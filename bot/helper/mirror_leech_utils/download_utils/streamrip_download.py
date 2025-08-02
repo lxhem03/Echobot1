@@ -160,7 +160,7 @@ class StreamripDownloadHelper:
             }
 
             for file_path in downloaded_files:
-                if isinstance(file_path, (str, Path)):
+                if isinstance(file_path, str | Path):
                     file_path = Path(file_path)
                     if file_path.suffix.lower() in audio_extensions:
                         # Extract track name from filename
@@ -172,10 +172,7 @@ class StreamripDownloadHelper:
                         if ". " in filename and " - " in filename:
                             # Remove track number prefix
                             parts = filename.split(". ", 1)
-                            if len(parts) > 1:
-                                track_name = parts[1]
-                            else:
-                                track_name = filename
+                            track_name = parts[1] if len(parts) > 1 else filename
                         else:
                             track_name = filename
 
@@ -960,10 +957,7 @@ class StreamripDownloadHelper:
         """Map bot UI quality to streamrip quality for specific platform"""
         try:
             if platform and platform in self.QUALITY_MAPPINGS:
-                mapped_quality = self.QUALITY_MAPPINGS[platform].get(
-                    bot_quality, bot_quality
-                )
-                return mapped_quality
+                return self.QUALITY_MAPPINGS[platform].get(bot_quality, bot_quality)
             LOGGER.info(
                 f"No mapping found for platform {platform}, using quality {bot_quality}"
             )

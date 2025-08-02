@@ -266,7 +266,7 @@ class StreamripQualitySelector:
         msg += f"<b>📁 Media Type:</b> <code>{self.media_type.title()}</code>\n"
 
         # Add platform max quality info
-        max_streamrip_quality = self.PLATFORM_MAX_QUALITIES.get(self.platform, 0)
+        self.PLATFORM_MAX_QUALITIES.get(self.platform, 0)
         max_bot_quality = max(available_qualities) if available_qualities else 0
         msg += f"<b>🎯 Max Quality:</b> <code>{self.QUALITY_INFO[max_bot_quality]['name']}</code>\n"
         msg += f"<b>📊 Available Qualities:</b> <code>{len(available_qualities)}</code>\n\n"
@@ -421,27 +421,27 @@ class StreamripQualitySelector:
         if self.platform == "qobuz":
             if bot_quality == 1:
                 return "320kbps MP3"
-            elif bot_quality == 2:
+            if bot_quality == 2:
                 return "16-bit/44.1kHz FLAC (CD Quality)"
-            elif bot_quality == 3:
+            if bot_quality == 3:
                 return "24-bit/≤96kHz FLAC (Hi-Res)"
-            elif bot_quality == 4:
+            if bot_quality == 4:
                 return "24-bit/≥96kHz FLAC (Hi-Res+)"
         elif self.platform == "tidal":
             if bot_quality == 0:
                 return "256kbps AAC"
-            elif bot_quality == 1:
+            if bot_quality == 1:
                 return "320kbps AAC"
-            elif bot_quality == 2:
+            if bot_quality == 2:
                 return "16-bit/44.1kHz FLAC (HiFi)"
-            elif bot_quality == 3:
+            if bot_quality == 3:
                 return "24-bit/44.1kHz MQA (Master)"
         elif self.platform == "deezer":
             if bot_quality == 0:
                 return "128kbps MP3"
-            elif bot_quality == 1:
+            if bot_quality == 1:
                 return "320kbps MP3"
-            elif bot_quality == 2:
+            if bot_quality == 2:
                 return "16-bit/44.1kHz FLAC"
         elif self.platform == "soundcloud":
             return "MP3 (various bitrates)"

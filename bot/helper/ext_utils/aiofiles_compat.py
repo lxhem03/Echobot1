@@ -215,7 +215,6 @@ async def remove(path):
     # Completely isolated fallback to prevent any os module scoping issues
     def _isolated_remove():
         # Import os inside the function to ensure complete isolation
-        import os
 
         return os.remove(path)
 
@@ -356,7 +355,7 @@ class AsyncPath:
             # Use pathlib which is more reliable than os.path.exists
             path_obj = Path(path)
             return path_obj.exists()
-        except Exception as pathlib_error:
+        except Exception:
             # Final fallback: use the isolated function approach
             def _isolated_exists():
                 # Import everything inside to ensure complete isolation

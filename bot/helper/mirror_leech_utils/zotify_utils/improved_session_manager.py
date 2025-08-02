@@ -35,12 +35,11 @@ class SimpleZotifySessionManager:
                     # Session is still active, update activity and return
                     self._last_activity = current_time
                     return self._session
-                else:
-                    # Session has been inactive for more than 1 hour, close it
-                    LOGGER.info(
-                        f"Session inactive for {time_since_activity:.0f}s, closing"
-                    )
-                    await self._close_session()
+                # Session has been inactive for more than 1 hour, close it
+                LOGGER.info(
+                    f"Session inactive for {time_since_activity:.0f}s, closing"
+                )
+                await self._close_session()
 
             # Create new session
             if await self._create_session():
@@ -121,8 +120,7 @@ class SimpleZotifySessionManager:
 
             # Make API call
             api = await asyncio.to_thread(session.api)
-            result = await asyncio.to_thread(api.invoke_url, endpoint)
-            return result
+            return await asyncio.to_thread(api.invoke_url, endpoint)
 
         except Exception as e:
             LOGGER.error(f"API call failed for {endpoint}: {e}")

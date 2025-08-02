@@ -2,16 +2,15 @@ import asyncio
 import base64
 import hashlib
 import json
-import mimetypes
 import os
 import re
 import time
 import warnings
 from asyncio import create_task, sleep
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import chardet
 import fitz
@@ -21,11 +20,9 @@ import fitz
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=SyntaxWarning, module="md2tgmd")
     warnings.filterwarnings("ignore", category=SyntaxWarning, module="latex2unicode")
-    import md2tgmd
 
     # Import functions for markdown processing
-    from md2tgmd import escape as md2tgmd_escape
-    from md2tgmd import latex2unicode, split_code
+    from md2tgmd import latex2unicode
 
 from httpx import AsyncClient, Timeout
 from pyrogram import enums
@@ -64,7 +61,7 @@ from bot.helper.telegram_helper.message_utils import (
 
 
 async def process_media_file(
-    message, user_id: int, model_id: Optional[str] = None, user_dict: dict = None
+    message, user_id: int, model_id: str | None = None, user_dict: dict | None = None
 ) -> str:
     """
     Process different types of media files and extract content for AI analysis.
@@ -157,24 +154,23 @@ async def process_media_file(
                 return f"Unable to download {media_info['type']} file."
         except Exception as e:
             LOGGER.error(f"Failed to download media file: {e}")
-            return f"Error downloading {media_info['type']} file: {str(e)}"
+            return f"Error downloading {media_info['type']} file: {e!s}"
 
         # Process based on media type
         user_dict = user_dict or {}
         if media_info["type"] == "image" or media_info.get("supports_vision"):
             return await process_image_file(file_path, media_info, user_dict)
-        elif media_info["type"] == "document":
+        if media_info["type"] == "document":
             return await process_document_file(file_path, media_info, user_dict)
-        elif media_info["type"] in ["audio", "voice"]:
+        if media_info["type"] in ["audio", "voice"]:
             return await process_audio_file(file_path, media_info, user_dict)
-        elif media_info["type"] == "video":
+        if media_info["type"] == "video":
             return await process_video_file(file_path, media_info, user_dict)
-        else:
-            return f"Unsupported media type: {media_info['type']}"
+        return f"Unsupported media type: {media_info['type']}"
 
     except Exception as e:
         LOGGER.error(f"Error processing media file: {e}")
-        return f"Error processing media file: {str(e)}"
+        return f"Error processing media file: {e!s}"
     finally:
         # Clean up downloaded file
         if file_path and os.path.exists(file_path):
@@ -192,17 +188,14 @@ async def download_media_file(file_id: str, user_id: int) -> str:
         os.makedirs(temp_dir, exist_ok=True)
 
         # Download file
-        file_path = await TgClient.bot.download_media(
-            file_id, file_name=temp_dir + "/"
-        )
-        return file_path
+        return await TgClient.bot.download_media(file_id, file_name=temp_dir + "/")
     except Exception as e:
         LOGGER.error(f"Failed to download media file {file_id}: {e}")
         return None
 
 
 async def process_image_file(
-    file_path: str, media_info: dict, user_dict: dict = None
+    file_path: str, media_info: dict, user_dict: dict | None = None
 ) -> str:
     """Process image files for AI vision analysis."""
     try:
@@ -226,7 +219,7 @@ async def process_image_file(
                 mode = img.mode
 
             # Prepare image description
-            description = f"""Image Analysis:
+            return f"""Image Analysis:
 - File: {media_info.get("file_name", "image")}
 - Format: {format_name}
 - Dimensions: {width}x{height}
@@ -235,17 +228,15 @@ async def process_image_file(
 
 [Note: This image can be analyzed by vision-capable AI models. Ask specific questions about what you see in the image.]"""
 
-            return description
-        else:
-            return f"Image file detected: {media_info.get('file_name', 'image')} ({media_info.get('mime_type', 'unknown format')}). Vision analysis is disabled."
+        return f"Image file detected: {media_info.get('file_name', 'image')} ({media_info.get('mime_type', 'unknown format')}). Vision analysis is disabled."
 
     except Exception as e:
         LOGGER.error(f"Failed to process image file: {e}")
-        return f"Error processing image: {str(e)}"
+        return f"Error processing image: {e!s}"
 
 
 async def process_document_file(
-    file_path: str, media_info: dict, user_dict: dict = None
+    file_path: str, media_info: dict, user_dict: dict | None = None
 ) -> str:
     """Process document files (PDF, text, etc.)."""
     try:
@@ -257,14 +248,13 @@ async def process_document_file(
             return await extract_pdf_text(file_path, media_info, user_dict)
 
         # Handle text files
-        elif mime_type.startswith("text/") or file_name.lower().endswith(
+        if mime_type.startswith("text/") or file_name.lower().endswith(
             (".txt", ".md", ".py", ".js", ".html", ".css", ".json", ".xml", ".csv")
         ):
             return await extract_text_content(file_path, media_info)
 
         # Handle other document types
-        else:
-            return f"""Document Analysis:
+        return f"""Document Analysis:
 - File: {file_name}
 - Type: {mime_type}
 - Size: {media_info.get("file_size", 0)} bytes
@@ -273,11 +263,11 @@ async def process_document_file(
 
     except Exception as e:
         LOGGER.error(f"Failed to process document file: {e}")
-        return f"Error processing document: {str(e)}"
+        return f"Error processing document: {e!s}"
 
 
 async def process_audio_file(
-    file_path: str, media_info: dict, user_dict: dict = None
+    file_path: str, media_info: dict, user_dict: dict | None = None
 ) -> str:
     """Process audio files for transcription."""
     try:
@@ -285,36 +275,32 @@ async def process_audio_file(
         duration = media_info.get("duration", 0)
 
         # Basic audio info
-        description = f"""Audio Analysis:
+        return f"""Audio Analysis:
 - File: {file_name}
 - Type: {media_info.get("mime_type", "unknown")}
 - Duration: {duration} seconds
 
 [Note: Audio transcription is not currently implemented. Please describe what you'd like to know about this audio file.]"""
 
-        return description
-
     except Exception as e:
         LOGGER.error(f"Failed to process audio file: {e}")
-        return f"Error processing audio: {str(e)}"
+        return f"Error processing audio: {e!s}"
 
 
 async def process_video_file(
-    file_path: str, media_info: dict, user_dict: dict = None
+    file_path: str, media_info: dict, user_dict: dict | None = None
 ) -> str:
     """Process video files."""
     try:
         file_name = media_info.get("file_name", "video")
         duration = media_info.get("duration", 0)
 
-        description = f"""Video Analysis:
+        return f"""Video Analysis:
 - File: {file_name}
 - Type: {media_info.get("mime_type", "unknown")}
 - Duration: {duration} seconds
 
 [Note: Video analysis is not currently implemented. Please describe what you'd like to know about this video file.]"""
-
-        return description
 
     except Exception as e:
         LOGGER.error(f"Failed to process video file: {e}")
@@ -322,7 +308,7 @@ async def process_video_file(
 
 
 async def extract_pdf_text(
-    file_path: str, media_info: dict, user_dict: dict = None
+    file_path: str, media_info: dict, user_dict: dict | None = None
 ) -> str:
     """Extract text content from PDF files."""
     try:
@@ -366,7 +352,7 @@ Content:
 
     except Exception as e:
         LOGGER.error(f"Failed to extract PDF text: {e}")
-        return f"Error extracting PDF content: {str(e)}"
+        return f"Error extracting PDF content: {e!s}"
 
 
 async def extract_text_content(file_path: str, media_info: dict) -> str:
@@ -384,11 +370,11 @@ async def extract_text_content(file_path: str, media_info: dict) -> str:
 
         # Read text content
         try:
-            with open(file_path, "r", encoding=encoding) as f:
+            with open(file_path, encoding=encoding) as f:
                 content = f.read()
         except UnicodeDecodeError:
             # Fallback to utf-8 with error handling
-            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+            with open(file_path, encoding="utf-8", errors="ignore") as f:
                 content = f.read()
 
         # Limit content length
@@ -407,7 +393,7 @@ Content:
 
     except Exception as e:
         LOGGER.error(f"Failed to extract text content: {e}")
-        return f"Error reading text file: {str(e)}"
+        return f"Error reading text file: {e!s}"
 
 
 def get_model_media_capabilities(model_id: str) -> dict:
@@ -638,12 +624,10 @@ def smart_split_message(text: str, max_length: int = 4096) -> list[str]:
             if first_pre_start > 0:
                 # Split before the first <pre> block
                 return first_pre_start
-            else:
-                # The <pre> block starts at the beginning, so we can't split safely
-                # Return the end of the last <pre> block or max_len, whichever is smaller
-                last_pre_end = pre_blocks[-1][1]
-                result = min(last_pre_end, len(text_segment))
-                return result
+            # The <pre> block starts at the beginning, so we can't split safely
+            # Return the end of the last <pre> block or max_len, whichever is smaller
+            last_pre_end = pre_blocks[-1][1]
+            return min(last_pre_end, len(text_segment))
 
         # Emergency fallback: split at max_len
         return max_len
@@ -658,7 +642,6 @@ def smart_split_message(text: str, max_length: int = 4096) -> list[str]:
     # Try splitting by paragraphs first for better content organization
     # But only split at paragraph breaks that are NOT inside <pre> blocks
     current_chunk = ""
-    current_pos = 0
 
     # Find all paragraph breaks (\n\n) that are safe to split at
     paragraph_breaks = []
@@ -717,7 +700,7 @@ def smart_split_message(text: str, max_length: int = 4096) -> list[str]:
 
     # Emergency fallback: if any chunk is still too long, use safe splitting
     final_chunks = []
-    for i, chunk in enumerate(chunks):
+    for _i, chunk in enumerate(chunks):
         if len(chunk) <= max_length:
             final_chunks.append(chunk)
         else:
@@ -992,7 +975,10 @@ async def send_streaming_response(
 
 
 async def handle_ai_error(
-    message, error: Exception, user_id: int = None, question: str = None
+    message,
+    error: Exception,
+    user_id: int | None = None,
+    question: str | None = None,
 ):
     """
     Enhanced error handling with ChatGPT-Telegram-Bot inspired patterns.
@@ -1003,51 +989,51 @@ async def handle_ai_error(
 
     # Categorize errors for better user experience
     if "rate limit" in error_str.lower() or "too many requests" in error_str.lower():
-        error_msg = f"⏳ <b>Rate Limit Exceeded</b>\n\n"
-        error_msg += f"The AI service is currently busy. Please try again in a few moments.\n\n"
+        error_msg = "⏳ <b>Rate Limit Exceeded</b>\n\n"
+        error_msg += "The AI service is currently busy. Please try again in a few moments.\n\n"
         error_msg += (
-            f"<i>Tip: Try using a different AI model or wait 30-60 seconds.</i>"
+            "<i>Tip: Try using a different AI model or wait 30-60 seconds.</i>"
         )
 
     elif "api key" in error_str.lower() or "unauthorized" in error_str.lower():
-        error_msg = f"🔑 <b>Authentication Error</b>\n\n"
-        error_msg += f"There's an issue with the AI service authentication.\n\n"
+        error_msg = "🔑 <b>Authentication Error</b>\n\n"
+        error_msg += "There's an issue with the AI service authentication.\n\n"
         error_msg += (
-            f"<i>Please contact the bot administrator to resolve this issue.</i>"
+            "<i>Please contact the bot administrator to resolve this issue.</i>"
         )
 
     elif "timeout" in error_str.lower() or "connection" in error_str.lower():
-        error_msg = f"🌐 <b>Connection Error</b>\n\n"
+        error_msg = "🌐 <b>Connection Error</b>\n\n"
         error_msg += (
-            f"Unable to connect to the AI service. This might be temporary.\n\n"
+            "Unable to connect to the AI service. This might be temporary.\n\n"
         )
-        error_msg += f"<i>Please try again in a few moments. If the issue persists, try a different AI model.</i>"
+        error_msg += "<i>Please try again in a few moments. If the issue persists, try a different AI model.</i>"
 
     elif "context length" in error_str.lower() or "token limit" in error_str.lower():
-        error_msg = f"📏 <b>Message Too Long</b>\n\n"
-        error_msg += f"Your message or conversation history is too long for the current AI model.\n\n"
-        error_msg += f"<i>Try shortening your message or use /ai_reset to clear conversation history.</i>"
+        error_msg = "📏 <b>Message Too Long</b>\n\n"
+        error_msg += "Your message or conversation history is too long for the current AI model.\n\n"
+        error_msg += "<i>Try shortening your message or use /ai_reset to clear conversation history.</i>"
 
     elif "content policy" in error_str.lower() or "safety" in error_str.lower():
-        error_msg = f"🛡️ <b>Content Policy Violation</b>\n\n"
+        error_msg = "🛡️ <b>Content Policy Violation</b>\n\n"
         error_msg += (
-            f"Your request was blocked by the AI service's content policy.\n\n"
+            "Your request was blocked by the AI service's content policy.\n\n"
         )
-        error_msg += f"<i>Please rephrase your question to comply with the service guidelines.</i>"
+        error_msg += "<i>Please rephrase your question to comply with the service guidelines.</i>"
 
     elif (
         "model not found" in error_str.lower()
         or "invalid model" in error_str.lower()
     ):
-        error_msg = f"🤖 <b>Model Error</b>\n\n"
-        error_msg += f"The selected AI model is currently unavailable.\n\n"
+        error_msg = "🤖 <b>Model Error</b>\n\n"
+        error_msg += "The selected AI model is currently unavailable.\n\n"
         error_msg += (
-            f"<i>Try switching to a different model using the settings menu.</i>"
+            "<i>Try switching to a different model using the settings menu.</i>"
         )
 
     else:
         # Generic error with helpful context
-        error_msg = f"❌ <b>AI Service Error</b>\n\n"
+        error_msg = "❌ <b>AI Service Error</b>\n\n"
         error_msg += f"<b>Error Type:</b> <code>{error_type}</code>\n"
         error_msg += f"<b>Details:</b> <code>{error_str[:200]}{'...' if len(error_str) > 200 else ''}</code>\n\n"
 
@@ -1056,15 +1042,15 @@ async def handle_ai_error(
             error_msg += f"<b>Your Question:</b> <i>{question[:100]}{'...' if len(question) > 100 else ''}</i>\n\n"
 
         error_msg += (
-            f"<i>Please try again or contact support if the issue persists.</i>"
+            "<i>Please try again or contact support if the issue persists.</i>"
         )
 
     # Add recovery suggestions
-    error_msg += f"\n\n<b>💡 Quick Fixes:</b>\n"
-    error_msg += f"• Try a different AI model\n"
-    error_msg += f"• Simplify your question\n"
-    error_msg += f"• Check your internet connection\n"
-    error_msg += f"• Use /ai_help for more options"
+    error_msg += "\n\n<b>💡 Quick Fixes:</b>\n"
+    error_msg += "• Try a different AI model\n"
+    error_msg += "• Simplify your question\n"
+    error_msg += "• Check your internet connection\n"
+    error_msg += "• Use /ai_help for more options"
 
     try:
         await send_message(message, error_msg, is_ai_message=True)
@@ -1645,22 +1631,21 @@ class AIManager:
 
         if provider == "openai":
             return "✅ Ready" if Config.OPENAI_API_KEY else "❌ API Key Required"
-        elif provider == "anthropic":
+        if provider == "anthropic":
             return "✅ Ready" if Config.ANTHROPIC_API_KEY else "❌ API Key Required"
-        elif provider == "google":
+        if provider == "google":
             return "✅ Ready" if Config.GOOGLE_AI_API_KEY else "❌ API Key Required"
-        elif provider == "groq":
+        if provider == "groq":
             return "✅ Ready" if Config.GROQ_API_KEY else "❌ API Key Required"
-        elif provider == "vertex":
+        if provider == "vertex":
             return (
                 "✅ Ready" if Config.VERTEX_PROJECT_ID else "❌ Project ID Required"
             )
-        elif provider == "mistral":
+        if provider == "mistral":
             return "✅ Ready" if Config.MISTRAL_API_URL else "❌ API URL Required"
-        elif provider == "deepseek":
+        if provider == "deepseek":
             return "✅ Ready" if Config.DEEPSEEK_API_URL else "❌ API URL Required"
-        else:
-            return "❓ Unknown Provider"
+        return "❓ Unknown Provider"
 
     def check_rate_limit(self, user_id: int, request_type: str = "standard") -> bool:
         """Enhanced rate limiting with different limits for different request types."""
@@ -1773,9 +1758,7 @@ class AIManager:
             "active_conversations": len(self.get_active_conversations(user_id)),
         }
 
-    async def get_model_instance(
-        self, model_id: str, user_dict: dict
-    ) -> Optional[Any]:
+    async def get_model_instance(self, model_id: str, user_dict: dict) -> Any | None:
         """Get or create model instance for the specified model."""
         if not AIENT_AVAILABLE:
             return None
@@ -1910,7 +1893,7 @@ class AIManager:
             return None
 
     def get_conversation_id(
-        self, user_id: int, chat_id: int, topic_id: Optional[int] = None
+        self, user_id: int, chat_id: int, topic_id: int | None = None
     ) -> str:
         """Generate conversation ID for user/chat/topic isolation."""
         # Respect user preference for group topic mode
@@ -1931,7 +1914,7 @@ class AIManager:
         conversation_id: str,
         role: str,
         content: str,
-        metadata: Optional[dict] = None,
+        metadata: dict | None = None,
     ):
         """Add message to conversation history with enhanced metadata."""
         # Respect user preference for conversation history
@@ -1980,8 +1963,8 @@ class AIManager:
 
         # Separate different types of messages
         system_messages = [msg for msg in messages if msg["role"] == "system"]
-        user_messages = [msg for msg in messages if msg["role"] == "user"]
-        assistant_messages = [msg for msg in messages if msg["role"] == "assistant"]
+        [msg for msg in messages if msg["role"] == "user"]
+        [msg for msg in messages if msg["role"] == "assistant"]
 
         # Keep all system messages (they're usually important)
         preserved_messages = system_messages.copy()
@@ -2262,7 +2245,7 @@ class AIManager:
             # Clear AI-related settings
             ai_keys = [
                 key
-                for key in user_dict.keys()
+                for key in user_dict
                 if key.startswith("AI_") or key == "DEFAULT_AI_MODEL"
             ]
             for key in ai_keys:
@@ -2494,7 +2477,7 @@ class AIManager:
         return False
 
     def get_mode_system_prompt(
-        self, user_id: int, detected_language: str = None
+        self, user_id: int, detected_language: str | None = None
     ) -> str:
         """Get system prompt based on user's conversation mode and language."""
         mode = self.get_user_conversation_mode(user_id)
@@ -2538,7 +2521,7 @@ class AIManager:
 
         # Calculate usage patterns
         model_usage = stats.get("model_usage", {})
-        total_model_tokens = sum(model_usage.values())
+        sum(model_usage.values())
 
         # Get most used models
         popular_models = sorted(
@@ -2615,7 +2598,7 @@ class AIManager:
 
         # Calculate conversation mode popularity
         mode_usage = {}
-        for user_id in self.usage_stats.keys():
+        for user_id in self.usage_stats:
             mode = self.get_user_conversation_mode(user_id)
             mode_usage[mode] = mode_usage.get(mode, 0) + 1
 
@@ -2623,7 +2606,7 @@ class AIManager:
 
         # Calculate language distribution
         language_usage = {}
-        for user_id in self.usage_stats.keys():
+        for user_id in self.usage_stats:
             language = self.get_user_language(user_id)
             language_usage[language] = language_usage.get(language, 0) + 1
 
@@ -2651,7 +2634,7 @@ class AIManager:
             ),
             "active_conversations": sum(
                 len(self.get_active_conversations(user_id))
-                for user_id in self.usage_stats.keys()
+                for user_id in self.usage_stats
             ),
         }
 
@@ -2807,7 +2790,7 @@ class AIManager:
         return "en"
 
     def get_language_prompt(
-        self, user_id: int, detected_language: str = None
+        self, user_id: int, detected_language: str | None = None
     ) -> str:
         """Get language-specific system prompt."""
         user_language = self.get_user_language(user_id)
@@ -2977,7 +2960,7 @@ class AIManager:
 
         except Exception as e:
             LOGGER.error(f"Error processing file upload: {e}")
-            return f"[FILE_PROCESSING_ERROR: {str(e)}]"
+            return f"[FILE_PROCESSING_ERROR: {e!s}]"
 
     async def _process_image(self, photo) -> str:
         """Process image files for vision models with enhanced capabilities."""
@@ -3005,7 +2988,7 @@ class AIManager:
 
         except Exception as e:
             LOGGER.error(f"Error processing image: {e}")
-            return f"[IMAGE_PROCESSING_ERROR: {str(e)}]"
+            return f"[IMAGE_PROCESSING_ERROR: {e!s}]"
 
     async def _process_document(self, document) -> str:
         """Process document files (PDF, TXT, MD, etc.) with enhanced capabilities."""
@@ -3056,7 +3039,7 @@ class AIManager:
                     doc.close()
 
                 except Exception as pdf_error:
-                    content = f"[PDF_PROCESSING_ERROR: {str(pdf_error)}]"
+                    content = f"[PDF_PROCESSING_ERROR: {pdf_error!s}]"
 
             elif file_ext in supported_text_types:
                 # Process text files with better encoding detection
@@ -3079,7 +3062,7 @@ class AIManager:
                     content = f"[File: {file_name}, Size: {file_size} bytes, Encoding: {encoding}]\n\n{content}"
 
                 except Exception as text_error:
-                    content = f"[TEXT_PROCESSING_ERROR: {str(text_error)}]"
+                    content = f"[TEXT_PROCESSING_ERROR: {text_error!s}]"
 
             else:
                 content = f"[UNSUPPORTED_FILE_TYPE: {file_ext}. Supported types: {', '.join(supported_text_types + supported_doc_types)}]"
@@ -3113,7 +3096,7 @@ class AIManager:
 
         except Exception as e:
             LOGGER.error(f"Error processing document: {e}")
-            return f"[DOCUMENT_PROCESSING_ERROR: {str(e)}]"
+            return f"[DOCUMENT_PROCESSING_ERROR: {e!s}]"
 
     async def _process_audio(self, audio) -> str:
         """Process audio/voice files using Whisper."""
@@ -3152,7 +3135,7 @@ class AIManager:
 
         except Exception as e:
             LOGGER.error(f"Error processing video note: {e}")
-            return f"[VIDEO_NOTE_PROCESSING_ERROR: {str(e)}]"
+            return f"[VIDEO_NOTE_PROCESSING_ERROR: {e!s}]"
 
     async def _process_video(self, video) -> str:
         """Process video files (provide metadata and guidance)."""
@@ -3164,7 +3147,7 @@ class AIManager:
             height = getattr(video, "height", 0)
             file_name = getattr(video, "file_name", "video")
 
-            metadata = f"""📹 <b>Video File Analysis ({file_name}):</b>
+            return f"""📹 <b>Video File Analysis ({file_name}):</b>
 
 📊 <b>Metadata:</b>
 • Duration: {duration} seconds ({duration // 60}:{duration % 60:02d})
@@ -3178,11 +3161,9 @@ class AIManager:
 
 🔮 <b>Coming Soon:</b> Automatic video frame analysis and audio transcription."""
 
-            return metadata
-
         except Exception as e:
             LOGGER.error(f"Error processing video: {e}")
-            return f"[VIDEO_PROCESSING_ERROR: {str(e)}]"
+            return f"[VIDEO_PROCESSING_ERROR: {e!s}]"
 
     async def search_web(self, query: str, num_results: int = 5) -> str:
         """Search the web using search engine."""
@@ -3202,12 +3183,11 @@ class AIManager:
                         f"{i}. <b>{title}</b>\n{snippet}\n🔗 {url}\n\n"
                     )
                 return formatted_results
-            else:
-                return f"❌ No search results found for: {query}"
+            return f"❌ No search results found for: {query}"
 
         except Exception as e:
             LOGGER.error(f"Error in web search: {e}")
-            return f"❌ Web search error: {str(e)}"
+            return f"❌ Web search error: {e!s}"
 
     async def summarize_url(self, url: str) -> str:
         """Summarize content from a URL."""
@@ -3226,12 +3206,11 @@ class AIManager:
                     content = content[:5000] + "\n\n[Content truncated...]"
 
                 return f"📄 <b>URL Content Summary:</b>\n🔗 {url}\n\n{content}"
-            else:
-                return f"❌ Could not extract content from: {url}"
+            return f"❌ Could not extract content from: {url}"
 
         except Exception as e:
             LOGGER.error(f"Error in URL summarization: {e}")
-            return f"❌ URL summarization error: {str(e)}"
+            return f"❌ URL summarization error: {e!s}"
 
     async def search_arxiv(self, query: str) -> str:
         """Search and analyze ArXiv papers."""
@@ -3245,12 +3224,11 @@ class AIManager:
                 return (
                     f"📚 <b>ArXiv Paper Analysis:</b>\n🔍 Query: {query}\n\n{result}"
                 )
-            else:
-                return f"❌ No ArXiv papers found for: {query}"
+            return f"❌ No ArXiv papers found for: {query}"
 
         except Exception as e:
             LOGGER.error(f"Error in ArXiv search: {e}")
-            return f"❌ ArXiv search error: {str(e)}"
+            return f"❌ ArXiv search error: {e!s}"
 
     async def execute_code(self, code: str, language: str = "python") -> str:
         """Execute code using the code interpreter."""
@@ -3264,12 +3242,11 @@ class AIManager:
             if language.lower() == "python":
                 result = run_python_script(code)
                 return f"💻 <b>Code Execution Result:</b>\n\n```python\n{code}\n```\n\n<b>Output:</b>\n```\n{result}\n```"
-            else:
-                return f"❌ Unsupported language: {language}. Only Python is currently supported."
+            return f"❌ Unsupported language: {language}. Only Python is currently supported."
 
         except Exception as e:
             LOGGER.error(f"Error in code execution: {e}")
-            return f"❌ Code execution error: {str(e)}"
+            return f"❌ Code execution error: {e!s}"
 
     async def generate_image(self, prompt: str) -> str:
         """Generate an image using DALL-E."""
@@ -3286,12 +3263,11 @@ class AIManager:
                 return (
                     f"🎨 <b>Generated Image:</b>\n📝 Prompt: {prompt}\n🖼️ {image_url}"
                 )
-            else:
-                return f"❌ Could not generate image for prompt: {prompt}"
+            return f"❌ Could not generate image for prompt: {prompt}"
 
         except Exception as e:
             LOGGER.error(f"Error in image generation: {e}")
-            return f"❌ Image generation error: {str(e)}"
+            return f"❌ Image generation error: {e!s}"
 
 
 # Global AI Manager instance
@@ -3497,7 +3473,7 @@ async def ask_ai(_, message):
         if not model_info:
             available_models = ai_manager.get_available_models()
             available_list = []
-            for group, models in available_models.items():
+            for models in available_models.values():
                 available_list.extend(models)
 
             error_msg = await send_message(
@@ -3582,9 +3558,7 @@ async def ask_ai(_, message):
                 reply_context = f"Media file analysis: {media_content[:1000]}{'...' if len(media_content) > 1000 else ''}"
         except Exception as e:
             LOGGER.warning(f"Failed to process media file: {e}")
-            reply_context = (
-                f"Media file detected but could not be processed: {str(e)}"
-            )
+            reply_context = f"Media file detected but could not be processed: {e!s}"
 
     if hasattr(message, "text") and message.text:
         if message.text.strip().startswith("/ask"):
@@ -3823,7 +3797,7 @@ async def get_ai_response_new(
 
     except Exception as e:
         LOGGER.error(f"Error getting AI response from {provider}/{model}: {e}")
-        raise Exception(f"AI Error: {str(e)}")
+        raise Exception(f"AI Error: {e!s}")
 
 
 def _split_response_for_streaming(text: str, chunk_size: int = 50) -> list[str]:
@@ -3840,11 +3814,10 @@ def _split_response_for_streaming(text: str, chunk_size: int = 50) -> list[str]:
         if len(current_chunk) + len(word) + 1 > chunk_size and current_chunk:
             chunks.append(current_chunk)
             current_chunk = word
+        elif current_chunk:
+            current_chunk += " " + word
         else:
-            if current_chunk:
-                current_chunk += " " + word
-            else:
-                current_chunk = word
+            current_chunk = word
 
     # Add remaining chunk
     if current_chunk:
@@ -4163,7 +4136,7 @@ async def show_ai_stats(client, message):
         LOGGER.error(f"Error showing AI stats: {e}")
         await send_message(
             message,
-            f"❌ Error retrieving AI statistics: {str(e)}",
+            f"❌ Error retrieving AI statistics: {e!s}",
             is_ai_message=True,
         )
 
@@ -4212,7 +4185,7 @@ async def get_legacy_ai_response(
                 raise Exception("Mistral API URL not configured")
             return await get_response_with_api_url(question, api_url, user_id)
 
-        elif provider == "deepseek":
+        if provider == "deepseek":
             api_url = user_dict.get("DEEPSEEK_API_URL", Config.DEEPSEEK_API_URL)
             if not api_url:
                 raise Exception("DeepSeek API URL not configured")
@@ -4220,8 +4193,7 @@ async def get_legacy_ai_response(
                 question, api_url, user_id
             )
 
-        else:
-            raise Exception(f"Unknown legacy provider: {provider}")
+        raise Exception(f"Unknown legacy provider: {provider}")
 
     except Exception as e:
         LOGGER.error(f"Error with legacy provider {provider}: {e}")
@@ -4346,7 +4318,7 @@ async def get_deepseek_response_with_api_url(question, api_url, user_id):
 
         except Exception as e:
             LOGGER.error(f"Voice transcription error: {e}")
-            return f"❌ Voice transcription failed: {str(e)}"
+            return f"❌ Voice transcription failed: {e!s}"
 
     async def generate_image_from_prompt(self, prompt: str, user_dict: dict) -> dict:
         """Generate image using DALL-E or other image generation models."""
@@ -4387,14 +4359,13 @@ async def get_deepseek_response_with_api_url(question, api_url, user_id):
 
             if file_extension == ".pdf":
                 return await self._process_pdf_document(document_path)
-            elif file_extension in [".txt", ".md", ".py", ".js", ".html", ".css"]:
+            if file_extension in [".txt", ".md", ".py", ".js", ".html", ".css"]:
                 return await self._process_text_document(document_path)
-            else:
-                return f"❌ Unsupported document type: {file_extension}"
+            return f"❌ Unsupported document type: {file_extension}"
 
         except Exception as e:
             LOGGER.error(f"Document processing error: {e}")
-            return f"❌ Document processing failed: {str(e)}"
+            return f"❌ Document processing failed: {e!s}"
 
     async def _process_pdf_document(self, pdf_path: str) -> str:
         """Process PDF document and extract text."""
@@ -4419,7 +4390,7 @@ async def get_deepseek_response_with_api_url(question, api_url, user_id):
 
         except Exception as e:
             LOGGER.error(f"PDF processing error: {e}")
-            return f"❌ PDF processing failed: {str(e)}"
+            return f"❌ PDF processing failed: {e!s}"
 
     async def _process_text_document(self, file_path: str) -> str:
         """Process text-based documents."""
@@ -4431,7 +4402,7 @@ async def get_deepseek_response_with_api_url(question, api_url, user_id):
             encoding = chardet.detect(raw_data)["encoding"] or "utf-8"
 
             # Read file content
-            with open(file_path, "r", encoding=encoding) as f:
+            with open(file_path, encoding=encoding) as f:
                 content = f.read()
 
             # Limit content length
@@ -4445,7 +4416,7 @@ async def get_deepseek_response_with_api_url(question, api_url, user_id):
 
         except Exception as e:
             LOGGER.error(f"Text document processing error: {e}")
-            return f"❌ Text document processing failed: {str(e)}"
+            return f"❌ Text document processing failed: {e!s}"
 
     async def generate_follow_up_questions(
         self, conversation_history: list, response: str
@@ -4517,7 +4488,9 @@ Generate 3 relevant follow-up questions that the user might want to ask. Return 
         """Get plugin usage statistics."""
         return dict(self.plugin_stats)
 
-    async def reset_conversation(self, user_id: int, conversation_id: str = None):
+    async def reset_conversation(
+        self, user_id: int, conversation_id: str | None = None
+    ):
         """Reset conversation history for user or specific conversation."""
         try:
             if conversation_id:
@@ -4553,7 +4526,7 @@ Generate 3 relevant follow-up questions that the user might want to ask. Return 
                 return "❌ Conversation is empty"
 
             # Format conversation for export
-            export_text = f"📋 **Conversation Export**\n"
+            export_text = "📋 **Conversation Export**\n"
             export_text += f"User ID: {user_id}\n"
             export_text += f"Conversation ID: {conversation_id}\n"
             export_text += f"Messages: {len(conversation)}\n"
@@ -4577,7 +4550,7 @@ Generate 3 relevant follow-up questions that the user might want to ask. Return 
 
         except Exception as e:
             LOGGER.error(f"Error exporting conversation: {e}")
-            return f"❌ Export failed: {str(e)}"
+            return f"❌ Export failed: {e!s}"
 
     async def get_user_analytics(self, user_id: int) -> dict:
         """Get comprehensive user analytics."""
@@ -4655,7 +4628,6 @@ async def handle_ai_reply(_, message):
             return
 
         # Check if user is authorized
-        user_id = message.from_user.id
         if not await CustomFilters.authorized(_, message):
             return
 

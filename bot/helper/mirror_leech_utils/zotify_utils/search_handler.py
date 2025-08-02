@@ -25,7 +25,6 @@ from bot import LOGGER
 from bot.core.aeon_client import TgClient
 from bot.core.config_manager import Config
 from bot.helper.ext_utils.status_utils import get_readable_time
-from bot.helper.mirror_leech_utils.zotify_utils.zotify_config import zotify_config
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.telegram_helper.message_utils import (
     auto_delete_message,

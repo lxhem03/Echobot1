@@ -1,3 +1,4 @@
+import contextlib
 from asyncio import create_subprocess_exec, create_task, sleep
 from functools import partial
 from html import escape
@@ -34,10 +35,8 @@ from bot.helper.telegram_helper.message_utils import (
 
 # Import ai_manager for AI-related functionality
 ai_manager = None
-try:
+with contextlib.suppress(ImportError):
     from bot.modules.ai import ai_manager
-except ImportError:
-    pass
 
 handler_dict = {}
 # Only use owner thumbnail if it's actually configured (not empty/None)
@@ -1838,7 +1837,7 @@ Configure missing providers in API Keys or Custom URLs.</i>"""
 
 ❌ <b>Analytics Unavailable</b>
 
-Unable to load detailed analytics: {str(e)}
+Unable to load detailed analytics: {e!s}
 
 <i>Please try refreshing or contact support if the issue persists.</i>"""
         else:
@@ -1928,7 +1927,7 @@ Detailed analytics are not available because the AI module is not loaded.
 
 ❌ <b>Budget Information Unavailable</b>
 
-Unable to load budget status: {str(e)}
+Unable to load budget status: {e!s}
 
 <i>Please try refreshing or contact support if the issue persists.</i>"""
         else:
@@ -2139,7 +2138,7 @@ Choose your preferred language for AI responses. The AI will:
 
 ❌ <b>Statistics Unavailable</b>
 
-Unable to load AI usage statistics: {str(e)}
+Unable to load AI usage statistics: {e!s}
 
 <i>Please try refreshing or contact support if the issue persists.</i>"""
         else:

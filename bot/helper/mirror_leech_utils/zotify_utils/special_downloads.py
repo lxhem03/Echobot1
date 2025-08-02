@@ -8,7 +8,6 @@ from zotify import Session
 from zotify.app import Selection
 
 from bot import LOGGER
-from bot.helper.mirror_leech_utils.zotify_utils.zotify_config import zotify_config
 
 
 class ZotifySpecialDownloads:

@@ -2,7 +2,6 @@ import contextlib
 import inspect
 import json
 import os
-import tempfile
 from asyncio import (
     create_subprocess_exec,
     create_subprocess_shell,
@@ -14,7 +13,6 @@ from datetime import datetime
 from functools import partial
 from io import BytesIO
 from os import getcwd, path
-from pathlib import Path
 from time import time
 
 import aiofiles
@@ -156,10 +154,8 @@ from .rss import add_job
 
 # Import ai_manager for AI-related functionality
 ai_manager = None
-try:
+with contextlib.suppress(ImportError):
     from bot.modules.ai import ai_manager
-except ImportError:
-    pass
 
 start = 0
 state = "view"
@@ -2135,11 +2131,7 @@ Select a tool category to configure its settings."""
 
         # Get model info
         model_info = ai_manager.get_model_info(default_model) if ai_manager else None
-        provider = (
-            model_info.get("provider", "unknown").upper()
-            if model_info
-            else "UNKNOWN"
-        )
+        (model_info.get("provider", "unknown").upper() if model_info else "UNKNOWN")
 
         # Get provider status
         providers_status = []
@@ -14729,7 +14721,7 @@ async def edit_bot_settings(client, query):
 
             # Add models grouped by provider (limit to avoid too many buttons)
             model_count = 0
-            for group_name, models in available_models.items():
+            for models in available_models.values():
                 if model_count >= 20:  # Limit total models shown
                     break
 
@@ -18294,11 +18286,9 @@ No database-only files found."""
             "MEDIA_TOOLS_ENABLED",
         }:
             return_menu = "var"
-        elif key == "AI_ENABLED":
-            return_menu = "ai"
-        elif key == "DEFAULT_AI_MODEL":
-            return_menu = "ai"
-        elif key.startswith(("MISTRAL_", "DEEPSEEK_")):
+        elif key in {"AI_ENABLED", "DEFAULT_AI_MODEL"} or key.startswith(
+            ("MISTRAL_", "DEEPSEEK_")
+        ):
             return_menu = "ai"
         elif key.startswith("AI_") and key in {
             "AI_PLUGINS_ENABLED",
