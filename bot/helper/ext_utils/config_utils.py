@@ -717,6 +717,17 @@ async def reset_tool_configs(tool_name, database):
         "metadata": ["METADATA_"],
         "xtra": ["FFMPEG_CMDS"],  # Reset FFMPEG_CMDS for users
         "sample": [],  # No specific configs for sample
+        "ai": [
+            "AI_",
+            "DEFAULT_AI_MODEL",
+            "OPENAI_",
+            "ANTHROPIC_",
+            "GOOGLE_AI_",
+            "GROQ_",
+            "VERTEX_",
+            "MISTRAL_",
+            "DEEPSEEK_",
+        ],  # AI-related configs
     }
 
     # Define default values for each tool
@@ -1077,6 +1088,58 @@ async def reset_tool_configs(tool_name, database):
         "SWAP_SUBTITLE_USE_LANGUAGE": True,
         "SWAP_SUBTITLE_LANGUAGE_ORDER": "eng,hin",
         "SWAP_SUBTITLE_INDEX_ORDER": "0,1",
+        # AI Settings - Core
+        "DEFAULT_AI_MODEL": "gpt-4o-mini",
+        "AI_CONVERSATION_MODE": "assistant",
+        "AI_LANGUAGE": "en",
+        # AI Feature Settings
+        "AI_STREAMING_ENABLED": True,
+        "AI_PLUGINS_ENABLED": True,
+        "AI_MULTIMODAL_ENABLED": True,
+        "AI_CONVERSATION_HISTORY": True,
+        "AI_MAX_HISTORY_LENGTH": 50,
+        "AI_QUESTION_PREDICTION": True,
+        "AI_GROUP_TOPIC_MODE": True,
+        "AI_INLINE_MODE_ENABLED": True,
+        "AI_AUTO_LANGUAGE_DETECTION": True,
+        "AI_DEFAULT_LANGUAGE": "en",
+        # New ChatGPT-Telegram-Bot Features
+        "AI_VOICE_TRANSCRIPTION_ENABLED": True,
+        "AI_IMAGE_GENERATION_ENABLED": True,
+        "AI_DOCUMENT_PROCESSING_ENABLED": True,
+        "AI_FOLLOW_UP_QUESTIONS_ENABLED": True,
+        "AI_CONVERSATION_EXPORT_ENABLED": True,
+        "AI_TYPEWRITER_EFFECT_ENABLED": True,
+        "AI_CONTEXT_PRUNING_ENABLED": True,
+        # AI Plugin Settings
+        "AI_WEB_SEARCH_ENABLED": True,
+        "AI_URL_SUMMARIZATION_ENABLED": True,
+        "AI_ARXIV_ENABLED": True,
+        "AI_CODE_INTERPRETER_ENABLED": True,
+        # AI Budget Settings
+        "AI_DAILY_TOKEN_LIMIT": 0,  # 0 = unlimited
+        "AI_MONTHLY_TOKEN_LIMIT": 0,  # 0 = unlimited
+        "AI_DAILY_COST_LIMIT": 0.0,  # 0 = unlimited
+        "AI_MONTHLY_COST_LIMIT": 0.0,  # 0 = unlimited
+        # AI Performance Settings
+        "AI_MAX_TOKENS": 4096,
+        "AI_TEMPERATURE": 0.7,
+        "AI_TIMEOUT": 600,
+        "AI_RATE_LIMIT_PER_USER": 100,
+        # AI API Keys (reset to empty)
+        "OPENAI_API_KEY": "",
+        "ANTHROPIC_API_KEY": "",
+        "GOOGLE_AI_API_KEY": "",
+        "GROQ_API_KEY": "",
+        "VERTEX_PROJECT_ID": "",
+        "VERTEX_AI_LOCATION": "",
+        # AI API URLs (reset to empty for default)
+        "OPENAI_API_URL": "",
+        "ANTHROPIC_API_URL": "",
+        "GOOGLE_AI_API_URL": "",
+        "GROQ_API_URL": "",
+        "MISTRAL_API_URL": "",
+        "DEEPSEEK_API_URL": "",
     }
 
     # Get prefixes for the specified tool
@@ -1481,3 +1544,157 @@ async def reset_ddl_configs(database):
             await database.update_user_data(user_id)
 
     # DDL operations disabled without logging
+
+
+async def reset_ai_configs(database):
+    """Reset all AI-related configurations to their default values when AI is disabled.
+
+    Args:
+        database: The database instance to update configurations
+    """
+    # Reset user-specific AI configurations
+    for user_id, user_dict in list(user_data.items()):
+        user_configs_to_reset = False
+
+        # AI-related keys to reset
+        ai_keys = [
+            # Core AI Settings
+            "DEFAULT_AI_MODEL",
+            "AI_CONVERSATION_MODE",
+            "AI_LANGUAGE",
+            # AI Feature Settings
+            "AI_STREAMING_ENABLED",
+            "AI_PLUGINS_ENABLED",
+            "AI_MULTIMODAL_ENABLED",
+            "AI_CONVERSATION_HISTORY",
+            "AI_MAX_HISTORY_LENGTH",
+            "AI_QUESTION_PREDICTION",
+            "AI_GROUP_TOPIC_MODE",
+            "AI_INLINE_MODE_ENABLED",
+            "AI_AUTO_LANGUAGE_DETECTION",
+            "AI_DEFAULT_LANGUAGE",
+            # New ChatGPT-Telegram-Bot Features
+            "AI_VOICE_TRANSCRIPTION_ENABLED",
+            "AI_IMAGE_GENERATION_ENABLED",
+            "AI_DOCUMENT_PROCESSING_ENABLED",
+            "AI_FOLLOW_UP_QUESTIONS_ENABLED",
+            "AI_CONVERSATION_EXPORT_ENABLED",
+            "AI_TYPEWRITER_EFFECT_ENABLED",
+            "AI_CONTEXT_PRUNING_ENABLED",
+            # AI Plugin Settings
+            "AI_WEB_SEARCH_ENABLED",
+            "AI_URL_SUMMARIZATION_ENABLED",
+            "AI_ARXIV_ENABLED",
+            "AI_CODE_INTERPRETER_ENABLED",
+            # AI Budget Settings
+            "AI_DAILY_TOKEN_LIMIT",
+            "AI_MONTHLY_TOKEN_LIMIT",
+            "AI_DAILY_COST_LIMIT",
+            "AI_MONTHLY_COST_LIMIT",
+            # AI Performance Settings
+            "AI_MAX_TOKENS",
+            "AI_TEMPERATURE",
+            "AI_TIMEOUT",
+            "AI_RATE_LIMIT_PER_USER",
+            # AI API Keys
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY",
+            "GOOGLE_AI_API_KEY",
+            "GROQ_API_KEY",
+            "VERTEX_PROJECT_ID",
+            "VERTEX_AI_LOCATION",
+            # AI API URLs
+            "OPENAI_API_URL",
+            "ANTHROPIC_API_URL",
+            "GOOGLE_AI_API_URL",
+            "GROQ_API_URL",
+            "MISTRAL_API_URL",
+            "DEEPSEEK_API_URL",
+        ]
+
+        # Reset each AI-related key
+        for key in ai_keys:
+            if key in user_dict:
+                user_dict.pop(key, None)
+                user_configs_to_reset = True
+
+        # Update the database if there are user configurations to reset
+        if user_configs_to_reset:
+            await database.update_user_data(user_id)
+
+    # AI operations disabled without logging
+
+
+async def reset_ai_provider_configs(provider_name, database):
+    """Reset AI provider-specific configurations when a provider is disabled.
+
+    Args:
+        provider_name: The name of the AI provider (openai, anthropic, google, groq, etc.)
+        database: The database instance to update configurations
+    """
+    # Reset user-specific provider configurations
+    for user_id, user_dict in list(user_data.items()):
+        user_configs_to_reset = False
+
+        # Provider-specific keys to reset based on provider name
+        provider_keys = []
+
+        if provider_name.lower() == "openai":
+            provider_keys = [
+                "OPENAI_API_KEY",
+                "OPENAI_API_URL",
+            ]
+            # Reset model if it's an OpenAI model
+            current_model = user_dict.get("DEFAULT_AI_MODEL", "")
+            if current_model.startswith(("gpt-", "chatgpt")):
+                user_dict.pop("DEFAULT_AI_MODEL", None)
+                user_configs_to_reset = True
+
+        elif provider_name.lower() == "anthropic":
+            provider_keys = [
+                "ANTHROPIC_API_KEY",
+                "ANTHROPIC_API_URL",
+            ]
+            # Reset model if it's an Anthropic model
+            current_model = user_dict.get("DEFAULT_AI_MODEL", "")
+            if current_model.startswith("claude"):
+                user_dict.pop("DEFAULT_AI_MODEL", None)
+                user_configs_to_reset = True
+
+        elif provider_name.lower() == "google":
+            provider_keys = [
+                "GOOGLE_AI_API_KEY",
+                "GOOGLE_AI_API_URL",
+                "VERTEX_PROJECT_ID",
+                "VERTEX_AI_LOCATION",
+            ]
+            # Reset model if it's a Google model
+            current_model = user_dict.get("DEFAULT_AI_MODEL", "")
+            if current_model.startswith(("gemini", "vertex")):
+                user_dict.pop("DEFAULT_AI_MODEL", None)
+                user_configs_to_reset = True
+
+        elif provider_name.lower() == "groq":
+            provider_keys = [
+                "GROQ_API_KEY",
+                "GROQ_API_URL",
+            ]
+            # Reset model if it's a Groq model
+            current_model = user_dict.get("DEFAULT_AI_MODEL", "")
+            if "groq" in current_model.lower() or current_model.startswith(
+                ("mixtral", "llama")
+            ):
+                user_dict.pop("DEFAULT_AI_MODEL", None)
+                user_configs_to_reset = True
+
+        # Reset each provider-specific key
+        for key in provider_keys:
+            if key in user_dict:
+                user_dict.pop(key, None)
+                user_configs_to_reset = True
+
+        # Update the database if there are user configurations to reset
+        if user_configs_to_reset:
+            await database.update_user_data(user_id)
+
+    # Provider-specific AI operations disabled without logging

@@ -279,14 +279,55 @@ async def unified_inline_search_handler(client, inline_query: InlineQuery):
     Unified inline search handler that routes queries to appropriate search modules.
 
     Routing logic:
+    - Queries starting with 'ai:' or 'ask:' -> AI Assistant
     - Queries starting with 'spotify:' or 'zotify:' or 'z:' -> Zotify search
     - Queries starting with 'streamrip:' or 'sr:' or 'music:' -> Streamrip search
     - Queries starting with 'qobuz:', 'tidal:', 'deezer:', 'soundcloud:' -> Streamrip search
-    - All other queries -> Unified search (both platforms)
+    - All other queries -> Unified search (both platforms) or AI if enabled
     """
     query = inline_query.query.strip()
 
     # Routing inline search (log removed for cleaner output)
+
+    # Route to AI Assistant if prefixed or if AI inline mode is enabled
+    if query.startswith(("ai:", "ask:")):
+        if Config.AI_ENABLED and getattr(Config, "AI_INLINE_MODE_ENABLED", True):
+            # Extract AI query and remove prefix
+            if query.startswith("ai:"):
+                modified_query = query[3:].strip()
+            elif query.startswith("ask:"):
+                modified_query = query[4:].strip()
+
+            # Create modified inline query for AI handler
+            modified_inline_query = ModifiedInlineQuery(inline_query, modified_query)
+
+            # Import and call AI inline handler
+            try:
+                from bot.modules.ai import handle_ai_inline_query
+
+                await handle_ai_inline_query(client, modified_inline_query)
+                return
+            except Exception as e:
+                LOGGER.error(f"AI inline handler error: {e}")
+                # Fall through to show error
+
+        # AI disabled, show error
+        from pyrogram.types import InlineQueryResultArticle, InputTextMessageContent
+
+        await inline_query.answer(
+            results=[
+                InlineQueryResultArticle(
+                    id="ai_disabled",
+                    title="❌ AI Assistant Disabled",
+                    description="AI Assistant is currently disabled",
+                    input_message_content=InputTextMessageContent(
+                        "❌ **AI Assistant Disabled**\n\nAI Assistant is currently disabled. Please contact the administrator."
+                    ),
+                )
+            ],
+            cache_time=60,
+        )
+        return
 
     # Route to Zotify search if prefixed (with lazy initialization)
     if query.startswith(("spotify:", "zotify:", "z:")):
@@ -340,10 +381,7 @@ async def unified_inline_search_handler(client, inline_query: InlineQuery):
             await inline_zotify_search(client, modified_inline_query)
             return
         # Zotify disabled, show error
-        from pyrogram.types import (
-            InlineQueryResultArticle,
-            InputTextMessageContent,
-        )
+        from pyrogram.types import InlineQueryResultArticle, InputTextMessageContent
 
         await inline_query.answer(
             results=[
@@ -404,10 +442,7 @@ async def unified_inline_search_handler(client, inline_query: InlineQuery):
             await inline_streamrip_search(client, modified_inline_query)
             return
         # Streamrip disabled, show error
-        from pyrogram.types import (
-            InlineQueryResultArticle,
-            InputTextMessageContent,
-        )
+        from pyrogram.types import InlineQueryResultArticle, InputTextMessageContent
 
         await inline_query.answer(
             results=[
@@ -424,12 +459,22 @@ async def unified_inline_search_handler(client, inline_query: InlineQuery):
         )
         return
 
-    # For all other queries, route to unified search (both platforms)
+    # For all other queries, route to unified search (both platforms) or AI
     if Config.ZOTIFY_ENABLED or Config.STREAMRIP_ENABLED:
         await unified_music_search(client, inline_query)
         return
 
-    # If neither search is enabled, show help
+    # If music search is disabled but AI is enabled, route to AI
+    if Config.AI_ENABLED and getattr(Config, "AI_INLINE_MODE_ENABLED", True):
+        try:
+            from bot.modules.ai import handle_ai_inline_query
+
+            await handle_ai_inline_query(client, inline_query)
+            return
+        except Exception as e:
+            LOGGER.error(f"AI inline handler error: {e}")
+
+    # If neither search nor AI is enabled, show help
     await show_search_help(inline_query)
 
 
@@ -905,11 +950,24 @@ async def send_search_results(
 
 async def show_search_help(inline_query: InlineQuery):
     """
-    Show help information for inline search
+    Show help information for inline search and AI assistant
     """
     from pyrogram.types import InlineQueryResultArticle, InputTextMessageContent
 
-    help_text = "🔍 <b>Music Search Help</b>\n\n"
+    help_text = "🔍 <b>Unified Inline Search & AI Assistant</b>\n\n"
+
+    # AI Assistant Help
+    if Config.AI_ENABLED and getattr(Config, "AI_INLINE_MODE_ENABLED", True):
+        help_text += (
+            "🤖 <b>AI Assistant:</b>\n"
+            "<code>@bot_username ai:your question</code>\n"
+            "<code>@bot_username ask:your question</code>\n"
+            "<code>@bot_username your question</code> (if music search disabled)\n\n"
+            "Examples:\n"
+            "• <code>@bot_username ai:What is Python?</code>\n"
+            "• <code>@bot_username ask:Write a function to sort a list</code>\n"
+            "• <code>@bot_username Explain quantum computing</code>\n\n"
+        )
 
     if Config.ZOTIFY_ENABLED:
         help_text += (
@@ -938,22 +996,56 @@ async def show_search_help(inline_query: InlineQuery):
             "Searches both Spotify and other platforms\n\n"
         )
 
-    if not Config.ZOTIFY_ENABLED and not Config.STREAMRIP_ENABLED:
-        help_text += "❌ No music search modules are currently enabled."
+    # Show appropriate tips based on enabled features
+    ai_enabled = Config.AI_ENABLED and getattr(
+        Config, "AI_INLINE_MODE_ENABLED", True
+    )
+    music_enabled = Config.ZOTIFY_ENABLED or Config.STREAMRIP_ENABLED
+
+    if not music_enabled and not ai_enabled:
+        help_text += "❌ No search modules or AI assistant are currently enabled."
     else:
-        help_text += (
-            "💡 <b>Tips:</b>\n"
-            "• Default queries search all platforms\n"
-            "• Use platform prefixes for specific searches\n"
-            "• Try artist name or song title for best results"
-        )
+        help_text += "💡 <b>Tips:</b>\n"
+
+        if music_enabled:
+            help_text += (
+                "• Default queries search all music platforms\n"
+                "• Use platform prefixes for specific searches\n"
+                "• Try artist name or song title for best results\n"
+            )
+
+        if ai_enabled:
+            help_text += (
+                "• Use 'ai:' or 'ask:' prefixes for AI questions\n"
+                "• AI supports multiple languages and topics\n"
+                "• Ask for code examples, explanations, or help\n"
+            )
+
+        if music_enabled and ai_enabled:
+            help_text += "• Without prefixes, music search takes priority"
+
+    # Determine appropriate title based on enabled features
+    ai_enabled = Config.AI_ENABLED and getattr(
+        Config, "AI_INLINE_MODE_ENABLED", True
+    )
+    music_enabled = Config.ZOTIFY_ENABLED or Config.STREAMRIP_ENABLED
+
+    if ai_enabled and music_enabled:
+        title = "🔍🤖 Music Search & AI Assistant Help"
+        description = "Learn how to use music search and AI assistant"
+    elif ai_enabled:
+        title = "🤖 AI Assistant Help"
+        description = "Learn how to use the AI assistant"
+    else:
+        title = "🔍 Music Search Help"
+        description = "Learn how to use music search"
 
     await inline_query.answer(
         results=[
             InlineQueryResultArticle(
                 id="help",
-                title="🔍 Music Search Help",
-                description="Learn how to use music search",
+                title=title,
+                description=description,
                 input_message_content=InputTextMessageContent(help_text),
             )
         ],

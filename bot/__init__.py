@@ -7,6 +7,31 @@ install()
 import os
 import subprocess
 import time
+import warnings
+
+
+# Configure warning filters to suppress known issues
+def configure_warning_filters():
+    """Configure warning filters to suppress known library issues."""
+    # Comprehensive suppression for md2tgmd and latex2unicode SyntaxWarning issues
+    warnings.filterwarnings(
+        "ignore", category=SyntaxWarning
+    )  # Global SyntaxWarning suppression
+    warnings.filterwarnings(
+        "ignore", message=".*invalid escape sequence.*"
+    )  # Specific pattern
+    warnings.filterwarnings("ignore", module="md2tgmd")  # All md2tgmd warnings
+    warnings.filterwarnings(
+        "ignore", module="latex2unicode"
+    )  # All latex2unicode warnings
+
+    # Additional pattern-based suppression for specific warning messages
+    warnings.filterwarnings("ignore", message=".*md2tgmd.*")
+    warnings.filterwarnings("ignore", message=".*latex2unicode.*")
+
+
+# Apply warning filters immediately
+configure_warning_filters()
 from asyncio import Lock, new_event_loop, set_event_loop
 from datetime import datetime
 from logging import (

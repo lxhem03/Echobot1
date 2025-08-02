@@ -4,16 +4,20 @@ Optimized Zotify download implementation
 
 import asyncio
 import contextlib
+import gc
+import os
 import shutil
 import time
+from collections import deque
 from pathlib import Path
-from typing import Any
 
+from tqdm import tqdm
 from zotify import Session
 from zotify.collections import Album, Artist, Playlist, Show
-from zotify.utils import AudioFormat
+from zotify.utils import AudioFormat, ImageSize
 
 from bot import DOWNLOAD_DIR, LOGGER, task_dict, task_dict_lock
+from bot.core.config_manager import Config
 from bot.helper.ext_utils.limit_checker import limit_checker
 from bot.helper.ext_utils.task_manager import (
     check_running_tasks,
@@ -23,7 +27,7 @@ from bot.helper.mirror_leech_utils.status_utils.zotify_status import (
     ZotifyDownloadStatus,
 )
 from bot.helper.mirror_leech_utils.zotify_utils.improved_session_manager import (
-    improved_session_manager,
+    simple_session_manager,
 )
 from bot.helper.mirror_leech_utils.zotify_utils.quality_selector import (
     show_zotify_quality_selector,
@@ -62,17 +66,12 @@ class ZotifyDownloadHelper:
         self._current_file_size = 0
         self._current_file_downloaded = 0
         # Use deque for bounded speed samples (memory efficient)
-        from collections import deque
-
         self._speed_samples = deque(maxlen=10)  # Keep only last 10 samples
         self._last_downloaded = 0
         self._progress_callback = None
         # Memory optimization
         self._last_gc_time = time.time()
         self._gc_interval = 60  # Force GC every minute
-        # Session keep-alive
-        self._last_keepalive = time.time()
-        self._keepalive_interval = 300  # Keep session alive every 5 minutes
 
         # Cancellation tracking
         self._download_tasks = set()  # Track active download tasks
@@ -90,51 +89,12 @@ class ZotifyDownloadHelper:
         return session
 
     async def get_session(self) -> Session | None:
-        """Get or create Zotify session with enhanced error handling and retries"""
-        max_retries = 3
-        for attempt in range(max_retries):
-            try:
-                session = await improved_session_manager.get_session()
-                if session:
-                    return session
-
-                health_info = improved_session_manager.get_session_health()
-                LOGGER.warning(f"Session creation failed. Health: {health_info}")
-
-                # Wait before retry
-                if attempt < max_retries - 1:
-                    wait_time = 2**attempt
-                    LOGGER.info(
-                        f"Retrying session creation in {wait_time}s... (attempt {attempt + 1}/{max_retries})"
-                    )
-                    await asyncio.sleep(wait_time)
-
-            except Exception as e:
-                error_msg = str(e)
-                if any(
-                    err in error_msg
-                    for err in [
-                        "packet",
-                        "Connection",
-                        "session-packet-receiver",
-                        "descriptor",
-                    ]
-                ):
-                    LOGGER.warning(
-                        f"Connection issue (attempt {attempt + 1}): {error_msg}"
-                    )
-                else:
-                    LOGGER.error(
-                        f"Failed to get Zotify session (attempt {attempt + 1}): {error_msg}"
-                    )
-
-                # Wait before retry
-                if attempt < max_retries - 1:
-                    wait_time = 2**attempt
-                    await asyncio.sleep(wait_time)
-
-        LOGGER.error("Failed to create session after all retries")
-        return None
+        """Get session from simple session manager"""
+        try:
+            return await simple_session_manager.get_session()
+        except Exception as e:
+            LOGGER.error(f"Failed to get session: {e}")
+            return None
 
     async def get_zotify_config(self):
         """Get Zotify config object with validation"""
@@ -192,8 +152,6 @@ class ZotifyDownloadHelper:
 
         # Periodic garbage collection for memory optimization
         if current_time - self._last_gc_time > self._gc_interval:
-            import gc
-
             gc.collect()
             self._last_gc_time = current_time
 
@@ -295,9 +253,8 @@ class ZotifyDownloadHelper:
             self._download_path = Path(DOWNLOAD_DIR) / f"zotify_{self.listener.mid}"
             self._download_path.mkdir(parents=True, exist_ok=True)
 
-            # Set downloading flag and mark session as active
+            # Set downloading flag
             self._is_downloading = True
-            improved_session_manager.mark_download_start()
 
             # Start download based on content type with optimized flow
             success = False
@@ -379,43 +336,10 @@ class ZotifyDownloadHelper:
                 ]
             ):
                 LOGGER.error(f"Zotify connection error: {error_msg}")
-
-                # Handle packet failures more gracefully
-                if (
-                    "Failed reading packet" in error_msg
-                    or "Failed to receive packet" in error_msg
-                ):
-                    should_recreate = (
-                        improved_session_manager.handle_packet_failure()
-                    )
-                    if should_recreate:
-                        LOGGER.warning(
-                            "Too many packet failures - forcing session recreation"
-                        )
-                        try:
-                            await improved_session_manager.force_session_recreation()
-                        except Exception as recreation_error:
-                            LOGGER.error(
-                                f"Failed to recreate session: {recreation_error}"
-                            )
-                    else:
-                        LOGGER.info(
-                            "Packet failure handled, will retry with current session"
-                        )
-                else:
-                    # Force session recreation for other connection errors
-                    try:
-                        await improved_session_manager.force_session_recreation()
-                    except Exception as recreation_error:
-                        LOGGER.error(
-                            f"Failed to recreate session: {recreation_error}"
-                        )
             else:
                 LOGGER.error(f"Zotify download error: {error_msg}")
             return False
         finally:
-            # Always mark download as ended to restore normal session timeout
-            improved_session_manager.mark_download_end()
             self._is_downloading = False
 
     async def _download_special(self) -> bool:
@@ -509,191 +433,295 @@ class ZotifyDownloadHelper:
             return False
 
     async def _download_track(self, session: Session, track_id: str) -> bool:
-        """Download a single track with optimized performance and retry logic"""
-        max_retries = 3
-        for attempt in range(max_retries):
+        """Download a single track with optimized performance"""
+        try:
+            # Validate session before use
+            if (
+                not session
+                or not hasattr(session, "api")
+                or not hasattr(session, "rate_limiter")
+            ):
+                LOGGER.error("Invalid session provided to _download_track")
+                return False
+
+            # Check cancellation at start
+            if self.listener.is_cancelled:
+                return False
+
+            self._total_tracks = 1
+            self._current_track = "Downloading track..."
+
+            config_obj = await self.get_zotify_config()
+
+            # Check cancellation before rate limiting
+            if self.listener.is_cancelled:
+                return False
+
+            # Wrap blocking rate limiter in thread with error handling
             try:
-                if attempt > 0:
-                    LOGGER.info(
-                        f"Retrying track download (attempt {attempt + 1}/{max_retries})"
-                    )
-                    # Wait before retry with exponential backoff
-                    await asyncio.sleep(2**attempt)
-                    # Get fresh session for retry
-                    session = await self.get_session()
-                    if not session:
-                        LOGGER.error("Failed to get session for retry")
-                        continue
+                await asyncio.to_thread(session.rate_limiter.apply_limit)
+            except Exception as e:
+                LOGGER.error(f"Rate limiter error: {e}")
+                return False
 
-                # Validate session before use
-                if (
-                    not session
-                    or not hasattr(session, "api")
-                    or not hasattr(session, "rate_limiter")
-                ):
-                    LOGGER.error("Invalid session provided to _download_track")
-                    continue  # Try next attempt
+            # Check cancellation before track fetch
+            if self.listener.is_cancelled:
+                return False
 
-                # Check cancellation at start
-                if self.listener.is_cancelled:
-                    return False
+            # Wrap blocking track metadata fetch in thread
+            track = await asyncio.to_thread(session.get_track, track_id)
+            if not track:
+                LOGGER.error(f"Failed to get track metadata for {track_id}")
+                return False
 
-                self._total_tracks = 1
-                self._current_track = "Downloading track..."
+            # Add metadata if configured - wrap in threads to prevent blocking
+            if config_obj.save_genre:
+                await asyncio.to_thread(track.add_genre)
+            if config_obj.all_artists:
+                await asyncio.to_thread(track.add_all_artists)
 
-                config_obj = await self.get_zotify_config()
+            file_ext = self._get_file_extension(config_obj.audio_format)
 
-                # Check cancellation before rate limiting
-                if self.listener.is_cancelled:
-                    return False
+            # Get output template from config
+            output_template = getattr(
+                Config,
+                "ZOTIFY_OUTPUT_ALBUM",
+                "{album_artist}/{album}/{track_number}. {artists} - {title}",
+            )
 
-                # Wrap blocking rate limiter in thread with error handling
-                try:
-                    await asyncio.to_thread(session.rate_limiter.apply_limit)
-                except Exception as e:
-                    LOGGER.error(f"Rate limiter error: {e}")
-                    continue  # Try next attempt
-
-                # Check cancellation before track fetch
-                if self.listener.is_cancelled:
-                    return False
-
-                # Wrap blocking track metadata fetch in thread
-                track = await asyncio.to_thread(session.get_track, track_id)
-                if not track:
-                    LOGGER.error(f"Failed to get track metadata for {track_id}")
-                    continue  # Try next attempt
-
-                # Add metadata if configured - wrap in threads to prevent blocking
-                if config_obj.save_genre:
-                    await asyncio.to_thread(track.add_genre)
-                if config_obj.all_artists:
-                    await asyncio.to_thread(track.add_all_artists)
-
-                file_ext = self._get_file_extension(config_obj.audio_format)
-
-                # Get output template from config
-                from bot.core.config_manager import Config
-
-                output_template = getattr(
-                    Config,
-                    "ZOTIFY_OUTPUT_ALBUM",
-                    "{album_artist}/{album}/{track_number}. {artists} - {title}",
+            try:
+                # Wrap blocking output creation in thread
+                output = await asyncio.to_thread(
+                    track.create_output,
+                    ext=file_ext,
+                    library=self._download_path,
+                    output=output_template,
+                    replace=config_obj.replace_existing,
                 )
 
-                try:
-                    # Wrap blocking output creation in thread
-                    output = await asyncio.to_thread(
-                        track.create_output,
-                        ext=file_ext,
-                        library=self._download_path,
-                        output=output_template,
-                        replace=config_obj.replace_existing,
-                    )
-
-                    # Validate that output is not a boolean and is a proper path/object
-                    if isinstance(output, bool):
-                        LOGGER.error(
-                            f"track.create_output returned boolean: {output}"
-                        )
-                        continue  # Try next attempt
-
-                    if not output:
-                        LOGGER.error(
-                            "track.create_output returned None or empty value"
-                        )
-                        continue  # Try next attempt
-
-                except Exception as e:
-                    LOGGER.error(
-                        f"Failed to create output path for track {track_id}: {e}"
-                    )
-                    continue  # Try next attempt
-
-                self._current_track = f"Downloading: {track.name}"
-
-                # Check cancellation before rate limiting
-                if self.listener.is_cancelled:
+                # Validate that output is not a boolean and is a proper path/object
+                if isinstance(output, bool):
+                    LOGGER.error(f"track.create_output returned boolean: {output}")
                     return False
 
-                # Keep session alive during long downloads
-                current_time = time.time()
-                if current_time - self._last_keepalive > self._keepalive_interval:
-                    improved_session_manager.keep_session_alive()
-                    self._last_keepalive = current_time
-
-                # Apply rate limiting using Zotify's built-in rate limiter - wrap in thread
-                await asyncio.to_thread(session.rate_limiter.apply_limit)
-
-                # Check cancellation before download
-                if self.listener.is_cancelled:
+                if not output:
+                    LOGGER.error("track.create_output returned None or empty value")
                     return False
 
-                # Download track using Zotify's exact method signature with progress tracking
+            except Exception as e:
+                LOGGER.error(
+                    f"Failed to create output path for track {track_id}: {e}"
+                )
+                LOGGER.error(
+                    f"Parameters used: ext={file_ext}, library={self._download_path}, output={output_template}, replace={config_obj.replace_existing}"
+                )
+                LOGGER.error(f"Config object type: {type(config_obj)}")
+                LOGGER.error(f"Track object type: {type(track)}")
+                return False
+
+            self._current_track = f"Downloading: {track.name}"
+
+            # Check cancellation before rate limiting
+            if self.listener.is_cancelled:
+                return False
+
+            # Apply rate limiting using Zotify's built-in rate limiter - wrap in thread
+            await asyncio.to_thread(session.rate_limiter.apply_limit)
+
+            # Mark activity to keep session alive
+            simple_session_manager.mark_activity()
+
+            # Check cancellation before download
+            if self.listener.is_cancelled:
+                return False
+
+            # Download track using Zotify's exact method signature with progress tracking
+            try:
                 file = await self._download_track_with_progress(
                     track, output, config_obj.download_real_time
                 )
 
                 if not file:
                     LOGGER.error("Track download returned None or empty file object")
-                    continue  # Try next attempt
-
-                # Clear consecutive hits on successful download
-                await asyncio.to_thread(session.rate_limiter.clear_consec_hits)
-
-                # Update progress tracking
-                if self._total_tracks == 1:
-                    self._downloaded_tracks = 1
-                else:
-                    self._downloaded_tracks += 1
-
-                return True  # Success!
+                    return False
 
             except Exception as e:
-                error_msg = str(e)
-                LOGGER.error(f"Failed to download track {track_id}: {error_msg}")
+                LOGGER.error(f"Track download failed: {e}")
+                if "context manager protocol" in str(e):
+                    LOGGER.error(
+                        "Context manager error in track download - check output parameter"
+                    )
+                    LOGGER.error(
+                        f"Output parameter: {output} (type: {type(output)})"
+                    )
+                    LOGGER.error(
+                        f"Real-time parameter: {config_obj.download_real_time} (type: {type(config_obj.download_real_time)})"
+                    )
+                raise
 
-                # Check if this is a retryable error
-                retryable_errors = [
-                    "Failed reading packet",
-                    "Failed to receive packet",
-                    "Connection reset by peer",
-                    "ConnectionResetError",
-                    "'NoneType' object has no attribute 'send'",
-                    "session-packet-receiver",
-                    "RuntimeError",
-                ]
+            # Clear consecutive hits on successful download - wrap in thread
+            await asyncio.to_thread(session.rate_limiter.clear_consec_hits)
 
-                is_retryable = any(err in error_msg for err in retryable_errors)
+            # Mark activity after successful download
+            simple_session_manager.mark_activity()
 
-                if is_retryable and attempt < max_retries - 1:
+            # Write metadata and cover art with fully async processing
+            if config_obj.save_metadata:
+                try:
+                    # Wrap metadata operations in threads
+                    metadata = await asyncio.to_thread(lambda: track.metadata)
+                    if metadata:
+                        await asyncio.to_thread(file.write_metadata, metadata)
+                    else:
+                        LOGGER.warning(f"No metadata available for: {track.name}")
+                except Exception as e:
+                    LOGGER.warning(f"Failed to write metadata for {track.name}: {e}")
+
+                # Yield control during metadata processing
+                await asyncio.sleep(0.05)
+
+                try:
+                    # Get cover art with size fallback - wrap in threads
+                    cover_art = None
+                    artwork_sizes = [
+                        config_obj.artwork_size,
+                        ImageSize.LARGE,
+                        ImageSize.MEDIUM,
+                        ImageSize.SMALL,
+                    ]
+
+                    for size in artwork_sizes:
+                        try:
+                            cover_art = await asyncio.to_thread(
+                                track.get_cover_art, size
+                            )
+                            if cover_art:
+                                break
+                        except Exception:
+                            continue
+
+                    if cover_art:
+                        await asyncio.to_thread(file.write_cover_art, cover_art)
+                        # Cover art written (log removed for cleaner output)
+                    else:
+                        LOGGER.warning(f"No cover art available for: {track.name}")
+                except Exception as e:
                     LOGGER.warning(
-                        f"Retryable error encountered, will retry: {error_msg}"
+                        f"Failed to write cover art for {track.name}: {e}"
                     )
 
-                    # Handle packet failures gracefully
-                    if (
-                        "Failed reading packet" in error_msg
-                        or "Failed to receive packet" in error_msg
-                    ):
-                        should_recreate = (
-                            improved_session_manager.handle_packet_failure()
+            # Download lyrics with free account handling
+            if config_obj.lyrics_file:
+                try:
+                    # Check if track has lyrics
+                    has_lyrics = False
+                    with contextlib.suppress(Exception):
+                        # For free accounts, lyrics availability might not be accessible
+                        has_lyrics = (
+                            track.track.has_lyrics
+                            if hasattr(track, "track")
+                            and hasattr(track.track, "has_lyrics")
+                            else False
                         )
-                        if should_recreate:
-                            LOGGER.warning(
-                                "Too many packet failures - forcing session recreation"
-                            )
-                            with contextlib.suppress(Exception):
-                                await improved_session_manager.force_session_recreation()
 
-                    continue  # Retry the download
+                    if has_lyrics:
+                        try:
+                            # Wrap lyrics operations in threads
+                            lyrics = await asyncio.to_thread(track.get_lyrics)
+                            if lyrics:
+                                await asyncio.to_thread(
+                                    lyrics.save, output, prefer_synced=True
+                                )
+                                LOGGER.info(f"Lyrics downloaded for: {track.name}")
+                            else:
+                                LOGGER.warning(
+                                    f"No lyrics content for: {track.name}"
+                                )
+                        except Exception as e:
+                            # Check if it's a free account limitation - wrap API calls in threads
+                            try:
+                                api = session.api()
+                                user_info = await asyncio.to_thread(
+                                    api.invoke_url, "me"
+                                )
+                                account_type = user_info.get("product", "unknown")
+                                if account_type == "free":
+                                    LOGGER.info(
+                                        f"Lyrics not available for free account: {track.name}"
+                                    )
+                                else:
+                                    LOGGER.warning(
+                                        f"Failed to download lyrics for {track.name}: {e}"
+                                    )
+                            except Exception:
+                                LOGGER.warning(
+                                    f"Failed to download lyrics for {track.name}: {e}"
+                                )
+                except Exception as e:
+                    LOGGER.warning(f"Lyrics check failed for {track.name}: {e}")
+
+            # Handle transcoding if needed using Zotify's exact method
+            if config_obj.audio_format.name != "VORBIS" or config_obj.ffmpeg_args:
+                try:
+                    file.transcode(
+                        audio_format=config_obj.audio_format,  # audio_format parameter
+                        download_quality=config_obj.download_quality,  # download_quality parameter
+                        bitrate=config_obj.transcode_bitrate,  # bitrate parameter
+                        replace=True,  # replace parameter
+                        ffmpeg=config_obj.ffmpeg_path,  # ffmpeg parameter
+                        opt_args=config_obj.ffmpeg_args.split()
+                        if config_obj.ffmpeg_args
+                        else [],  # opt_args parameter
+                    )
+                except Exception as e:
+                    LOGGER.warning(f"Transcoding failed: {e}")
+
+            # Clean filename using Zotify's method
+            file.clean_filename()
+
+            # Update progress tracking
+            if self._total_tracks == 1:
+                self._downloaded_tracks = 1
+            else:
+                self._downloaded_tracks += 1
+
+            return True
+
+        except Exception as e:
+            error_msg = str(e)
+            LOGGER.error(f"Failed to download track {track_id}: {error_msg}")
+
+            # Provide specific error information for common issues
+            if "context manager protocol" in error_msg:
                 LOGGER.error(
-                    f"Non-retryable error or max retries reached: {error_msg}"
+                    "Context manager error - likely boolean value used where file object expected"
                 )
-                break
+                LOGGER.error(f"Track object type: {type(track)}")
+                LOGGER.error(
+                    f"Output object type: {type(output) if 'output' in locals() else 'output not created'}"
+                )
+                LOGGER.error(
+                    f"Config object type: {type(config_obj) if 'config_obj' in locals() else 'config not created'}"
+                )
+            elif "write_audio_stream" in error_msg:
+                LOGGER.error(
+                    "Error in write_audio_stream - check Zotify library compatibility"
+                )
+            elif "create_output" in error_msg:
+                LOGGER.error(
+                    "Error creating output path - check file permissions and path validity"
+                )
+            elif "Cannot get alternative track" in error_msg:
+                LOGGER.warning(
+                    f"Track {track_id} is not available in your region or requires premium"
+                )
+            elif "'NoneType' object has no attribute 'send'" in error_msg:
+                LOGGER.error(
+                    "Session connection lost during download - will retry with new session"
+                )
+                # Session will be recreated automatically on next use
 
-        # If we get here, all retries failed
-        return False
+            return False
 
     async def _download_album(self, session: Session, album_id: str) -> bool:
         """Download an album with fully async operations"""
@@ -991,6 +1019,9 @@ class ZotifyDownloadHelper:
             # Clear consecutive hits on successful download - wrap in thread
             await asyncio.to_thread(session.rate_limiter.clear_consec_hits)
 
+            # Mark activity after successful episode download
+            simple_session_manager.mark_activity()
+
             # Write metadata and cover art using Zotify's exact methods - wrap in threads
             if config_obj.save_metadata:
                 await asyncio.to_thread(file.write_metadata, episode.metadata)
@@ -1097,8 +1128,6 @@ class ZotifyDownloadHelper:
             raise ValueError("Invalid output parameter")
 
         try:
-            from tqdm import tqdm
-
             dummy_pbar = tqdm(disable=True)
 
             # Start download and progress monitoring concurrently
@@ -1141,8 +1170,6 @@ class ZotifyDownloadHelper:
 
     async def _monitor_download_progress(self, output_path):
         """Monitor download progress with optimized frequency"""
-        import os
-
         if isinstance(output_path, bool) or not output_path:
             return
 
@@ -1160,6 +1187,9 @@ class ZotifyDownloadHelper:
                         # Break if file seems complete
                         if current_size >= estimated_total * 0.9:
                             break
+
+                    # Mark activity periodically during download
+                    simple_session_manager.mark_activity()
 
                     # Reduced frequency to improve responsiveness
                     await asyncio.sleep(1.0)
@@ -1181,8 +1211,6 @@ class ZotifyDownloadHelper:
             raise ValueError("Invalid output parameter")
 
         try:
-            from tqdm import tqdm
-
             dummy_pbar = tqdm(disable=True)
 
             # Start download and progress monitoring concurrently
@@ -1222,26 +1250,6 @@ class ZotifyDownloadHelper:
                 with contextlib.suppress(asyncio.CancelledError):
                     await progress_task
             raise e
-
-    def get_progress_info(self) -> dict[str, Any]:
-        """Get current download progress information with real-time tracking"""
-        return {
-            "current_track": self._current_track,
-            "downloaded_tracks": self._downloaded_tracks,
-            "total_tracks": self._total_tracks,
-            "is_downloading": self._is_downloading,
-            "start_time": self._start_time,
-            # Real-time progress tracking like Zotify
-            "current_downloaded": self._current_downloaded,
-            "current_total": self._current_total,
-            "current_speed": self._current_speed,
-            "last_update": self._last_update,
-            # Enhanced progress tracking
-            "total_size": self._total_size,
-            "downloaded_size": self._downloaded_size,
-            "current_file_size": self._current_file_size,
-            "current_file_downloaded": self._current_file_downloaded,
-        }
 
 
 async def _estimate_zotify_size(url: str) -> int:
@@ -1301,7 +1309,7 @@ async def add_zotify_download(listener, url: str):
         await listener.on_download_error("Invalid Spotify URL format")
         return
 
-    content_type, spotify_id = parsed
+    content_type, _ = parsed
 
     # Show quality selector BEFORE creating task and status
     quality_selection = await show_zotify_quality_selector(listener, content_type)

@@ -14,11 +14,11 @@ download_files() {
     local arch=$(uname -m)
     
     if [ "$arch" = "x86_64" ]; then
-        wget -qO "$BIN_DIR/xnox" "https://github.com/userdocs/qbittorrent-nox-static/releases/download/release-4.5.5_v2.0.9/x86_64-qbittorrent-nox" &
+        wget -qO "$BIN_DIR/xnox" "https://github.com/userdocs/qbittorrent-nox-static/releases/latest/download/x86_64-qbittorrent-nox" &
         wget -qO "$TEMP_DIR/ffmpeg.tar.xz" "https://github.com/5hojib/FFmpeg-Builds/releases/download/latest/ffmpeg-n7.1-latest-linux64-gpl-7.1.tar.xz" &
         wget -qO "$TEMP_DIR/uv.tar.gz" "https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-unknown-linux-gnu.tar.gz" &
     else
-        wget -qO "$BIN_DIR/xnox" "https://github.com/userdocs/qbittorrent-nox-static/releases/download/release-4.5.5_v2.0.9/aarch64-qbittorrent-nox" &
+        wget -qO "$BIN_DIR/xnox" "https://github.com/userdocs/qbittorrent-nox-static/releases/latest/download/aarch64-qbittorrent-nox" &
         wget -qO "$TEMP_DIR/ffmpeg.tar.xz" "https://github.com/5hojib/FFmpeg-Builds/releases/latest/download/ffmpeg-n7.1-latest-linuxarm64-gpl-7.1.tar.xz" &
         wget -qO "$TEMP_DIR/uv.tar.gz" "https://github.com/astral-sh/uv/releases/latest/download/uv-aarch64-unknown-linux-gnu.tar.gz" &
     fi

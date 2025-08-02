@@ -32,6 +32,13 @@ from bot.helper.telegram_helper.message_utils import (
     send_message,
 )
 
+# Import ai_manager for AI-related functionality
+ai_manager = None
+try:
+    from bot.modules.ai import ai_manager
+except ImportError:
+    pass
+
 handler_dict = {}
 # Only use owner thumbnail if it's actually configured (not empty/None)
 no_thumb = (
@@ -281,9 +288,58 @@ leech_options = [
 ]
 
 ai_options = [
-    "DEFAULT_AI_PROVIDER",
+    # Core AI Settings
+    "DEFAULT_AI_MODEL",
+    "AI_CONVERSATION_MODE",
+    "AI_LANGUAGE",
+    # Provider API Keys
+    "OPENAI_API_KEY",
+    "ANTHROPIC_API_KEY",
+    "GOOGLE_AI_API_KEY",
+    "GROQ_API_KEY",
+    "VERTEX_PROJECT_ID",
+    # Provider API URLs
+    "OPENAI_API_URL",
+    "ANTHROPIC_API_URL",
+    "GOOGLE_AI_API_URL",
+    "GROQ_API_URL",
+    # Legacy Provider URLs
     "MISTRAL_API_URL",
     "DEEPSEEK_API_URL",
+    # AI Feature Settings
+    "AI_STREAMING_ENABLED",
+    "AI_PLUGINS_ENABLED",
+    "AI_MULTIMODAL_ENABLED",
+    "AI_CONVERSATION_HISTORY",
+    "AI_MAX_HISTORY_LENGTH",
+    "AI_QUESTION_PREDICTION",
+    "AI_GROUP_TOPIC_MODE",
+    "AI_INLINE_MODE_ENABLED",
+    "AI_AUTO_LANGUAGE_DETECTION",
+    "AI_DEFAULT_LANGUAGE",
+    # New ChatGPT-Telegram-Bot Features
+    "AI_VOICE_TRANSCRIPTION_ENABLED",
+    "AI_IMAGE_GENERATION_ENABLED",
+    "AI_DOCUMENT_PROCESSING_ENABLED",
+    "AI_FOLLOW_UP_QUESTIONS_ENABLED",
+    "AI_CONVERSATION_EXPORT_ENABLED",
+    "AI_TYPEWRITER_EFFECT_ENABLED",
+    "AI_CONTEXT_PRUNING_ENABLED",
+    # AI Plugin Settings
+    "AI_WEB_SEARCH_ENABLED",
+    "AI_URL_SUMMARIZATION_ENABLED",
+    "AI_ARXIV_ENABLED",
+    "AI_CODE_INTERPRETER_ENABLED",
+    # AI Budget Settings
+    "AI_DAILY_TOKEN_LIMIT",
+    "AI_MONTHLY_TOKEN_LIMIT",
+    "AI_DAILY_COST_LIMIT",
+    "AI_MONTHLY_COST_LIMIT",
+    # AI Performance Settings
+    "AI_MAX_TOKENS",
+    "AI_TEMPERATURE",
+    "AI_TIMEOUT",
+    "AI_RATE_LIMIT_PER_USER",
 ]
 metadata_options = [
     "METADATA_ALL",
@@ -875,37 +931,1225 @@ async def get_user_settings(from_user, stype="main"):
 <i>These are advanced settings for YouTube uploads.</i>"""
 
     elif stype == "ai":
-        # Add buttons for each AI setting
-        for option in ai_options:
-            buttons.data_button(
-                option.replace("_", " ").title(),
-                f"userset {user_id} menu {option}",
-            )
+        # AI Model Selection (direct selection)
+        buttons.data_button("🤖 AI Model", f"userset {user_id} ai_model_selection")
 
-        buttons.data_button("Reset AI Settings", f"userset {user_id} reset ai")
+        # Conversation Mode Selection (direct selection)
+        buttons.data_button(
+            "🎭 Conversation Mode", f"userset {user_id} ai_conversation_mode"
+        )
+
+        # Language Setting (direct selection)
+        buttons.data_button("🌐 Language", f"userset {user_id} ai_language")
+
+        # Max History Length (editable)
+        buttons.data_button(
+            "📝 Max History Length", f"userset {user_id} menu AI_MAX_HISTORY_LENGTH"
+        )
+
+        # Core Feature Toggles
+        streaming_enabled = user_dict.get(
+            "AI_STREAMING_ENABLED", Config.AI_STREAMING_ENABLED
+        )
+        buttons.data_button(
+            f"Streaming: {'✅ ON' if streaming_enabled else '❌ OFF'}",
+            f"userset {user_id} tog AI_STREAMING_ENABLED {'f' if streaming_enabled else 't'}",
+        )
+
+        multimodal_enabled = user_dict.get(
+            "AI_MULTIMODAL_ENABLED", Config.AI_MULTIMODAL_ENABLED
+        )
+        buttons.data_button(
+            f"Multimodal: {'✅ ON' if multimodal_enabled else '❌ OFF'}",
+            f"userset {user_id} tog AI_MULTIMODAL_ENABLED {'f' if multimodal_enabled else 't'}",
+        )
+
+        history_enabled = user_dict.get(
+            "AI_CONVERSATION_HISTORY", Config.AI_CONVERSATION_HISTORY
+        )
+        buttons.data_button(
+            f"Conversation History: {'✅ ON' if history_enabled else '❌ OFF'}",
+            f"userset {user_id} tog AI_CONVERSATION_HISTORY {'f' if history_enabled else 't'}",
+        )
+
+        prediction_enabled = user_dict.get(
+            "AI_QUESTION_PREDICTION", Config.AI_QUESTION_PREDICTION
+        )
+        buttons.data_button(
+            f"Follow-up Questions: {'✅ ON' if prediction_enabled else '❌ OFF'}",
+            f"userset {user_id} tog AI_QUESTION_PREDICTION {'f' if prediction_enabled else 't'}",
+        )
+
+        # Plugin Toggles
+        web_search_enabled = user_dict.get(
+            "AI_WEB_SEARCH_ENABLED", Config.AI_WEB_SEARCH_ENABLED
+        )
+        buttons.data_button(
+            f"Web Search: {'✅ ON' if web_search_enabled else '❌ OFF'}",
+            f"userset {user_id} tog AI_WEB_SEARCH_ENABLED {'f' if web_search_enabled else 't'}",
+        )
+
+        url_summary_enabled = user_dict.get(
+            "AI_URL_SUMMARIZATION_ENABLED", Config.AI_URL_SUMMARIZATION_ENABLED
+        )
+        buttons.data_button(
+            f"URL Summarization: {'✅ ON' if url_summary_enabled else '❌ OFF'}",
+            f"userset {user_id} tog AI_URL_SUMMARIZATION_ENABLED {'f' if url_summary_enabled else 't'}",
+        )
+
+        arxiv_enabled = user_dict.get("AI_ARXIV_ENABLED", Config.AI_ARXIV_ENABLED)
+        buttons.data_button(
+            f"ArXiv Papers: {'✅ ON' if arxiv_enabled else '❌ OFF'}",
+            f"userset {user_id} tog AI_ARXIV_ENABLED {'f' if arxiv_enabled else 't'}",
+        )
+
+        code_enabled = user_dict.get(
+            "AI_CODE_INTERPRETER_ENABLED", Config.AI_CODE_INTERPRETER_ENABLED
+        )
+        buttons.data_button(
+            f"Code Interpreter: {'✅ ON' if code_enabled else '❌ OFF'}",
+            f"userset {user_id} tog AI_CODE_INTERPRETER_ENABLED {'f' if code_enabled else 't'}",
+        )
+
+        image_enabled = user_dict.get(
+            "AI_IMAGE_GENERATION_ENABLED", Config.AI_IMAGE_GENERATION_ENABLED
+        )
+        buttons.data_button(
+            f"Image Generation: {'✅ ON' if image_enabled else '❌ OFF'}",
+            f"userset {user_id} tog AI_IMAGE_GENERATION_ENABLED {'f' if image_enabled else 't'}",
+        )
+
+        voice_enabled = user_dict.get(
+            "AI_VOICE_TRANSCRIPTION_ENABLED", Config.AI_VOICE_TRANSCRIPTION_ENABLED
+        )
+        buttons.data_button(
+            f"Voice Transcription: {'✅ ON' if voice_enabled else '❌ OFF'}",
+            f"userset {user_id} tog AI_VOICE_TRANSCRIPTION_ENABLED {'f' if voice_enabled else 't'}",
+        )
+
+        # Budget Settings (editable)
+        buttons.data_button(
+            "💰 Daily Token Limit", f"userset {user_id} menu AI_DAILY_TOKEN_LIMIT"
+        )
+        buttons.data_button(
+            "💳 Monthly Token Limit",
+            f"userset {user_id} menu AI_MONTHLY_TOKEN_LIMIT",
+        )
+
+        # API Keys and Advanced Settings
+        buttons.data_button("🔑 API Keys", f"userset {user_id} ai_keys")
+        buttons.data_button("📊 Usage Statistics", f"userset {user_id} ai_usage")
+        buttons.data_button("⚙️ Advanced Settings", f"userset {user_id} ai_advanced")
+
+        buttons.data_button("🔄 Reset AI Settings", f"userset {user_id} reset ai")
         buttons.data_button("Back", f"userset {user_id} back")
         buttons.data_button("Close", f"userset {user_id} close")
 
-        # Get current AI settings
-        default_ai = user_dict.get(
-            "DEFAULT_AI_PROVIDER", Config.DEFAULT_AI_PROVIDER
-        ).capitalize()
-        mistral_api_url = user_dict.get("MISTRAL_API_URL", "Not Set")
-        deepseek_api_url = user_dict.get("DEEPSEEK_API_URL", "Not Set")
+        # Get current AI settings for display
+        default_model = user_dict.get(
+            "DEFAULT_AI_MODEL", getattr(Config, "DEFAULT_AI_MODEL", "gpt-4o")
+        )
 
-        text = f"""<u><b>AI Settings for {name}</b></u>
-<b>Default AI Provider:</b> <code>{default_ai}</code>
+        # Get conversation mode
+        conversation_mode = user_dict.get("AI_CONVERSATION_MODE", "assistant")
+        if ai_manager:
+            modes = ai_manager.get_conversation_modes()
+            mode_display = modes.get(conversation_mode, {}).get(
+                "name", "General Assistant"
+            )
+            mode_icon = modes.get(conversation_mode, {}).get("icon", "🤖")
+        else:
+            mode_display = "General Assistant"
+            mode_icon = "🤖"
 
-<b>Mistral AI:</b>
--> API URL: <code>{mistral_api_url}</code>
+        # Get language setting
+        ai_language = user_dict.get(
+            "AI_LANGUAGE", getattr(Config, "AI_DEFAULT_LANGUAGE", "en")
+        )
+        language_display = {
+            "en": "English",
+            "zh": "Chinese",
+            "ru": "Russian",
+            "es": "Spanish",
+            "fr": "French",
+            "de": "German",
+            "ja": "Japanese",
+            "ko": "Korean",
+        }.get(ai_language, ai_language.upper())
 
-<b>DeepSeek AI:</b>
--> API URL: <code>{deepseek_api_url}</code>
+        # Get max history length
+        max_history = user_dict.get(
+            "AI_MAX_HISTORY_LENGTH", getattr(Config, "AI_MAX_HISTORY_LENGTH", 50)
+        )
 
-<i>Note: For each AI provider, configure either API Key or API URL. If both are set, API Key will be used first with fallback to API URL.</i>
-<i>Your settings will take priority over the bot owner's settings.</i>
-<i>Use /ask command to chat with the default AI provider.</i>
-"""
+        # Get budget limits
+        daily_token_limit = user_dict.get("AI_DAILY_TOKEN_LIMIT", 0)
+        monthly_token_limit = user_dict.get("AI_MONTHLY_TOKEN_LIMIT", 0)
+        daily_limit_display = (
+            f"{daily_token_limit:,}" if daily_token_limit > 0 else "Unlimited"
+        )
+        monthly_limit_display = (
+            f"{monthly_token_limit:,}" if monthly_token_limit > 0 else "Unlimited"
+        )
+
+        # Get model info
+        try:
+            model_info = (
+                ai_manager.get_model_info(default_model) if ai_manager else None
+            )
+        except:
+            model_info = None
+
+        provider = (
+            model_info.get("provider", "unknown").upper()
+            if model_info
+            else "UNKNOWN"
+        )
+        display_name = (
+            model_info.get("display_name", default_model)
+            if model_info
+            else default_model
+        )
+
+        # Get status for all features
+        streaming_status = (
+            "✅ Enabled"
+            if user_dict.get("AI_STREAMING_ENABLED", Config.AI_STREAMING_ENABLED)
+            else "❌ Disabled"
+        )
+        multimodal_status = (
+            "✅ Enabled"
+            if user_dict.get("AI_MULTIMODAL_ENABLED", Config.AI_MULTIMODAL_ENABLED)
+            else "❌ Disabled"
+        )
+        history_status = (
+            "✅ Enabled"
+            if user_dict.get(
+                "AI_CONVERSATION_HISTORY", Config.AI_CONVERSATION_HISTORY
+            )
+            else "❌ Disabled"
+        )
+        prediction_status = (
+            "✅ Enabled"
+            if user_dict.get("AI_QUESTION_PREDICTION", Config.AI_QUESTION_PREDICTION)
+            else "❌ Disabled"
+        )
+        web_search_status = (
+            "✅ Enabled"
+            if user_dict.get("AI_WEB_SEARCH_ENABLED", Config.AI_WEB_SEARCH_ENABLED)
+            else "❌ Disabled"
+        )
+        url_summary_status = (
+            "✅ Enabled"
+            if user_dict.get(
+                "AI_URL_SUMMARIZATION_ENABLED", Config.AI_URL_SUMMARIZATION_ENABLED
+            )
+            else "❌ Disabled"
+        )
+        arxiv_status = (
+            "✅ Enabled"
+            if user_dict.get("AI_ARXIV_ENABLED", Config.AI_ARXIV_ENABLED)
+            else "❌ Disabled"
+        )
+        code_status = (
+            "✅ Enabled"
+            if user_dict.get(
+                "AI_CODE_INTERPRETER_ENABLED", Config.AI_CODE_INTERPRETER_ENABLED
+            )
+            else "❌ Disabled"
+        )
+        image_status = (
+            "✅ Enabled"
+            if user_dict.get(
+                "AI_IMAGE_GENERATION_ENABLED", Config.AI_IMAGE_GENERATION_ENABLED
+            )
+            else "❌ Disabled"
+        )
+        voice_status = (
+            "✅ Enabled"
+            if user_dict.get(
+                "AI_VOICE_TRANSCRIPTION_ENABLED",
+                Config.AI_VOICE_TRANSCRIPTION_ENABLED,
+            )
+            else "❌ Disabled"
+        )
+
+        text = f"""<u><b>🧠 AI Settings for {name}</b></u>
+-> AI Model: <b>{display_name}</b>
+-> Provider: <b>{provider}</b>
+-> Conversation Mode: <b>{mode_icon} {mode_display}</b>
+-> Language: <b>{language_display}</b>
+-> Max History Length: <b>{max_history}</b>
+-> Daily Token Limit: <b>{daily_limit_display}</b>
+-> Monthly Token Limit: <b>{monthly_limit_display}</b>
+-> Streaming: <b>{streaming_status}</b>
+-> Multimodal: <b>{multimodal_status}</b>
+-> Conversation History: <b>{history_status}</b>
+-> Follow-up Questions: <b>{prediction_status}</b>
+-> Web Search: <b>{web_search_status}</b>
+-> URL Summarization: <b>{url_summary_status}</b>
+-> ArXiv Papers: <b>{arxiv_status}</b>
+-> Code Interpreter: <b>{code_status}</b>
+-> Image Generation: <b>{image_status}</b>
+-> Voice Transcription: <b>{voice_status}</b>"""
+
+    elif stype == "ai_models":
+        # Model Selection with Grouping
+        if ai_manager:
+            available_models = ai_manager.get_available_models()
+
+            for group, models in available_models.items():
+                status = ai_manager.get_model_status(group.lower())
+                buttons.data_button(
+                    f"{group} Models {status}",
+                    f"userset {user_id} ai_{group.lower()}_models",
+                )
+        else:
+            # AI manager not available
+            buttons.data_button(
+                "❌ AI Module Not Available", f"userset {user_id} ai"
+            )
+
+        buttons.data_button("Back", f"userset {user_id} ai")
+        buttons.data_button("Close", f"userset {user_id} close")
+
+        current_model = user_dict.get(
+            "DEFAULT_AI_MODEL", getattr(Config, "DEFAULT_AI_MODEL", "gpt-4o")
+        )
+
+        # Get model info
+        try:
+            model_info = (
+                ai_manager.get_model_info(current_model) if ai_manager else None
+            )
+        except Exception:
+            model_info = None
+        provider = (
+            model_info.get("provider", "unknown").upper()
+            if model_info
+            else "UNKNOWN"
+        )
+        display_name = (
+            model_info.get("display_name", current_model)
+            if model_info
+            else current_model
+        )
+        status = (
+            ai_manager.get_model_status(current_model)
+            if ai_manager
+            else "❌ AI module not available"
+        )
+
+        text = f"""<u><b>🤖 AI Model Selection for {name}</b></u>
+
+<b>Current Selection:</b>
+• Model: <code>{display_name}</code>
+• Provider: <code>{provider}</code>
+• Status: {status}
+
+<b>Available Model Groups:</b>
+Select a group above to see available models and their capabilities.
+
+<i>Each provider offers different strengths:
+• GPT: Versatile, coding, vision
+• Claude: Reasoning, analysis
+• Gemini: Multimodal, fast
+• Groq: High-speed inference
+• Vertex: Enterprise features
+</i>"""
+
+    elif stype == "ai_providers":
+        # Provider Settings
+        buttons.data_button("🔑 API Keys", f"userset {user_id} ai_keys")
+        buttons.data_button("🌐 Custom URLs", f"userset {user_id} ai_urls")
+        buttons.data_button("📊 Provider Status", f"userset {user_id} ai_status")
+        buttons.data_button("Back", f"userset {user_id} ai")
+        buttons.data_button("Close", f"userset {user_id} close")
+
+        text = f"""<u><b>⚙️ AI Provider Settings for {name}</b></u>
+
+Configure your AI provider credentials and settings:
+
+🔑 <b>API Keys:</b> Set your personal API keys
+🌐 <b>Custom URLs:</b> Configure custom API endpoints
+📊 <b>Provider Status:</b> Check configuration status
+
+<i>Your personal settings override bot defaults.
+Keep your API keys secure and never share them.</i>"""
+
+    elif stype == "ai_plugins":
+        # Plugin Settings with master toggle
+
+        # Master plugin toggle
+        plugins_enabled = user_dict.get(
+            "AI_PLUGINS_ENABLED", getattr(Config, "AI_PLUGINS_ENABLED", True)
+        )
+        plugins_status = "✅" if plugins_enabled else "❌"
+        buttons.data_button(
+            f"🔌 Plugins Master {plugins_status}",
+            f"userset {user_id} var AI_PLUGINS_ENABLED",
+        )
+
+        if plugins_enabled:
+            plugin_settings = [
+                ("AI_WEB_SEARCH_ENABLED", "🔍 Web Search"),
+                ("AI_URL_SUMMARIZATION_ENABLED", "📄 URL Summarization"),
+                ("AI_ARXIV_ENABLED", "📚 ArXiv Papers"),
+                ("AI_CODE_INTERPRETER_ENABLED", "💻 Code Interpreter"),
+                ("AI_IMAGE_GENERATION_ENABLED", "🎨 Image Generation"),
+                ("AI_VOICE_TRANSCRIPTION_ENABLED", "🎵 Voice Transcription"),
+            ]
+
+            for setting, label in plugin_settings:
+                current_value = user_dict.get(
+                    setting, getattr(Config, setting, True)
+                )
+                status = "✅" if current_value else "❌"
+                buttons.data_button(
+                    f"{label} {status}", f"userset {user_id} var {setting}"
+                )
+
+        buttons.data_button("Back", f"userset {user_id} ai")
+        buttons.data_button("Close", f"userset {user_id} close")
+
+        if plugins_enabled:
+            # Get individual plugin statuses
+            web_search = (
+                "✅"
+                if user_dict.get(
+                    "AI_WEB_SEARCH_ENABLED",
+                    getattr(Config, "AI_WEB_SEARCH_ENABLED", True),
+                )
+                else "❌"
+            )
+            url_summary = (
+                "✅"
+                if user_dict.get(
+                    "AI_URL_SUMMARIZATION_ENABLED",
+                    getattr(Config, "AI_URL_SUMMARIZATION_ENABLED", True),
+                )
+                else "❌"
+            )
+            arxiv = (
+                "✅"
+                if user_dict.get(
+                    "AI_ARXIV_ENABLED", getattr(Config, "AI_ARXIV_ENABLED", True)
+                )
+                else "❌"
+            )
+            code_interpreter = (
+                "✅"
+                if user_dict.get(
+                    "AI_CODE_INTERPRETER_ENABLED",
+                    getattr(Config, "AI_CODE_INTERPRETER_ENABLED", True),
+                )
+                else "❌"
+            )
+            image_gen = (
+                "✅"
+                if user_dict.get(
+                    "AI_IMAGE_GENERATION_ENABLED",
+                    getattr(Config, "AI_IMAGE_GENERATION_ENABLED", True),
+                )
+                else "❌"
+            )
+            voice_transcription = (
+                "✅"
+                if user_dict.get(
+                    "AI_VOICE_TRANSCRIPTION_ENABLED",
+                    getattr(Config, "AI_VOICE_TRANSCRIPTION_ENABLED", True),
+                )
+                else "❌"
+            )
+
+            text = f"""<u><b>🔌 AI Plugin Settings for {name}</b></u>
+
+🔌 <b>Plugin System:</b> ✅ Enabled
+
+<b>Individual Plugin Status:</b>
+• 🔍 Web Search: {web_search} - Search the web for current information
+• 📄 URL Summarization: {url_summary} - Summarize web pages and articles
+• 📚 ArXiv Papers: {arxiv} - Search and analyze academic papers
+• 💻 Code Interpreter: {code_interpreter} - Execute and analyze code
+• 🎨 Image Generation: {image_gen} - Create images with DALL-E
+• 🎵 Voice Transcription: {voice_transcription} - Convert voice to text
+
+<i>Click any plugin above to toggle it on/off.</i>"""
+        else:
+            text = f"""<u><b>🔌 AI Plugin Settings for {name}</b></u>
+
+🔌 <b>Plugin System:</b> ❌ Disabled
+
+<i>AI plugins are currently disabled. Enable the master toggle above to access plugin features.</i>
+
+<b>Available when enabled:</b>
+• 🔍 Web Search - Real-time information retrieval
+• 📄 URL Summarization - Web page analysis
+• 📚 ArXiv Papers - Academic research access
+• 💻 Code Interpreter - Python code execution
+• 🎨 Image Generation - DALL-E image creation
+• 🎵 Voice Transcription - Audio to text conversion
+
+<i>Enable "Plugins Master" above to start using these features.</i>"""
+
+    elif stype == "ai_conversation":
+        # Conversation Settings
+        conv_settings = [
+            ("AI_CONVERSATION_HISTORY", "💬 Conversation History"),
+            ("AI_MAX_HISTORY_LENGTH", "📝 Max History Length"),
+            ("AI_QUESTION_PREDICTION", "🔮 Question Prediction"),
+            ("AI_GROUP_TOPIC_MODE", "🎯 Group Topic Mode"),
+            ("AI_AUTO_LANGUAGE_DETECTION", "🌐 Auto Language Detection"),
+            ("AI_DEFAULT_LANGUAGE", "🗣️ Default Language"),
+        ]
+
+        for setting, label in conv_settings:
+            if setting in ["AI_MAX_HISTORY_LENGTH", "AI_DEFAULT_LANGUAGE"]:
+                current_value = user_dict.get(
+                    setting, getattr(Config, setting, "Default")
+                )
+                buttons.data_button(
+                    f"{label}: {current_value}", f"userset {user_id} var {setting}"
+                )
+            else:
+                current_value = user_dict.get(
+                    setting, getattr(Config, setting, True)
+                )
+                status = "✅" if current_value else "❌"
+                buttons.data_button(
+                    f"{label} {status}", f"userset {user_id} var {setting}"
+                )
+
+        buttons.data_button("Back", f"userset {user_id} ai")
+        buttons.data_button("Close", f"userset {user_id} close")
+
+        # Get current conversation settings for status display
+        history_enabled = user_dict.get(
+            "AI_CONVERSATION_HISTORY",
+            getattr(Config, "AI_CONVERSATION_HISTORY", True),
+        )
+        max_history = user_dict.get(
+            "AI_MAX_HISTORY_LENGTH", getattr(Config, "AI_MAX_HISTORY_LENGTH", 10)
+        )
+        question_prediction = user_dict.get(
+            "AI_QUESTION_PREDICTION", getattr(Config, "AI_QUESTION_PREDICTION", True)
+        )
+        group_topic = user_dict.get(
+            "AI_GROUP_TOPIC_MODE", getattr(Config, "AI_GROUP_TOPIC_MODE", False)
+        )
+        auto_language = user_dict.get(
+            "AI_AUTO_LANGUAGE_DETECTION",
+            getattr(Config, "AI_AUTO_LANGUAGE_DETECTION", True),
+        )
+        default_language = user_dict.get(
+            "AI_DEFAULT_LANGUAGE", getattr(Config, "AI_DEFAULT_LANGUAGE", "en")
+        )
+
+        text = f"""<u><b>💬 AI Conversation Settings for {name}</b></u>
+
+<b>Current Configuration:</b>
+• 💬 History: {"✅ Enabled" if history_enabled else "❌ Disabled"}
+• 📝 Max Length: <code>{max_history}</code> messages
+• 🔮 Predictions: {"✅ Enabled" if question_prediction else "❌ Disabled"}
+• 🎯 Topic Mode: {"✅ Enabled" if group_topic else "❌ Disabled"}
+• 🌐 Auto Language: {"✅ Enabled" if auto_language else "❌ Disabled"}
+• 🗣️ Default Language: <code>{default_language}</code>
+
+<b>Feature Descriptions:</b>
+💬 <b>Conversation History:</b> Remember previous messages for context
+📝 <b>Max History Length:</b> Number of messages to remember (1-50)
+🔮 <b>Question Prediction:</b> Suggest follow-up questions
+🎯 <b>Group Topic Mode:</b> Separate conversations by topic in groups
+🌐 <b>Auto Language Detection:</b> Automatically detect user language
+🗣️ <b>Default Language:</b> Fallback language (en, es, fr, de, etc.)
+
+<i>These settings affect how AI maintains context and responds to you.</i>"""
+
+    elif stype == "ai_advanced":
+        # Advanced Settings
+        advanced_settings = [
+            ("AI_STREAMING_ENABLED", "⚡ Streaming Responses"),
+            ("AI_MULTIMODAL_ENABLED", "🎭 Multimodal Support"),
+            ("AI_INLINE_MODE_ENABLED", "📱 Inline Mode"),
+            ("AI_VOICE_TRANSCRIPTION_ENABLED", "🎵 Voice Transcription"),
+            ("AI_IMAGE_GENERATION_ENABLED", "🎨 Image Generation"),
+            ("AI_DOCUMENT_PROCESSING_ENABLED", "📄 Document Processing"),
+            ("AI_FOLLOW_UP_QUESTIONS_ENABLED", "❓ Follow-up Questions"),
+            ("AI_TYPEWRITER_EFFECT_ENABLED", "⌨️ Typewriter Effect"),
+            ("AI_CONTEXT_PRUNING_ENABLED", "🧹 Context Pruning"),
+            ("AI_MAX_TOKENS", "🔢 Max Tokens"),
+            ("AI_TEMPERATURE", "🌡️ Temperature"),
+            ("AI_TIMEOUT", "⏱️ Timeout"),
+            ("AI_RATE_LIMIT_PER_USER", "⏰ Rate Limit"),
+        ]
+
+        for setting, label in advanced_settings:
+            if setting in [
+                "AI_MAX_TOKENS",
+                "AI_TEMPERATURE",
+                "AI_TIMEOUT",
+                "AI_RATE_LIMIT_PER_USER",
+            ]:
+                current_value = user_dict.get(
+                    setting, getattr(Config, setting, "Default")
+                )
+                buttons.data_button(
+                    f"{label}: {current_value}", f"userset {user_id} var {setting}"
+                )
+            else:
+                current_value = user_dict.get(
+                    setting, getattr(Config, setting, True)
+                )
+                status = "✅" if current_value else "❌"
+                buttons.data_button(
+                    f"{label} {status}",
+                    f"userset {user_id} tog {setting} {'f' if current_value else 't'}",
+                )
+
+        buttons.data_button("Back", f"userset {user_id} ai")
+        buttons.data_button("Close", f"userset {user_id} close")
+
+        # Get current advanced settings for status display
+        streaming = user_dict.get(
+            "AI_STREAMING_ENABLED", getattr(Config, "AI_STREAMING_ENABLED", True)
+        )
+        multimodal = user_dict.get(
+            "AI_MULTIMODAL_ENABLED", getattr(Config, "AI_MULTIMODAL_ENABLED", True)
+        )
+        inline_mode = user_dict.get(
+            "AI_INLINE_MODE_ENABLED", getattr(Config, "AI_INLINE_MODE_ENABLED", True)
+        )
+        voice_transcription = user_dict.get(
+            "AI_VOICE_TRANSCRIPTION_ENABLED",
+            getattr(Config, "AI_VOICE_TRANSCRIPTION_ENABLED", True),
+        )
+        image_generation = user_dict.get(
+            "AI_IMAGE_GENERATION_ENABLED",
+            getattr(Config, "AI_IMAGE_GENERATION_ENABLED", True),
+        )
+        document_processing = user_dict.get(
+            "AI_DOCUMENT_PROCESSING_ENABLED",
+            getattr(Config, "AI_DOCUMENT_PROCESSING_ENABLED", True),
+        )
+        follow_up_questions = user_dict.get(
+            "AI_FOLLOW_UP_QUESTIONS_ENABLED",
+            getattr(Config, "AI_FOLLOW_UP_QUESTIONS_ENABLED", True),
+        )
+        typewriter_effect = user_dict.get(
+            "AI_TYPEWRITER_EFFECT_ENABLED",
+            getattr(Config, "AI_TYPEWRITER_EFFECT_ENABLED", True),
+        )
+        context_pruning = user_dict.get(
+            "AI_CONTEXT_PRUNING_ENABLED",
+            getattr(Config, "AI_CONTEXT_PRUNING_ENABLED", True),
+        )
+        max_tokens = user_dict.get(
+            "AI_MAX_TOKENS", getattr(Config, "AI_MAX_TOKENS", 4000)
+        )
+        temperature = user_dict.get(
+            "AI_TEMPERATURE", getattr(Config, "AI_TEMPERATURE", 0.7)
+        )
+        timeout = user_dict.get("AI_TIMEOUT", getattr(Config, "AI_TIMEOUT", 60))
+        rate_limit = user_dict.get(
+            "AI_RATE_LIMIT_PER_USER", getattr(Config, "AI_RATE_LIMIT_PER_USER", 50)
+        )
+
+        text = f"""<u><b>🎛️ Advanced AI Settings for {name}</b></u>
+
+<b>Core Features:</b>
+• ⚡ Streaming: {"✅ Enabled" if streaming else "❌ Disabled"}
+• 🎭 Multimodal: {"✅ Enabled" if multimodal else "❌ Disabled"}
+• 📱 Inline Mode: {"✅ Enabled" if inline_mode else "❌ Disabled"}
+
+<b>ChatGPT-Telegram-Bot Features:</b>
+• 🎵 Voice Transcription: {"✅ Enabled" if voice_transcription else "❌ Disabled"}
+• 🎨 Image Generation: {"✅ Enabled" if image_generation else "❌ Disabled"}
+• 📄 Document Processing: {"✅ Enabled" if document_processing else "❌ Disabled"}
+• ❓ Follow-up Questions: {"✅ Enabled" if follow_up_questions else "❌ Disabled"}
+• ⌨️ Typewriter Effect: {"✅ Enabled" if typewriter_effect else "❌ Disabled"}
+• 🧹 Context Pruning: {"✅ Enabled" if context_pruning else "❌ Disabled"}
+
+<b>Performance Settings:</b>
+• 🔢 Max Tokens: <code>{max_tokens}</code>
+• 🌡️ Temperature: <code>{temperature}</code>
+• ⏱️ Timeout: <code>{timeout}</code> seconds
+• ⏰ Rate Limit: <code>{rate_limit}</code> requests/hour
+
+<b>Feature Descriptions:</b>
+⚡ <b>Streaming:</b> Real-time response updates • 🎭 <b>Multimodal:</b> Handle images, voice, documents
+🎵 <b>Voice Transcription:</b> Convert voice messages to text • 🎨 <b>Image Generation:</b> Create images with DALL-E
+📄 <b>Document Processing:</b> Analyze PDFs and text files • ❓ <b>Follow-up Questions:</b> Auto-generate relevant questions
+⌨️ <b>Typewriter Effect:</b> Gradual text appearance • 🧹 <b>Context Pruning:</b> Intelligent conversation management
+
+<i>⚠️ Advanced users only. Default values work well for most cases.</i>"""
+
+    elif stype == "ai_urls":
+        # Custom API URLs Settings
+        url_settings = [
+            ("OPENAI_API_URL", "🌐 OpenAI API URL"),
+            ("ANTHROPIC_API_URL", "🌐 Anthropic API URL"),
+            ("GOOGLE_AI_API_URL", "🌐 Google AI API URL"),
+            ("GROQ_API_URL", "🌐 Groq API URL"),
+            ("MISTRAL_API_URL", "🌐 Mistral API URL"),
+            ("DEEPSEEK_API_URL", "🌐 DeepSeek API URL"),
+        ]
+
+        for setting, label in url_settings:
+            current_value = user_dict.get(setting, "")
+            status = "✅ Set" if current_value else "❌ Default"
+            buttons.data_button(
+                f"{label} {status}", f"userset {user_id} var {setting}"
+            )
+
+        buttons.data_button("Back", f"userset {user_id} ai_providers")
+        buttons.data_button("Close", f"userset {user_id} close")
+
+        text = f"""<u><b>🌐 Custom API URLs for {name}</b></u>
+
+Configure custom API endpoints for AI providers:
+
+🌐 <b>OpenAI URL:</b> Custom OpenAI-compatible endpoint
+🌐 <b>Anthropic URL:</b> Custom Anthropic-compatible endpoint
+🌐 <b>Google AI URL:</b> Custom Google AI endpoint
+🌐 <b>Groq URL:</b> Custom Groq endpoint
+🌐 <b>Mistral URL:</b> Legacy Mistral endpoint
+🌐 <b>DeepSeek URL:</b> Legacy DeepSeek endpoint
+
+<i>💡 Leave empty to use default provider URLs.
+Useful for proxy servers or custom deployments.</i>"""
+
+    elif stype == "ai_status":
+        # Provider Status Display
+        buttons.data_button("🔄 Refresh Status", f"userset {user_id} ai_status")
+        buttons.data_button("Back", f"userset {user_id} ai_providers")
+        buttons.data_button("Close", f"userset {user_id} close")
+
+        # Check provider status
+        providers = ["gpt", "claude", "gemini", "groq"]
+        status_lines = []
+
+        if ai_manager:
+            for provider in providers:
+                try:
+                    status = ai_manager.get_model_status(provider)
+                    status_lines.append(f"• {provider.upper()}: {status}")
+                except Exception:
+                    status_lines.append(f"• {provider.upper()}: ❌ Error")
+        else:
+            for provider in providers:
+                status_lines.append(
+                    f"• {provider.upper()}: ❌ AI module not available"
+                )
+
+        text = f"""<u><b>📊 AI Provider Status for {name}</b></u>
+
+Real-time status of your AI providers:
+
+{chr(10).join(status_lines)}
+
+<b>Legend:</b>
+✅ Ready - Provider configured and available
+❌ Not Configured - Missing API key or URL
+⚠️ Error - Configuration issue
+
+<i>🔄 Click "Refresh Status" to update information.
+Configure missing providers in API Keys or Custom URLs.</i>"""
+
+    elif stype.startswith("ai_") and stype.endswith("_models"):
+        # Model Group Selection (e.g., ai_gpt_models, ai_claude_models)
+        group_name = stype.replace("ai_", "").replace("_models", "").upper()
+
+        if ai_manager:
+            available_models = ai_manager.get_available_models()
+
+            if group_name in available_models:
+                models = available_models[group_name]
+
+                # Add buttons for each model in the group
+                for i, model in enumerate(models):
+                    current_model = user_dict.get(
+                        "DEFAULT_AI_MODEL",
+                        getattr(Config, "DEFAULT_AI_MODEL", "gpt-4o"),
+                    )
+                    status = "✅" if model == current_model else ""
+                    # Use short identifier to avoid callback data length limit
+                    model_id = f"{group_name.lower()[:3]}{i}"
+                    buttons.data_button(
+                        f"{model} {status}",
+                        f"userset {user_id} setmodel {model_id}",
+                    )
+        else:
+            # AI manager not available
+            pass
+
+            # No need to set provider separately - it's determined by model selection
+
+        buttons.data_button("Back", f"userset {user_id} ai_models")
+        buttons.data_button("Close", f"userset {user_id} close")
+
+    elif stype == "ai_keys":
+        # Comprehensive API Keys and URLs Settings
+
+        # API Keys Section
+        api_key_settings = [
+            ("OPENAI_API_KEY", "🔑 OpenAI API Key"),
+            ("ANTHROPIC_API_KEY", "🔑 Anthropic API Key"),
+            ("GOOGLE_AI_API_KEY", "🔑 Google AI API Key"),
+            ("GROQ_API_KEY", "🔑 Groq API Key"),
+            ("VERTEX_PROJECT_ID", "🔑 Vertex Project ID"),
+            ("VERTEX_AI_LOCATION", "🌍 Vertex AI Location"),
+        ]
+
+        for setting, label in api_key_settings:
+            current_value = user_dict.get(setting, "")
+            status = "✅ Set" if current_value else "❌ Not Set"
+            buttons.data_button(
+                f"{label} {status}", f"userset {user_id} var {setting}"
+            )
+
+        # Custom API URLs Section
+        url_settings = [
+            ("OPENAI_API_URL", "🔗 OpenAI API URL"),
+            ("ANTHROPIC_API_URL", "🔗 Anthropic API URL"),
+            ("GOOGLE_AI_API_URL", "🔗 Google AI API URL"),
+            ("GROQ_API_URL", "🔗 Groq API URL"),
+            ("MISTRAL_API_URL", "🔗 Mistral API URL"),
+            ("DEEPSEEK_API_URL", "🔗 DeepSeek API URL"),
+        ]
+
+        for setting, label in url_settings:
+            current_value = user_dict.get(setting, "")
+            status = "✅ Set" if current_value else "❌ Default"
+            buttons.data_button(
+                f"{label} {status}", f"userset {user_id} var {setting}"
+            )
+
+        # Provider Status Check
+        buttons.data_button("📊 Provider Status", f"userset {user_id} ai_status")
+
+        buttons.data_button("Back", f"userset {user_id} ai")
+        buttons.data_button("Close", f"userset {user_id} close")
+
+        # Get API key and URL status
+        openai_key = "✅ Set" if user_dict.get("OPENAI_API_KEY") else "❌ Not Set"
+        anthropic_key = (
+            "✅ Set" if user_dict.get("ANTHROPIC_API_KEY") else "❌ Not Set"
+        )
+        google_key = "✅ Set" if user_dict.get("GOOGLE_AI_API_KEY") else "❌ Not Set"
+        groq_key = "✅ Set" if user_dict.get("GROQ_API_KEY") else "❌ Not Set"
+        vertex_project = (
+            "✅ Set" if user_dict.get("VERTEX_PROJECT_ID") else "❌ Not Set"
+        )
+        vertex_location = (
+            "✅ Set" if user_dict.get("VERTEX_AI_LOCATION") else "❌ Not Set"
+        )
+
+        openai_url = "✅ Custom" if user_dict.get("OPENAI_API_URL") else "❌ Default"
+        anthropic_url = (
+            "✅ Custom" if user_dict.get("ANTHROPIC_API_URL") else "❌ Default"
+        )
+        google_url = (
+            "✅ Custom" if user_dict.get("GOOGLE_AI_API_URL") else "❌ Default"
+        )
+        groq_url = "✅ Custom" if user_dict.get("GROQ_API_URL") else "❌ Default"
+        mistral_url = (
+            "✅ Custom" if user_dict.get("MISTRAL_API_URL") else "❌ Default"
+        )
+        deepseek_url = (
+            "✅ Custom" if user_dict.get("DEEPSEEK_API_URL") else "❌ Default"
+        )
+
+        text = f"""<u><b>🔑 AI API Keys & URLs for {name}</b></u>
+
+<b>🔑 API Keys:</b>
+-> OpenAI: <b>{openai_key}</b>
+-> Anthropic: <b>{anthropic_key}</b>
+-> Google AI: <b>{google_key}</b>
+-> Groq: <b>{groq_key}</b>
+-> Vertex Project: <b>{vertex_project}</b>
+-> Vertex Location: <b>{vertex_location}</b>
+
+<b>🔗 Custom API URLs:</b>
+-> OpenAI: <b>{openai_url}</b>
+-> Anthropic: <b>{anthropic_url}</b>
+-> Google AI: <b>{google_url}</b>
+-> Groq: <b>{groq_url}</b>
+-> Mistral: <b>{mistral_url}</b>
+-> DeepSeek: <b>{deepseek_url}</b>
+
+<i>Configure your personal API keys and custom endpoints. Your settings override bot defaults.</i>"""
+
+    elif stype == "ai_analytics":
+        # Detailed AI Analytics
+        buttons.data_button(
+            "🔄 Refresh Analytics", f"userset {user_id} ai_analytics"
+        )
+        buttons.data_button("Back", f"userset {user_id} ai_usage")
+        buttons.data_button("Close", f"userset {user_id} close")
+
+        if ai_manager:
+            try:
+                analytics = ai_manager.get_user_analytics(user_id)
+
+                # Format plugin usage
+                plugin_usage = analytics["plugin_usage"]
+                plugin_text = f"""🔌 <b>Plugin Usage:</b>
+• Web Search: {plugin_usage["web_search"]} requests
+• URL Summary: {plugin_usage["url_summary"]} requests
+• ArXiv Papers: {plugin_usage["arxiv"]} requests
+• Code Execution: {plugin_usage["code_execution"]} requests
+• Image Generation: {plugin_usage["image_generation"]} requests"""
+
+                # Format model usage details
+                model_details = []
+                for i, (model, tokens) in enumerate(
+                    analytics["popular_models"][:5], 1
+                ):
+                    percentage = (tokens / max(1, analytics["total_tokens"])) * 100
+                    model_details.append(
+                        f"{i}. {model}: {tokens:,} tokens ({percentage:.1f}%)"
+                    )
+
+                models_text = (
+                    "\n".join(model_details) if model_details else "No usage data"
+                )
+
+                text = f"""<u><b>📊 Detailed AI Analytics for {name}</b></u>
+
+<b>📈 Usage Overview:</b>
+• Total Requests: <b>{analytics["total_requests"]:,}</b>
+• Total Conversations: <b>{analytics["total_conversations"]}</b>
+• Active Conversations: <b>{analytics["active_conversations"]}</b>
+• Average Conversation Length: <b>{analytics["avg_conversation_length"]}</b>
+
+<b>🤖 Model Usage Details:</b>
+{models_text}
+
+{plugin_text}
+
+<b>⚙️ Current Settings:</b>
+• Mode: <b>{analytics["current_mode"]}</b>
+• Language: <b>{analytics["current_language"].upper()}</b>
+• Preferred Model: <b>{analytics["preferred_model"]}</b>
+
+<i>Detailed analytics help you understand your AI usage patterns.</i>"""
+            except Exception as e:
+                text = f"""<u><b>📊 Detailed AI Analytics for {name}</b></u>
+
+❌ <b>Analytics Unavailable</b>
+
+Unable to load detailed analytics: {str(e)}
+
+<i>Please try refreshing or contact support if the issue persists.</i>"""
+        else:
+            text = f"""<u><b>📊 Detailed AI Analytics for {name}</b></u>
+
+❌ <b>AI Module Not Available</b>
+
+Detailed analytics are not available because the AI module is not loaded.
+
+<i>Please contact the administrator to enable AI functionality.</i>"""
+
+    elif stype == "ai_budget":
+        # Budget Status and Management
+        buttons.data_button("🔄 Refresh Budget", f"userset {user_id} ai_budget")
+        buttons.data_button(
+            "💰 Set Daily Token Limit", f"userset {user_id} var AI_DAILY_TOKEN_LIMIT"
+        )
+        buttons.data_button(
+            "💳 Set Monthly Token Limit",
+            f"userset {user_id} var AI_MONTHLY_TOKEN_LIMIT",
+        )
+        buttons.data_button("Back", f"userset {user_id} ai_usage")
+        buttons.data_button("Close", f"userset {user_id} close")
+
+        if ai_manager:
+            try:
+                budget_status = ai_manager.check_token_budget(user_id)
+                token_stats = ai_manager.get_token_usage_stats(user_id)
+
+                # Budget status indicators
+                daily_token_icon = (
+                    "✅" if budget_status["within_daily_token_limit"] else "⚠️"
+                )
+                monthly_token_icon = (
+                    "✅" if budget_status["within_monthly_token_limit"] else "⚠️"
+                )
+                daily_cost_icon = (
+                    "✅" if budget_status["within_daily_cost_limit"] else "⚠️"
+                )
+                monthly_cost_icon = (
+                    "✅" if budget_status["within_monthly_cost_limit"] else "⚠️"
+                )
+
+                # Calculate percentages
+                daily_token_pct = (
+                    (
+                        budget_status["daily_token_usage"]
+                        / max(1, budget_status["daily_token_limit"])
+                    )
+                    * 100
+                    if budget_status["daily_token_limit"] > 0
+                    else 0
+                )
+                monthly_token_pct = (
+                    (
+                        budget_status["monthly_token_usage"]
+                        / max(1, budget_status["monthly_token_limit"])
+                    )
+                    * 100
+                    if budget_status["monthly_token_limit"] > 0
+                    else 0
+                )
+
+                text = f"""<u><b>💰 Budget Status for {name}</b></u>
+
+<b>📊 Token Usage:</b>
+• Daily: <b>{daily_token_icon} {budget_status["daily_token_usage"]:,} / {budget_status["daily_token_limit"]:,}</b> ({daily_token_pct:.1f}%)
+• Monthly: <b>{monthly_token_icon} {budget_status["monthly_token_usage"]:,} / {budget_status["monthly_token_limit"]:,}</b> ({monthly_token_pct:.1f}%)
+
+<b>💵 Cost Tracking:</b>
+• Daily Cost: <b>{daily_cost_icon} ${budget_status["daily_cost_usage"]:.4f} / ${budget_status["daily_cost_limit"]:.2f}</b>
+• Monthly Cost: <b>{monthly_cost_icon} ${budget_status["monthly_cost_usage"]:.4f} / ${budget_status["monthly_cost_limit"]:.2f}</b>
+
+<b>📈 Total Usage:</b>
+• All-time Tokens: <b>{token_stats["total_tokens"]:,}</b>
+• All-time Cost: <b>${token_stats["total_cost"]:.4f}</b>
+• Prompt Tokens: <b>{token_stats["prompt_tokens"]:,}</b>
+• Completion Tokens: <b>{token_stats["completion_tokens"]:,}</b>
+
+<b>⚙️ Budget Settings:</b>
+• Daily Token Limit: <b>{"Unlimited" if budget_status["daily_token_limit"] == 0 else f"{budget_status['daily_token_limit']:,}"}</b>
+• Monthly Token Limit: <b>{"Unlimited" if budget_status["monthly_token_limit"] == 0 else f"{budget_status['monthly_token_limit']:,}"}</b>
+
+<i>Set limits to control your AI usage and costs. 0 = unlimited.</i>"""
+            except Exception as e:
+                text = f"""<u><b>💰 Budget Status for {name}</b></u>
+
+❌ <b>Budget Information Unavailable</b>
+
+Unable to load budget status: {str(e)}
+
+<i>Please try refreshing or contact support if the issue persists.</i>"""
+        else:
+            text = f"""<u><b>💰 Budget Status for {name}</b></u>
+
+❌ <b>AI Module Not Available</b>
+
+Budget tracking is not available because the AI module is not loaded.
+
+<i>Please contact the administrator to enable AI functionality.</i>"""
+
+    elif stype == "ai_model_selection":
+        # AI Model Selection - Combined view of all models
+        buttons.data_button("Back", f"userset {user_id} ai")
+        buttons.data_button("Close", f"userset {user_id} close")
+
+        current_model = user_dict.get(
+            "DEFAULT_AI_MODEL", getattr(Config, "DEFAULT_AI_MODEL", "gpt-4o")
+        )
+
+        if ai_manager:
+            available_models = ai_manager.get_available_models()
+
+            # Group models by provider
+            for group, models in available_models.items():
+                # Add group header
+                buttons.data_button(
+                    f"━━━ {group} Models ━━━",
+                    f"userset {user_id} ai_model_selection",
+                )
+
+                # Add models in this group
+                for i, model in enumerate(models):
+                    status = "✅" if model == current_model else ""
+                    model_display = (
+                        model.replace("gpt-", "GPT-")
+                        .replace("claude-", "Claude ")
+                        .replace("gemini-", "Gemini ")
+                    )
+                    # Use short identifier to avoid callback data length limit
+                    model_id = f"{group.lower()[:3]}{i}"
+                    buttons.data_button(
+                        f"{model_display} {status}",
+                        f"userset {user_id} setmodel {model_id}",
+                    )
+        else:
+            # Fallback when AI manager not available
+            buttons.data_button(
+                "❌ AI Module Not Available", f"userset {user_id} ai"
+            )
+
+        text = f"""<u><b>🤖 AI Model Selection for {name}</b></u>
+
+<b>Current Model:</b> {current_model}
+
+Select your preferred AI model from the options below. Each model has different capabilities, speed, and cost characteristics.
+
+<b>Model Categories:</b>
+• <b>GPT Models:</b> OpenAI's models (GPT-4o, GPT-4, GPT-3.5)
+• <b>Claude Models:</b> Anthropic's models (Claude 3.5 Sonnet, Claude 3 Opus)
+• <b>Gemini Models:</b> Google's models (Gemini 1.5 Pro, Gemini 1.5 Flash)
+• <b>Groq Models:</b> Fast inference models (Mixtral, Llama)
+• <b>Others:</b> Additional models and providers
+
+<i>Choose the model that best fits your needs and budget.</i>"""
+
+    elif stype == "ai_conversation_mode":
+        # Conversation Mode Selection
+        buttons.data_button("Back", f"userset {user_id} ai")
+        buttons.data_button("Close", f"userset {user_id} close")
+
+        if ai_manager:
+            modes = ai_manager.get_conversation_modes()
+            current_mode = user_dict.get("AI_CONVERSATION_MODE", "assistant")
+
+            for mode_id, mode_info in modes.items():
+                status = "✅" if mode_id == current_mode else ""
+                buttons.data_button(
+                    f"{mode_info['icon']} {mode_info['name']} {status}",
+                    f"userset {user_id} setvar AI_CONVERSATION_MODE {mode_id}",
+                )
+        else:
+            buttons.data_button(
+                "❌ AI Module Not Available", f"userset {user_id} ai"
+            )
+
+        text = f"""<u><b>🎭 Conversation Mode Selection for {name}</b></u>
+
+Choose your preferred AI conversation mode. Each mode has specialized prompts and capabilities:
+
+• <b>🤖 Assistant:</b> General helpful assistant for everyday tasks
+• <b>💻 Code Assistant:</b> Specialized for programming and development
+• <b>🎨 Artist:</b> Creative writing, art, and design assistance
+• <b>📊 Analyst:</b> Data analysis, research, and insights
+• <b>👨‍🏫 Teacher:</b> Educational tutoring and learning support
+• <b>✍️ Writer:</b> Professional writing and editing assistance
+• <b>🔬 Researcher:</b> Academic and professional research helper
+• <b>🌐 Translator:</b> Language translation and multilingual support
+
+<i>Select the mode that best matches your intended use case.</i>"""
+
+    elif stype == "ai_language":
+        # Language Selection
+        buttons.data_button("Back", f"userset {user_id} ai")
+        buttons.data_button("Close", f"userset {user_id} close")
+
+        languages = {
+            "en": "🇺🇸 English",
+            "zh": "🇨🇳 Chinese",
+            "ru": "🇷🇺 Russian",
+            "es": "🇪🇸 Spanish",
+            "fr": "🇫🇷 French",
+            "de": "🇩🇪 German",
+            "ja": "🇯🇵 Japanese",
+            "ko": "🇰🇷 Korean",
+        }
+
+        current_lang = user_dict.get(
+            "AI_LANGUAGE", getattr(Config, "AI_DEFAULT_LANGUAGE", "en")
+        )
+
+        for lang_code, lang_name in languages.items():
+            status = "✅" if lang_code == current_lang else ""
+            buttons.data_button(
+                f"{lang_name} {status}",
+                f"userset {user_id} setvar AI_LANGUAGE {lang_code}",
+            )
+
+        text = f"""<u><b>🌐 AI Language Selection for {name}</b></u>
+
+<b>Current Language:</b> {languages.get(current_lang, current_lang.upper())}
+
+Choose your preferred language for AI responses. The AI will:
+• Respond in your selected language
+• Adapt communication style accordingly
+• Use appropriate cultural context
+• Provide localized examples and references
+
+<b>Supported Languages:</b>
+🇺🇸 English • 🇨🇳 Chinese • 🇷🇺 Russian • 🇪🇸 Spanish
+🇫🇷 French • 🇩🇪 German • 🇯🇵 Japanese • 🇰🇷 Korean
+
+<i>Select your preferred language for the best AI experience.</i>"""
+
+    elif stype == "ai_usage":
+        # AI Usage Statistics
+        buttons.data_button("🔄 Refresh Stats", f"userset {user_id} ai_usage")
+        buttons.data_button(
+            "📊 Detailed Analytics", f"userset {user_id} ai_analytics"
+        )
+        buttons.data_button("💰 Budget Status", f"userset {user_id} ai_budget")
+        buttons.data_button("Back", f"userset {user_id} ai")
+        buttons.data_button("Close", f"userset {user_id} close")
+
+        # Get usage statistics
+        if ai_manager:
+            try:
+                analytics = ai_manager.get_user_analytics(user_id)
+                token_stats = ai_manager.get_token_usage_stats(user_id)
+                budget_status = ai_manager.check_token_budget(user_id)
+
+                # Format top models
+                top_models = []
+                for i, (model, tokens) in enumerate(
+                    analytics["popular_models"][:3], 1
+                ):
+                    percentage = (tokens / max(1, analytics["total_tokens"])) * 100
+                    top_models.append(
+                        f"{i}. {model}: {tokens:,} tokens ({percentage:.1f}%)"
+                    )
+
+                models_text = (
+                    "\n".join(top_models) if top_models else "No usage data"
+                )
+
+                # Budget status indicators
+                daily_budget_icon = (
+                    "✅" if budget_status["within_daily_token_limit"] else "⚠️"
+                )
+                monthly_budget_icon = (
+                    "✅" if budget_status["within_monthly_token_limit"] else "⚠️"
+                )
+
+                text = f"""<u><b>📊 AI Usage Statistics for {name}</b></u>
+
+<b>📈 Usage Summary:</b>
+-> Total Requests: <b>{analytics["total_requests"]:,}</b>
+-> Total Tokens: <b>{token_stats["total_tokens"]:,}</b>
+-> Daily Tokens: <b>{token_stats["daily_tokens"]:,}</b>
+-> Monthly Tokens: <b>{token_stats["monthly_tokens"]:,}</b>
+-> Total Cost: <b>${token_stats["total_cost"]:.4f}</b>
+
+<b>💰 Budget Status:</b>
+-> Daily Limit: <b>{daily_budget_icon} {budget_status["daily_token_usage"]:,} / {budget_status["daily_token_limit"]:,}</b>
+-> Monthly Limit: <b>{monthly_budget_icon} {budget_status["monthly_token_usage"]:,} / {budget_status["monthly_token_limit"]:,}</b>
+
+<b>🤖 Top Models:</b>
+{models_text}
+
+<b>💬 Conversations:</b>
+-> Total: <b>{analytics["total_conversations"]}</b>
+-> Active: <b>{analytics["active_conversations"]}</b>
+-> Avg Length: <b>{analytics["avg_conversation_length"]}</b>
+
+<i>View detailed analytics and manage your AI usage budget.</i>"""
+            except Exception as e:
+                text = f"""<u><b>📊 AI Usage Statistics for {name}</b></u>
+
+❌ <b>Statistics Unavailable</b>
+
+Unable to load AI usage statistics: {str(e)}
+
+<i>Please try refreshing or contact support if the issue persists.</i>"""
+        else:
+            text = f"""<u><b>📊 AI Usage Statistics for {name}</b></u>
+
+❌ <b>AI Module Not Available</b>
+
+AI statistics are not available because the AI module is not loaded.
+
+<i>Please contact the administrator to enable AI functionality.</i>"""
 
     elif stype == "mega":
         # Check if MEGA operations are enabled
@@ -2672,6 +3916,8 @@ async def get_menu(option, message, user_id):
     handler_dict[user_id] = False
     user_dict = user_data.get(user_id, {})
     buttons = ButtonMaker()
+
+    # Regular menu handling for all options
     if option in [
         "THUMBNAIL",
         "RCLONE_CONFIG",
@@ -2915,6 +4161,25 @@ async def edit_user_settings(client, query):
         "metadata",
         "convert",
         "ai",
+        "ai_models",
+        "ai_providers",
+        "ai_plugins",
+        "ai_conversation",
+        "ai_advanced",
+        "ai_keys",
+        "ai_urls",
+        "ai_status",
+        "ai_usage",
+        "ai_analytics",
+        "ai_budget",
+        "ai_model_selection",
+        "ai_conversation_mode",
+        "ai_language",
+        "ai_gpt_models",
+        "ai_claude_models",
+        "ai_gemini_models",
+        "ai_groq_models",
+        "ai_others_models",
         "youtube_basic",
         "youtube_advanced",
         "cookies_main",
@@ -3161,6 +4426,28 @@ Cookies allow you to access restricted content on YouTube, Instagram, Twitter, a
             "GOFILE_PASSWORD_PROTECTION",
         ]:
             back_to = "ddl_gofile"
+        elif data[3] in [
+            "AI_STREAMING_ENABLED",
+            "AI_PLUGINS_ENABLED",
+            "AI_MULTIMODAL_ENABLED",
+            "AI_CONVERSATION_HISTORY",
+            "AI_QUESTION_PREDICTION",
+            "AI_WEB_SEARCH_ENABLED",
+            "AI_URL_SUMMARIZATION_ENABLED",
+            "AI_ARXIV_ENABLED",
+            "AI_CODE_INTERPRETER_ENABLED",
+            "AI_IMAGE_GENERATION_ENABLED",
+            "AI_VOICE_TRANSCRIPTION_ENABLED",
+            "AI_DOCUMENT_PROCESSING_ENABLED",
+            "AI_FOLLOW_UP_QUESTIONS_ENABLED",
+            "AI_CONVERSATION_EXPORT_ENABLED",
+            "AI_TYPEWRITER_EFFECT_ENABLED",
+            "AI_CONTEXT_PRUNING_ENABLED",
+            "AI_GROUP_TOPIC_MODE",
+            "AI_AUTO_LANGUAGE_DETECTION",
+            "AI_INLINE_MODE_ENABLED",
+        ]:
+            back_to = "ai"
         # Convert settings have been moved to Media Tools settings
         else:
             back_to = "leech"
@@ -3226,20 +4513,7 @@ You can provide your own cookies for YT-DLP and Gallery-dl downloads to access r
             document=data[3] != "THUMBNAIL",
         )
         await get_menu(data[3], message, user_id)
-    elif data[2] == "setprovider":
-        if len(data) <= 3:
-            LOGGER.error(
-                f"Missing provider in setprovider request from user {user_id}"
-            )
-            await query.answer("Invalid provider request!", show_alert=True)
-            return
-        await query.answer(f"Setting default AI provider to {data[3].capitalize()}")
-        # Update the default AI provider in user settings
-        user_dict["DEFAULT_AI_PROVIDER"] = data[3]
-        # Update the database
-        await database.update_user_data(user_id)
-        # Update the UI
-        await update_user_settings(query, "ai")
+    # Deprecated: setprovider handler removed - provider is now determined by model selection
     elif data[2] == "var":
         await query.answer()
         if len(data) <= 3:
@@ -3301,6 +4575,80 @@ You can provide your own cookies for YT-DLP and Gallery-dl downloads to access r
             await update_user_settings(query, back_to)
         else:
             await update_user_settings(query, "back")
+    elif data[2] == "setvar":
+        # Direct variable setting without user input
+        await query.answer()
+        if len(data) <= 4:
+            LOGGER.error(
+                f"Missing variable name or value in setvar request from user {user_id}"
+            )
+            await query.answer("Invalid setvar request!", show_alert=True)
+            return
+
+        # Set the variable directly
+        variable_name = data[3]
+        variable_value = data[4]
+
+        # Update user data
+        user_dict[variable_name] = variable_value
+        user_data[user_id] = user_dict
+        update_user_ldata(user_id, variable_name, variable_value)
+
+        # Determine which section to return to
+        if variable_name == "DEFAULT_AI_MODEL":
+            await update_user_settings(query, "ai_model_selection")
+        elif variable_name == "AI_CONVERSATION_MODE":
+            await update_user_settings(query, "ai_conversation_mode")
+        elif variable_name == "AI_LANGUAGE":
+            await update_user_settings(query, "ai_language")
+        else:
+            await update_user_settings(query, "ai")
+        return
+    elif data[2] == "setmodel":
+        # Model selection with short identifier to avoid callback data length limit
+        await query.answer()
+        if len(data) <= 3:
+            LOGGER.error(f"Missing model ID in setmodel request from user {user_id}")
+            await query.answer("Invalid setmodel request!", show_alert=True)
+            return
+
+        model_id = data[3]
+
+        # Get the model mapping from AI manager
+        if ai_manager:
+            try:
+                available_models = ai_manager.get_available_models()
+                model_mapping = {}
+
+                # Create mapping from short IDs to full model names
+                for group, models in available_models.items():
+                    for i, model in enumerate(models):
+                        short_id = f"{group.lower()[:3]}{i}"
+                        model_mapping[short_id] = model
+
+                if model_id in model_mapping:
+                    selected_model = model_mapping[model_id]
+
+                    # Update user data
+                    user_dict["DEFAULT_AI_MODEL"] = selected_model
+                    user_data[user_id] = user_dict
+                    update_user_ldata(user_id, "DEFAULT_AI_MODEL", selected_model)
+
+                    await query.answer(f"✅ Model set to {selected_model}")
+                    await update_user_settings(query, "ai_model_selection")
+                else:
+                    await query.answer(
+                        "❌ Invalid model selection!", show_alert=True
+                    )
+                    await update_user_settings(query, "ai_model_selection")
+            except Exception as e:
+                LOGGER.error(f"Error in setmodel handler: {e}")
+                await query.answer("❌ Error setting model!", show_alert=True)
+                await update_user_settings(query, "ai_model_selection")
+        else:
+            await query.answer("❌ AI module not available!", show_alert=True)
+            await update_user_settings(query, "ai")
+        return
     elif data[2] in ["set", "addone", "rmone"]:
         if len(data) <= 3:
             LOGGER.error(
@@ -3308,26 +4656,7 @@ You can provide your own cookies for YT-DLP and Gallery-dl downloads to access r
             )
             await query.answer("Invalid request format!", show_alert=True)
             return
-        # Special handling for DEFAULT_AI_PROVIDER
-        if data[2] == "set" and data[3] == "DEFAULT_AI_PROVIDER":
-            await query.answer()
-            buttons = ButtonMaker()
-            buttons.data_button("Mistral", f"userset {user_id} setprovider mistral")
-            buttons.data_button(
-                "DeepSeek", f"userset {user_id} setprovider deepseek"
-            )
-            buttons.data_button("Back", f"userset {user_id} setevent")
-            buttons.data_button("Close", f"userset {user_id} close")
-
-            edit_msg = await edit_message(
-                message,
-                "<b>Select Default AI Provider</b>\n\nChoose which AI provider to use with the /ask command:",
-                buttons.build_menu(2),
-            )
-            create_task(  # noqa: RUF006
-                auto_delete_message(edit_msg, time=300),
-            )  # Auto delete edit stage after 5 minutes
-            return
+        # Deprecated: DEFAULT_AI_PROVIDER special handling removed - use DEFAULT_AI_MODEL instead
 
         # Normal handling for other settings
         await query.answer()

@@ -375,7 +375,7 @@ class Config:
     STREAMRIP_YOUTUBE_VIDEO_DOWNLOADS_FOLDER: str = ""
 
     # Streamrip Database Configuration
-    STREAMRIP_DATABASE_DOWNLOADS_ENABLED: bool = True
+    STREAMRIP_DATABASE_DOWNLOADS_ENABLED: bool = False
     STREAMRIP_DATABASE_DOWNLOADS_PATH: str = "./downloads.db"
     STREAMRIP_DATABASE_FAILED_DOWNLOADS_ENABLED: bool = True
     STREAMRIP_DATABASE_FAILED_DOWNLOADS_PATH: str = "./failed_downloads.db"
@@ -1198,7 +1198,7 @@ class Config:
     CAT_API_KEY: str = ""  # The Cat API key for enhanced features
 
     # Auto Thumbnail Settings
-    AUTO_THUMBNAIL: bool = True  # Enable/disable auto thumbnail from IMDB/TMDB
+    AUTO_THUMBNAIL: bool = False  # Enable/disable auto thumbnail from IMDB/TMDB
 
     # Rclone Settings
     RCLONE_ENABLED: bool = True
@@ -1207,14 +1207,100 @@ class Config:
     ARCHIVE_FLAGS_ENABLED: bool = True
 
     # AI Settings
-    # Default AI Provider (mistral, deepseek)
-    DEFAULT_AI_PROVIDER: str = "mistral"
+    AI_ENABLED: bool = True  # Master toggle for AI functionality
 
-    # Mistral AI Settings
+    # Default AI Model (replaces separate provider and model configs)
+    DEFAULT_AI_MODEL: str = "gpt-4o-mini"  # Use most reliable model as default - All supported models: gpt-4o, gpt-4o-mini, gpt-4, gpt-3.5-turbo, o1-preview, o1-mini, claude-3.5-sonnet, claude-3-sonnet, claude-3-haiku, claude-3-opus, claude-2.1, gemini-1.5-pro, gemini-1.5-flash, gemini-2.0-flash-exp, mixtral-8x7b-32768, llama-3.1-70b-versatile, llama-3.1-8b-instant, llama2-70b-4096, vertex-gemini-1.5-pro, vertex-gemini-1.5-flash, vertex-claude-3-sonnet, vertex-claude-3-haiku, whisper-1, mistral, deepseek
+
+    # GPT/OpenAI Settings
+    OPENAI_API_KEY: str = ""
+    OPENAI_API_URL: str = "https://api.openai.com/v1/chat/completions"
+    OPENAI_MODELS: str = (
+        "gpt-3.5-turbo,gpt-4,gpt-4-turbo,gpt-4o,gpt-4o-mini,o1-preview,o1-mini"
+    )
+
+    # Claude/Anthropic Settings
+    ANTHROPIC_API_KEY: str = ""
+    ANTHROPIC_API_URL: str = "https://api.anthropic.com/v1/messages"
+    CLAUDE_MODELS: str = (
+        "claude-2.1,claude-3-haiku,claude-3-sonnet,claude-3.5-sonnet,claude-3-opus"
+    )
+
+    # Gemini/Google AI Settings
+    GOOGLE_AI_API_KEY: str = ""
+    GOOGLE_AI_API_URL: str = (
+        "https://generativelanguage.googleapis.com/v1beta/models"
+    )
+    GEMINI_MODELS: str = "gemini-1.5-pro,gemini-1.5-flash,gemini-2.0-flash-exp"
+
+    # Vertex AI Settings
+    VERTEX_PROJECT_ID: str = ""
+    VERTEX_LOCATION: str = "us-central1"
+    VERTEX_MODELS: str = (
+        "gemini-1.5-pro,gemini-1.5-flash,claude-3-sonnet,claude-3-haiku"
+    )
+
+    # Groq Settings
+    GROQ_API_KEY: str = ""
+    GROQ_API_URL: str = "https://api.groq.com/openai/v1/chat/completions"
+    GROQ_MODELS: str = "mixtral-8x7b-32768,llama2-70b-4096,llama-3.1-70b-versatile,llama-3.1-8b-instant"
+
+    # Legacy AI Settings (for backward compatibility)
     MISTRAL_API_URL: str = ""
-
-    # DeepSeek AI Settings
     DEEPSEEK_API_URL: str = ""
+
+    # AI Feature Settings
+    AI_STREAMING_ENABLED: bool = False  # Enable streaming responses
+    AI_PLUGINS_ENABLED: bool = True  # Enable plugin system
+    AI_MULTIMODAL_ENABLED: bool = True  # Enable image/voice/document processing
+    AI_CONVERSATION_HISTORY: bool = True  # Enable conversation history
+    AI_MAX_HISTORY_LENGTH: int = 50  # Maximum conversation history length
+    AI_QUESTION_PREDICTION: bool = True  # Enable follow-up question generation
+    AI_GROUP_TOPIC_MODE: bool = True  # Enable topic-based conversations in groups
+    AI_INLINE_MODE_ENABLED: bool = True  # Enable inline mode support
+    AI_AUTO_LANGUAGE_DETECTION: bool = True  # Auto-detect user language
+    AI_DEFAULT_LANGUAGE: str = "en"  # Default language (en, zh, ru)
+    AI_CONVERSATION_MODE: str = "assistant"  # Default conversation mode
+    AI_LANGUAGE: str = "en"  # User's preferred AI language
+
+    # AI Plugin Settings
+    AI_WEB_SEARCH_ENABLED: bool = True  # Enable web search plugin
+    AI_URL_SUMMARIZATION_ENABLED: bool = True  # Enable URL summarization
+    AI_ARXIV_ENABLED: bool = True  # Enable ArXiv paper plugin
+    AI_CODE_INTERPRETER_ENABLED: bool = True  # Enable code execution
+    AI_IMAGE_GENERATION_ENABLED: bool = True  # Enable DALL-E image generation
+    AI_VOICE_TRANSCRIPTION_ENABLED: bool = True  # Enable Whisper voice transcription
+
+    # New ChatGPT-Telegram-Bot Features
+    AI_DOCUMENT_PROCESSING_ENABLED: bool = (
+        True  # Enable document processing (PDF, text)
+    )
+    AI_FOLLOW_UP_QUESTIONS_ENABLED: bool = (
+        True  # Enable automatic follow-up questions
+    )
+    AI_CONVERSATION_EXPORT_ENABLED: bool = True  # Enable conversation export
+    AI_TYPEWRITER_EFFECT_ENABLED: bool = (
+        True  # Enable typewriter effect for streaming
+    )
+    AI_CONTEXT_PRUNING_ENABLED: bool = True  # Enable intelligent context pruning
+
+    # AI Performance Settings
+    AI_MAX_TOKENS: int = 4096  # Maximum tokens per response
+    AI_TEMPERATURE: float = 0.7  # Response creativity (0.0-2.0)
+    AI_TIMEOUT: int = 60  # Request timeout in seconds
+    AI_MAX_CONCURRENT_REQUESTS: int = 10  # Max concurrent AI requests
+    AI_RATE_LIMIT_PER_USER: int = 50  # Max requests per user per hour
+
+    # AI Budget Settings
+    AI_DAILY_TOKEN_LIMIT: int = 0  # Daily token limit per user (0 = unlimited)
+    AI_MONTHLY_TOKEN_LIMIT: int = 0  # Monthly token limit per user (0 = unlimited)
+    AI_DAILY_COST_LIMIT: float = 0.0  # Daily cost limit per user (0.0 = unlimited)
+    AI_MONTHLY_COST_LIMIT: float = (
+        0.0  # Monthly cost limit per user (0.0 = unlimited)
+    )
+
+    # AI Model Grouping
+    AI_MODEL_GROUPS: str = "GPT:gpt-3.5-turbo,gpt-4,gpt-4o|Claude:claude-3-haiku,claude-3-sonnet|Gemini:gemini-1.5-pro,gemini-1.5-flash|Groq:mixtral-8x7b-32768,llama2-70b-4096|Others:mistral,deepseek"
 
     # Shortener Settings
     SHORTENER_MIN_TIME: int = 10  # Minimum time in seconds for shortener to process
@@ -1239,7 +1325,6 @@ class Config:
     QUICKINFO_ENABLED: bool = False  # Enable/disable QuickInfo feature
 
     # Extra Modules Settings
-    AI_ENABLED: bool = True  # Enable/disable AI functionality
     IMDB_ENABLED: bool = True  # Enable/disable IMDB functionality
     TRUECALLER_ENABLED: bool = True  # Enable/disable Truecaller functionality
 

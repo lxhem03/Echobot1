@@ -1,7 +1,54 @@
 # ruff: noqa: E402
 import asyncio
 import gc
+import os
+import warnings
 from asyncio import create_task, gather
+
+# Set environment variable to suppress Python warnings (most aggressive approach)
+os.environ.setdefault("PYTHONWARNINGS", "ignore::SyntaxWarning")
+
+# Comprehensive warning suppression for md2tgmd and latex2unicode libraries
+# These libraries have invalid escape sequences that generate SyntaxWarning in Python 3.12+
+
+# Method 1: Standard warning filters
+warnings.filterwarnings(
+    "ignore", category=SyntaxWarning
+)  # Global SyntaxWarning suppression
+warnings.filterwarnings(
+    "ignore", message=".*invalid escape sequence.*"
+)  # Specific message pattern
+warnings.filterwarnings("ignore", module="md2tgmd")  # All warnings from md2tgmd
+warnings.filterwarnings(
+    "ignore", module="latex2unicode"
+)  # All warnings from latex2unicode
+
+
+# Method 2: Aggressive suppression using custom warning handler
+def custom_warning_handler(
+    message, category, filename, lineno, file=None, line=None
+):
+    """Custom warning handler that suppresses md2tgmd and latex2unicode warnings."""
+    # Convert message to string for checking
+    msg_str = str(message)
+    filename_str = str(filename)
+
+    # Suppress if it's a SyntaxWarning about invalid escape sequences
+    if category == SyntaxWarning and "invalid escape sequence" in msg_str:
+        return
+
+    # Suppress if it's from md2tgmd or latex2unicode files
+    if "md2tgmd" in filename_str or "latex2unicode" in filename_str:
+        return
+
+    # For all other warnings, use the default handler
+    warnings._showwarning_orig(message, category, filename, lineno, file, line)
+
+
+# Store original warning handler and install custom one
+if not hasattr(warnings, "_showwarning_orig"):
+    warnings._showwarning_orig = warnings.showwarning
+    warnings.showwarning = custom_warning_handler
 
 from pyrogram.types import BotCommand
 

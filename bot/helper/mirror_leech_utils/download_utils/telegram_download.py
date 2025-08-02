@@ -117,10 +117,21 @@ class TelegramDownloadHelper:
             create_task(auto_delete_message(error_msg, time=300))  # noqa: RUF006
 
     async def _on_download_complete(self):
+        global LOGGER  # Ensure LOGGER is treated as global
         async with global_lock:
             # Safely remove ID from GLOBAL_GID if it exists
             GLOBAL_GID.discard(self._id)
-        await self._listener.on_download_complete()
+        try:
+            await self._listener.on_download_complete()
+        except Exception as e:
+            LOGGER.error(f"Error in download complete handler: {e}")
+            # Try to handle the error gracefully
+            try:
+                await self._listener.on_download_error(
+                    f"Post-download processing error: {e}"
+                )
+            except Exception as inner_e:
+                LOGGER.error(f"Failed to handle download complete error: {inner_e}")
 
     async def _download(self, message, path):
         global LOGGER  # Ensure LOGGER is treated as global
@@ -192,7 +203,17 @@ class TelegramDownloadHelper:
             await self._on_download_error(str(e))
             return
         if download is not None:
-            await self._on_download_complete()
+            try:
+                await self._on_download_complete()
+            except Exception as e:
+                LOGGER.error(f"Critical error in download complete: {e}")
+                # Ensure we don't leave the task in an inconsistent state
+                try:
+                    await self._on_download_error(f"Download completion failed: {e}")
+                except Exception as inner_e:
+                    LOGGER.error(
+                        f"Failed to handle critical download error: {inner_e}"
+                    )
         elif not self._listener.is_cancelled:
             await self._on_download_error("Internal error occurred")
 

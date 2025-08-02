@@ -82,6 +82,7 @@ async def send_message(
     markdown=False,
     block=True,
     bot_client=None,
+    is_ai_message=False,
 ):
     """Send a message using the specified bot client
 
@@ -93,6 +94,7 @@ async def send_message(
         markdown: Whether to use Markdown formatting
         block: Whether to block until the message is sent
         bot_client: Bot client to use for sending (default: main bot)
+        is_ai_message: Whether this is an AI-generated message (skips truncation)
     """
     parse_mode = enums.ParseMode.MARKDOWN if markdown else enums.ParseMode.HTML
 
@@ -109,11 +111,17 @@ async def send_message(
     if len(text) > max_length:
         # Check if message contains expandable blockquotes
         if "<blockquote expandable=" not in text:
-            # Truncate the message and add a note
-            text = (
-                text[: max_length - 100]
-                + "\n\n<i>... (message truncated due to length)</i>"
-            )
+            if not is_ai_message:
+                # Truncate non-AI messages as before
+                text = (
+                    text[: max_length - 100]
+                    + "\n\n<i>... (message truncated due to length)</i>"
+                )
+            else:
+                # For AI messages, log warning but don't truncate - let AI module handle splitting
+                LOGGER.warning(
+                    f"AI message length {len(text)} exceeds limit {max_length}. Should be split by AI module."
+                )
         else:
             # If it has expandable blockquotes, let Telegram handle it
             pass
@@ -218,6 +226,7 @@ async def edit_message(
     photo=None,
     markdown=False,
     block=True,
+    is_ai_message=False,
 ):
     # Check if message is valid
     if not message or not hasattr(message, "chat") or not hasattr(message, "id"):
@@ -238,11 +247,17 @@ async def edit_message(
     if len(text) > max_length:
         # Check if message contains expandable blockquotes
         if "<blockquote expandable=" not in text:
-            # Truncate the message and add a note
-            text = (
-                text[: max_length - 100]
-                + "\n\n<i>... (message truncated due to length)</i>"
-            )
+            if not is_ai_message:
+                # Truncate non-AI messages as before
+                text = (
+                    text[: max_length - 100]
+                    + "\n\n<i>... (message truncated due to length)</i>"
+                )
+            else:
+                # For AI messages, log warning but don't truncate - let AI module handle splitting
+                LOGGER.warning(
+                    f"AI edit message length {len(text)} exceeds limit {max_length}. Should be split by AI module."
+                )
         else:
             # If it has expandable blockquotes, let Telegram handle it
             pass

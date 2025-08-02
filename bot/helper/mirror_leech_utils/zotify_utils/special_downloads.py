@@ -15,45 +15,16 @@ class ZotifySpecialDownloads:
     """Handles special Zotify downloads like liked tracks, followed artists, etc."""
 
     def __init__(self):
-        self._session = None
+        # Use the global simple session manager
+        from bot.helper.mirror_leech_utils.zotify_utils.improved_session_manager import (
+            simple_session_manager,
+        )
+
+        self.session_manager = simple_session_manager
 
     async def get_session(self) -> Session | None:
-        """Get or create Zotify session"""
-        if self._session:
-            return self._session
-
-        try:
-            auth_method = zotify_config.get_auth_method()
-
-            if auth_method == "file":
-                # Suppress librespot core logs for cleaner output
-                import logging
-
-                librespot_logger = logging.getLogger("librespot.core")
-                original_level = librespot_logger.level
-                librespot_logger.setLevel(
-                    logging.WARNING
-                )  # Only show warnings and errors
-
-                try:
-                    # Wrap blocking Session.from_file in thread
-                    self._session = await asyncio.to_thread(
-                        Session.from_file,
-                        zotify_config.get_credentials_path(),
-                        zotify_config.get_download_config()["language"],
-                    )
-                finally:
-                    # Restore original logging level
-                    librespot_logger.setLevel(original_level)
-            else:
-                # Interactive authentication - will need to be handled separately
-                return None
-
-            return self._session
-
-        except Exception as e:
-            LOGGER.error(f"Failed to create Zotify session: {e}")
-            return None
+        """Get session from simple session manager"""
+        return await self.session_manager.get_session()
 
     async def get_liked_tracks(self) -> list[str]:
         """Get user's liked tracks"""

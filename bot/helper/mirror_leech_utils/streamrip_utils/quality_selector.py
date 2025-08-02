@@ -35,36 +35,57 @@ def unregister_quality_selector(user_id):
 class StreamripQualitySelector:
     """Quality selection interface for streamrip downloads"""
 
-    # Quality definitions for different platforms
+    # Streamrip platform max qualities (from streamrip library source)
+    PLATFORM_MAX_QUALITIES = {
+        "qobuz": 4,  # 1-4: 320kbps MP3, 16/44.1, 24/≤96, 24/≥96
+        "tidal": 3,  # 0-3: 256kbps AAC, 320kbps AAC, 16/44.1 FLAC, 24/44.1 MQA
+        "deezer": 2,  # 0-2: 128kbps MP3, 320kbps MP3, FLAC
+        "soundcloud": 0,  # 0: MP3 (various bitrates)
+    }
+
+    # Bot UI to Streamrip quality mapping (matches download helper)
+    BOT_TO_STREAMRIP_MAPPING = {
+        "qobuz": {0: 1, 1: 1, 2: 2, 3: 3, 4: 4},
+        "tidal": {0: 0, 1: 1, 2: 2, 3: 3},
+        "deezer": {0: 0, 1: 1, 2: 2},
+        "soundcloud": {0: 0, 1: 0, 2: 0, 3: 0, 4: 0},
+    }
+
+    # Quality definitions for different platforms (Bot UI qualities)
     QUALITY_INFO = {
         0: {
             "name": "128 kbps",
             "description": "Low quality MP3/AAC",
-            "platforms": ["deezer", "tidal", "soundcloud"],
+            "streamrip_qualities": {"deezer": 0, "tidal": 0, "soundcloud": 0},
             "size_estimate": "~4MB/track",
         },
         1: {
             "name": "320 kbps",
             "description": "High quality MP3/AAC",
-            "platforms": ["deezer", "tidal", "qobuz", "soundcloud"],
+            "streamrip_qualities": {
+                "deezer": 1,
+                "tidal": 1,
+                "qobuz": 1,
+                "soundcloud": 0,
+            },
             "size_estimate": "~10MB/track",
         },
         2: {
             "name": "CD Quality",
             "description": "16-bit/44.1kHz FLAC",
-            "platforms": ["deezer", "tidal", "qobuz", "soundcloud"],
+            "streamrip_qualities": {"deezer": 2, "tidal": 2, "qobuz": 2},
             "size_estimate": "~35MB/track",
         },
         3: {
             "name": "Hi-Res",
             "description": "24-bit/≤96kHz FLAC/MQA",
-            "platforms": ["tidal", "qobuz", "soundcloud"],
+            "streamrip_qualities": {"tidal": 3, "qobuz": 3},
             "size_estimate": "~80MB/track",
         },
         4: {
             "name": "Hi-Res+",
-            "description": "24-bit/≤192kHz FLAC",
-            "platforms": ["qobuz"],
+            "description": "24-bit/≥96kHz FLAC (up to 192kHz)",
+            "streamrip_qualities": {"qobuz": 4},
             "size_estimate": "~150MB/track",
         },
     }
@@ -242,14 +263,20 @@ class StreamripQualitySelector:
         # Platform info header with HTML formatting
         platform_name = self.platform.title()
         msg = f"<b>🎵 Quality Selection for {platform_name}</b>\n"
-        msg += f"<b>📁 Media Type:</b> <code>{self.media_type.title()}</code>\n\n"
+        msg += f"<b>📁 Media Type:</b> <code>{self.media_type.title()}</code>\n"
 
-        # Add quality buttons
+        # Add platform max quality info
+        max_streamrip_quality = self.PLATFORM_MAX_QUALITIES.get(self.platform, 0)
+        max_bot_quality = max(available_qualities) if available_qualities else 0
+        msg += f"<b>🎯 Max Quality:</b> <code>{self.QUALITY_INFO[max_bot_quality]['name']}</code>\n"
+        msg += f"<b>📊 Available Qualities:</b> <code>{len(available_qualities)}</code>\n\n"
+
+        # Add quality buttons with platform-specific descriptions
         for quality in available_qualities:
             quality_info = self.QUALITY_INFO[quality]
-            button_text = (
-                f"🔸 {quality_info['name']} - {quality_info['description']}"
-            )
+            platform_description = self._get_platform_quality_description(quality)
+
+            button_text = f"🔸 {quality_info['name']} - {platform_description}"
 
             # Add size estimate
             if quality_info["size_estimate"]:
@@ -349,14 +376,90 @@ class StreamripQualitySelector:
         self.event.set()
 
     def _get_available_qualities(self) -> list:
-        """Get available qualities for the current platform"""
+        """Get available qualities for the current platform based on streamrip library"""
         available = []
 
-        for quality, info in self.QUALITY_INFO.items():
-            if self.platform in info["platforms"]:
-                available.append(quality)
+        # Get all bot UI qualities that are supported by this platform
+        for bot_quality, quality_info in self.QUALITY_INFO.items():
+            if self.platform in quality_info["streamrip_qualities"]:
+                available.append(bot_quality)
 
         return sorted(available)
+
+    async def _check_platform_authentication(self) -> bool:
+        """Check if the platform client is available and authenticated"""
+        try:
+            from bot.helper.mirror_leech_utils.streamrip_utils.streamrip_config import (
+                streamrip_config,
+            )
+
+            # Ensure streamrip is initialized
+            await streamrip_config.lazy_initialize()
+            config = streamrip_config.get_config()
+            if not config:
+                return False
+
+            # Import streamrip Main class
+            from streamrip.rip.main import Main
+
+            main = Main(config)
+
+            # Try to get the client for this platform
+            client = await main.get_logged_in_client(self.platform)
+            return client is not None and client.logged_in
+
+        except Exception as e:
+            LOGGER.warning(f"Failed to check {self.platform} authentication: {e}")
+            return False
+
+    def _get_platform_quality_description(self, bot_quality: int) -> str:
+        """Get platform-specific quality description"""
+        quality_info = self.QUALITY_INFO[bot_quality]
+        base_description = quality_info["description"]
+
+        # Add platform-specific details
+        if self.platform == "qobuz":
+            if bot_quality == 1:
+                return "320kbps MP3"
+            elif bot_quality == 2:
+                return "16-bit/44.1kHz FLAC (CD Quality)"
+            elif bot_quality == 3:
+                return "24-bit/≤96kHz FLAC (Hi-Res)"
+            elif bot_quality == 4:
+                return "24-bit/≥96kHz FLAC (Hi-Res+)"
+        elif self.platform == "tidal":
+            if bot_quality == 0:
+                return "256kbps AAC"
+            elif bot_quality == 1:
+                return "320kbps AAC"
+            elif bot_quality == 2:
+                return "16-bit/44.1kHz FLAC (HiFi)"
+            elif bot_quality == 3:
+                return "24-bit/44.1kHz MQA (Master)"
+        elif self.platform == "deezer":
+            if bot_quality == 0:
+                return "128kbps MP3"
+            elif bot_quality == 1:
+                return "320kbps MP3"
+            elif bot_quality == 2:
+                return "16-bit/44.1kHz FLAC"
+        elif self.platform == "soundcloud":
+            return "MP3 (various bitrates)"
+
+        return base_description
+
+    async def _validate_quality_for_url(self, url: str, bot_quality: int) -> bool:
+        """Validate if a specific quality is available for a given URL"""
+        try:
+            # This is an advanced feature that could be implemented to check
+            # if a specific track/album actually supports the requested quality
+            # For now, we'll return True and let streamrip handle the fallback
+            return True
+        except Exception as e:
+            LOGGER.warning(
+                f"Failed to validate quality {bot_quality} for URL {url}: {e}"
+            )
+            return True
 
     def _get_available_codecs(self) -> list:
         """Get available codecs based on selected quality"""

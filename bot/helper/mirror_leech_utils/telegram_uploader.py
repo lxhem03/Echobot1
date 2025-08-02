@@ -196,6 +196,34 @@ class TelegramUploader:
 
         return result
 
+    def _get_original_filename_for_thumbnail(self, filename):
+        """
+        Get the original filename for auto thumbnail generation.
+        For split files (e.g., movie.mkv.001, movie.mkv.002), returns the original filename (movie.mkv).
+        For regular files, returns the filename as-is.
+        """
+
+        # Check for split file patterns
+        # Pattern 1: filename.ext.001, filename.ext.002, etc.
+        match = re.match(r"(.+\.\w+)\.(\d{3})$", filename)
+        if match:
+            return match.group(1)  # Return filename.ext without the .001 part
+
+        # Pattern 2: filename.part001.ext, filename.part002.ext, etc.
+        match = re.match(r"(.+)\.part\d+(\.\w+)$", filename)
+        if match:
+            return f"{match.group(1)}{match.group(2)}"  # Return filename.ext without the .part001 part
+
+        # Pattern 3: filename.001, filename.002 (no extension before split number)
+        match = re.match(r"(.+)\.(\d{3})$", filename)
+        if match:
+            # This is trickier - we need to guess the original extension
+            # For now, return the base name and let the auto thumbnail helper handle it
+            return match.group(1)
+
+        # Not a split file, return as-is
+        return filename
+
     def _build_caption_with_html_prefix_suffix(self, core_content):
         """
         Build caption with HTML prefix and suffix around core content - Old Aeon-MLTB style.
@@ -945,26 +973,48 @@ class TelegramUploader:
                                 f"Using bot client for {f_size / (1024 * 1024 * 1024):.2f} GB file (user transmission disabled)"
                             )
 
-                        if self._user_session:
-                            self._sent_msg = await TgClient.user.get_messages(
-                                chat_id=self._sent_msg.chat.id,
-                                message_ids=self._sent_msg.id,
-                            )
-                        else:
-                            self._sent_msg = (
-                                await self._listener.client.get_messages(
+                        # Check if _sent_msg is valid before refreshing
+                        if (
+                            self._sent_msg is not None
+                            and hasattr(self._sent_msg, "chat")
+                            and self._sent_msg.chat is not None
+                            and hasattr(self._sent_msg.chat, "id")
+                            and hasattr(self._sent_msg, "id")
+                        ):
+                            if self._user_session:
+                                self._sent_msg = await TgClient.user.get_messages(
                                     chat_id=self._sent_msg.chat.id,
                                     message_ids=self._sent_msg.id,
                                 )
+                            else:
+                                self._sent_msg = (
+                                    await self._listener.client.get_messages(
+                                        chat_id=self._sent_msg.chat.id,
+                                        message_ids=self._sent_msg.id,
+                                    )
+                                )
+                        else:
+                            LOGGER.error(
+                                f"Cannot refresh message: _sent_msg is invalid. Skipping file: {self._up_path}"
                             )
+                            self._corrupted += 1
+                            continue
                     self._last_msg_in_group = False
                     self._last_uploaded = 0
 
-                    await self._upload_file(
+                    upload_result = await self._upload_file(
                         cap_mono, current_filename, original_file_path
                     )
                     if self._listener.is_cancelled:
                         return
+
+                    # Check if upload was successful and _sent_msg is valid
+                    if upload_result is None or self._sent_msg is None:
+                        LOGGER.error(
+                            f"Upload failed or returned None for file: {self._up_path}"
+                        )
+                        self._corrupted += 1
+                        continue
 
                     # Perform memory cleanup after each file upload for memory-constrained environments
                     try:
@@ -1250,14 +1300,20 @@ class TelegramUploader:
 
                     if auto_thumb_enabled and (is_video or is_audio):
                         try:
+                            # Handle split files by using original filename for auto thumbnail
+                            original_filename = (
+                                self._get_original_filename_for_thumbnail(file)
+                            )
                             auto_thumb = (
                                 await AutoThumbnailHelper.get_auto_thumbnail(
-                                    file, self._listener.user_id
+                                    original_filename, self._listener.user_id
                                 )
                             )
                             if auto_thumb:
                                 thumb = auto_thumb
-                                LOGGER.info(f"✅ Using auto thumbnail for: {file}")
+                                LOGGER.info(
+                                    f"✅ Using auto thumbnail for: {file} (original: {original_filename})"
+                                )
                         except Exception as e:
                             LOGGER.error(f"Error getting auto thumbnail: {e}")
 
@@ -1294,6 +1350,39 @@ class TelegramUploader:
                             except Exception as e:
                                 LOGGER.error(
                                     f"Could not find cover art for streamrip audio: {e}"
+                                )
+                    # Enhanced thumbnail handling for Zotify audio files
+                    elif self._is_zotify:
+                        # For Zotify, try to extract embedded album art first
+                        thumb = await get_audio_thumbnail(self._up_path)
+
+                        # If no embedded thumbnail found, check for cover art files in the same directory
+                        if thumb is None:
+                            try:
+                                audio_dir = ospath.dirname(self._up_path)
+                                cover_files = [
+                                    "cover.jpg",
+                                    "cover.jpeg",
+                                    "cover.png",
+                                    "folder.jpg",
+                                    "folder.jpeg",
+                                    "folder.png",
+                                    "album.jpg",
+                                    "album.jpeg",
+                                    "album.png",
+                                    "artwork.jpg",
+                                    "artwork.jpeg",
+                                    "artwork.png",
+                                ]
+
+                                for cover_file in cover_files:
+                                    cover_path = ospath.join(audio_dir, cover_file)
+                                    if await aiopath.isfile(cover_path):
+                                        thumb = cover_path
+                                        break
+                            except Exception as e:
+                                LOGGER.error(
+                                    f"Could not find cover art for Zotify audio: {e}"
                                 )
                     else:
                         thumb = await get_audio_thumbnail(self._up_path)
@@ -1365,6 +1454,27 @@ class TelegramUploader:
                 key = "audios"
                 duration, artist, title = await get_media_info(self._up_path)
 
+                # Debug logging for Zotify downloads
+                if self._is_zotify:
+                    if not artist or not title:
+                        # For Zotify files, try a small delay and retry metadata extraction
+                        # Sometimes metadata isn't immediately available after download
+                        try:
+                            import asyncio
+
+                            await asyncio.sleep(0.5)  # Small delay
+                            (
+                                duration_retry,
+                                artist_retry,
+                                title_retry,
+                            ) = await get_media_info(self._up_path)
+                            if artist_retry and not artist:
+                                artist = artist_retry
+                            if title_retry and not title:
+                                title = title_retry
+                        except Exception as e:
+                            LOGGER.error(f"Zotify metadata retry failed: {e}")
+
                 # Enhanced audio handling for streamrip downloads
                 if self._is_streamrip:
                     # For streamrip, try to extract better metadata from filename if available
@@ -1391,6 +1501,48 @@ class TelegramUploader:
                         artist = self._streamrip_platform or "Unknown Artist"
                     if not title:
                         title = ospath.splitext(ospath.basename(self._up_path))[0]
+
+                # Enhanced audio handling for Zotify downloads
+                elif self._is_zotify:
+                    # For Zotify, try to extract better metadata from filename if available
+                    if not artist or not title:
+                        try:
+                            # Extract artist and title from Zotify filename patterns:
+                            # Pattern 1: "01. Artist - Title.ext" (track number prefix)
+                            # Pattern 2: "Artist - Title.ext" (simple format)
+                            filename_without_ext = ospath.splitext(
+                                ospath.basename(self._up_path)
+                            )[0]
+
+                            # Remove track number prefix if present (e.g., "01. ")
+                            if (
+                                ". " in filename_without_ext
+                                and filename_without_ext.split(". ")[0].isdigit()
+                            ):
+                                filename_without_ext = filename_without_ext.split(
+                                    ". ", 1
+                                )[1]
+
+                            if " - " in filename_without_ext:
+                                parts = filename_without_ext.split(" - ", 1)
+                                if len(parts) == 2:
+                                    if not artist:
+                                        artist = parts[0].strip()
+                                    if not title:
+                                        title = parts[1].strip()
+                        except Exception as e:
+                            LOGGER.error(
+                                f"Could not extract Zotify metadata from filename: {e}"
+                            )
+
+                    # Set default values for Zotify if still empty
+                    if not artist:
+                        artist = self._zotify_platform or "Unknown Artist"
+                    if not title:
+                        title = ospath.splitext(ospath.basename(self._up_path))[0]
+                        # Remove track number prefix from title if present
+                        if ". " in title and title.split(". ")[0].isdigit():
+                            title = title.split(". ", 1)[1]
 
                 if self._listener.is_cancelled:
                     return None
@@ -1468,7 +1620,11 @@ class TelegramUploader:
             if (
                 not self._listener.is_cancelled
                 and self._media_group
-                and self._sent_msg
+                and self._sent_msg is not None
+                and hasattr(self._sent_msg, "chat")
+                and self._sent_msg.chat is not None
+                and hasattr(self._sent_msg.chat, "id")
+                and hasattr(self._sent_msg, "id")
                 and (
                     (hasattr(self._sent_msg, "video") and self._sent_msg.video)
                     or (
@@ -1500,6 +1656,9 @@ class TelegramUploader:
                 and await aiopath.exists(thumb)
             ):
                 await remove(thumb)
+
+            # Return the uploaded message on successful upload
+            return self._sent_msg
         except (FloodWait, FloodPremiumWait) as f:
             await sleep(f.value * 1.3)
             if (
@@ -1900,6 +2059,11 @@ class TelegramUploader:
             LOGGER.error(f"Failed to copy message after {retries} attempts")
 
         # Follow the same destination logic as _copy_media_group for consistency
+        # Additional safety check for chat.id
+        if not hasattr(self._sent_msg.chat, "id"):
+            LOGGER.error("Cannot copy message: _sent_msg.chat has no id attribute")
+            return
+
         source_chat_id = self._sent_msg.chat.id
         destinations = []
 

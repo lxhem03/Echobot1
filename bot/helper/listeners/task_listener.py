@@ -393,6 +393,25 @@ class TaskListener(TaskConfig):
         if self.is_cancelled:
             LOGGER.info("Download was cancelled, skipping upload")
             return
+
+        # Add protection against os module issues
+        try:
+            # Ensure os module is available in this context
+            import os as _os_check
+
+            _os_check.path.exists  # Test access to os.path
+        except Exception as e:
+            LOGGER.error(f"OS module access issue detected: {e}")
+            # Try to recover by re-importing
+            try:
+                import os
+
+                os.path.exists  # Test access
+            except Exception as inner_e:
+                LOGGER.error(f"Failed to recover os module access: {inner_e}")
+                await self.on_download_error("System error: OS module access failed")
+                return
+
         multi_links = False
 
         if (
@@ -421,7 +440,14 @@ class TaskListener(TaskConfig):
                                 des_path = (
                                     f"{DOWNLOAD_DIR}{des_id}{self.folder_name}"
                                 )
-                                await makedirs(des_path, exist_ok=True)
+                                try:
+                                    await makedirs(des_path, exist_ok=True)
+                                except Exception as e:
+                                    LOGGER.error(
+                                        f"Error creating destination path {des_path}: {e}"
+                                    )
+                                    break
+
                                 try:
                                     if not await aiopath.exists(spath):
                                         LOGGER.error(
@@ -438,7 +464,13 @@ class TaskListener(TaskConfig):
                                         )
 
                                         try:
-                                            des_items = await listdir(des_path)
+                                            try:
+                                                des_items = await listdir(des_path)
+                                            except Exception as e:
+                                                LOGGER.error(
+                                                    f"Error listing destination directory {des_path}: {e}"
+                                                )
+                                                des_items = []
                                             if item in des_items:
                                                 await move(
                                                     item_path,
@@ -453,7 +485,15 @@ class TaskListener(TaskConfig):
                                                 f"Destination path does not exist: {des_path}"
                                             )
                                             # Try to create the directory again
-                                            await makedirs(des_path, exist_ok=True)
+                                            try:
+                                                await makedirs(
+                                                    des_path, exist_ok=True
+                                                )
+                                            except Exception as makedirs_e:
+                                                LOGGER.error(
+                                                    f"Error creating directory {des_path}: {makedirs_e}"
+                                                )
+                                                continue
                                             await move(
                                                 item_path, f"{des_path}/{item}"
                                             )

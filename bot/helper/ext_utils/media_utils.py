@@ -9,6 +9,7 @@ from asyncio.subprocess import PIPE
 from os import path as ospath
 from pathlib import Path
 from re import compile, escape
+from re import match as re_match
 from re import search as re_search
 from time import time
 
@@ -389,6 +390,139 @@ async def get_media_info(path):
     return 0, None, None
 
 
+def _get_original_filename_for_media_detection(filename):
+    """
+    Get the original filename for media type detection.
+    For split files (e.g., movie.mkv.001, movie.mkv.002), returns the original filename (movie.mkv).
+    For regular files, returns the filename as-is.
+    """
+
+    # Check for split file patterns
+    # Pattern 1: filename.ext.001, filename.ext.002, etc.
+    match = re_match(r"(.+\.\w+)\.(\d{3})$", filename)
+    if match:
+        return match.group(1)  # Return filename.ext without the .001 part
+
+    # Pattern 2: filename.part001.ext, filename.part002.ext, etc.
+    match = re_match(r"(.+)\.part\d+(\.\w+)$", filename)
+    if match:
+        return f"{match.group(1)}{match.group(2)}"  # Return filename.ext without the .part001 part
+
+    # Pattern 3: filename.001, filename.002 (no extension before split number)
+    match = re_match(r"(.+)\.(\d{3})$", filename)
+    if match:
+        # This is trickier - we need to guess the original extension
+        # For now, return the base name and let the extension-based detection handle it
+        return match.group(1)
+
+    # Not a split file, return as-is
+    return filename
+
+
+async def _get_document_type_from_extension(filename):
+    """
+    Determine document type based on file extension.
+    Returns (is_video, is_audio, is_image) tuple.
+    """
+    is_video, is_audio, is_image = False, False, False
+
+    # Get file extension
+    file_ext = ospath.splitext(filename)[1].lower()
+
+    # Video extensions
+    video_extensions = {
+        ".mp4",
+        ".mkv",
+        ".avi",
+        ".mov",
+        ".wmv",
+        ".flv",
+        ".webm",
+        ".m4v",
+        ".3gp",
+        ".3g2",
+        ".asf",
+        ".rm",
+        ".rmvb",
+        ".vob",
+        ".ts",
+        ".mts",
+        ".m2ts",
+        ".divx",
+        ".xvid",
+        ".ogv",
+        ".f4v",
+        ".mpg",
+        ".mpeg",
+        ".m1v",
+        ".m2v",
+        ".mpe",
+        ".mpv",
+        ".mp2",
+        ".mpa",
+        ".mpg2",
+    }
+
+    # Audio extensions
+    audio_extensions = {
+        ".mp3",
+        ".flac",
+        ".wav",
+        ".aac",
+        ".ogg",
+        ".wma",
+        ".m4a",
+        ".opus",
+        ".ape",
+        ".ac3",
+        ".dts",
+        ".amr",
+        ".au",
+        ".ra",
+        ".aiff",
+        ".aif",
+        ".aifc",
+        ".caf",
+        ".sd2",
+        ".snd",
+        ".m1a",
+        ".m2a",
+    }
+
+    # Image extensions
+    image_extensions = {
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".gif",
+        ".bmp",
+        ".tiff",
+        ".tif",
+        ".webp",
+        ".svg",
+        ".ico",
+        ".psd",
+        ".raw",
+        ".cr2",
+        ".nef",
+        ".arw",
+        ".dng",
+        ".heic",
+        ".heif",
+        ".avif",
+        ".jxl",
+    }
+
+    if file_ext in video_extensions:
+        is_video = True
+    elif file_ext in audio_extensions:
+        is_audio = True
+    elif file_ext in image_extensions:
+        is_image = True
+
+    return is_video, is_audio, is_image
+
+
 async def get_document_type(path):
     is_video, is_audio, is_image = False, False, False
 
@@ -399,6 +533,13 @@ async def get_document_type(path):
         or re_search(r".+(\.|_)(rar|7z|zip|bin)(\.0*\d+)?$", path)
     ):
         return is_video, is_audio, is_image
+
+    # Handle split files specially - determine type from original filename
+    filename = ospath.basename(path)
+    original_filename = _get_original_filename_for_media_detection(filename)
+    if original_filename != filename:
+        # This is a split file, determine type from original extension
+        return await _get_document_type_from_extension(original_filename)
 
     # Check file extension for known types that might cause issues with Telegram
     file_ext = ospath.splitext(path)[1].lower()

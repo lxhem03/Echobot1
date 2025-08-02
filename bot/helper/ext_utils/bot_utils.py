@@ -1,3 +1,4 @@
+import asyncio
 import contextlib
 import math
 import os
@@ -1164,8 +1165,9 @@ async def sync_to_async(func, *args, wait=True, **kwargs):
         # Create partial function with arguments
         pfunc = partial(func, *args, **kwargs)
 
-        # Run in executor using default thread pool
-        future = bot_loop.run_in_executor(None, pfunc)
+        # Run in executor using current event loop
+        loop = asyncio.get_event_loop()
+        future = loop.run_in_executor(None, pfunc)
         result = await future if wait else future
 
         # Force garbage collection after large operations
@@ -1192,7 +1194,8 @@ async def sync_to_async(func, *args, wait=True, **kwargs):
 
             # Retry the operation
             pfunc = partial(func, *args, **kwargs)
-            future = bot_loop.run_in_executor(None, pfunc)
+            loop = asyncio.get_event_loop()
+            future = loop.run_in_executor(None, pfunc)
             return await future if wait else future
         # Re-raise other runtime errors
         raise

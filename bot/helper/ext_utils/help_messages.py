@@ -2822,6 +2822,41 @@ PASSWORD_ERROR_MESSAGE = """
 
 
 user_settings_text = {
+    # AI Settings
+    "DEFAULT_AI_MODEL": "Select the default AI model to use with the /ask command. Examples: gpt-4o, claude-3.5-sonnet, gemini-1.5-pro. Timeout: 60 sec",
+    "AI_CONVERSATION_MODE": "Select the AI conversation mode. Options: assistant, code_assistant, artist, analyst, teacher, writer, researcher, translator. Timeout: 60 sec",
+    "AI_LANGUAGE": "Select the preferred language for AI responses. Options: en, zh, ru, es, fr, de, ja, ko. Timeout: 60 sec",
+    "AI_MAX_HISTORY_LENGTH": "Set the maximum number of messages to keep in conversation history. Example: 50. Set to 0 to disable history. Timeout: 60 sec",
+    "AI_DAILY_TOKEN_LIMIT": "Set daily token usage limit per user. Example: 10000. Set to 0 for unlimited. Timeout: 60 sec",
+    "AI_MONTHLY_TOKEN_LIMIT": "Set monthly token usage limit per user. Example: 100000. Set to 0 for unlimited. Timeout: 60 sec",
+    "AI_DAILY_COST_LIMIT": "Set daily cost limit per user in USD. Example: 5.00. Set to 0.0 for unlimited. Timeout: 60 sec",
+    "AI_MONTHLY_COST_LIMIT": "Set monthly cost limit per user in USD. Example: 50.00. Set to 0.0 for unlimited. Timeout: 60 sec",
+    # AI Performance Settings
+    "AI_MAX_TOKENS": "Set maximum tokens per AI response. Example: 4000. Range: 100-8000. Higher values allow longer responses. Timeout: 60 sec",
+    "AI_TEMPERATURE": "Set AI response creativity/randomness. Example: 0.7. Range: 0.0-2.0. Higher values = more creative, lower = more focused. Timeout: 60 sec",
+    "AI_TIMEOUT": "Set AI request timeout in seconds. Example: 60. Range: 10-300. Higher values allow more time for complex requests. Timeout: 60 sec",
+    "AI_RATE_LIMIT_PER_USER": "Set maximum AI requests per user per hour. Example: 50. Range: 1-100. Set to 0 for unlimited. Timeout: 60 sec",
+    # New ChatGPT-Telegram-Bot Features
+    "AI_VOICE_TRANSCRIPTION_ENABLED": "Enable/disable voice message transcription using Whisper. Send 'true' to enable or 'false' to disable. Timeout: 60 sec",
+    "AI_IMAGE_GENERATION_ENABLED": "Enable/disable AI image generation using DALL-E. Send 'true' to enable or 'false' to disable. Timeout: 60 sec",
+    "AI_DOCUMENT_PROCESSING_ENABLED": "Enable/disable document processing and analysis (PDF, text files). Send 'true' to enable or 'false' to disable. Timeout: 60 sec",
+    "AI_FOLLOW_UP_QUESTIONS_ENABLED": "Enable/disable automatic follow-up question generation. Send 'true' to enable or 'false' to disable. Timeout: 60 sec",
+    "AI_CONVERSATION_EXPORT_ENABLED": "Enable/disable conversation export functionality. Send 'true' to enable or 'false' to disable. Timeout: 60 sec",
+    "AI_TYPEWRITER_EFFECT_ENABLED": "Enable/disable typewriter effect for streaming responses. Send 'true' to enable or 'false' to disable. Timeout: 60 sec",
+    "AI_CONTEXT_PRUNING_ENABLED": "Enable/disable intelligent context pruning to manage conversation length. Send 'true' to enable or 'false' to disable. Timeout: 60 sec",
+    # AI API Keys
+    "OPENAI_API_KEY": "Send your personal OpenAI API key. Leave empty to use the bot owner's API key. Timeout: 60 sec",
+    "ANTHROPIC_API_KEY": "Send your personal Anthropic (Claude) API key. Leave empty to use the bot owner's API key. Timeout: 60 sec",
+    "GOOGLE_AI_API_KEY": "Send your personal Google AI (Gemini) API key. Leave empty to use the bot owner's API key. Timeout: 60 sec",
+    "GROQ_API_KEY": "Send your personal Groq API key. Leave empty to use the bot owner's API key. Timeout: 60 sec",
+    "VERTEX_PROJECT_ID": "Send your Google Cloud Vertex AI project ID. Leave empty to use the bot owner's project ID. Timeout: 60 sec",
+    "VERTEX_AI_LOCATION": "Send your Google Cloud Vertex AI location/region (e.g., us-central1, europe-west1). Leave empty to use the bot owner's location. Timeout: 60 sec",
+    # AI API URLs
+    "OPENAI_API_URL": "Send your custom OpenAI API URL. Leave empty to use the default OpenAI API URL. Timeout: 60 sec",
+    "ANTHROPIC_API_URL": "Send your custom Anthropic API URL. Leave empty to use the default Anthropic API URL. Timeout: 60 sec",
+    "GOOGLE_AI_API_URL": "Send your custom Google AI API URL. Leave empty to use the default Google AI API URL. Timeout: 60 sec",
+    "GROQ_API_URL": "Send your custom Groq API URL. Leave empty to use the default Groq API URL. Timeout: 60 sec",
+    # Legacy AI Settings
     "DEFAULT_AI_PROVIDER": "Select the default AI provider to use with the /ask command. Options: mistral, deepseek. Timeout: 60 sec",
     "MISTRAL_API_URL": "Send your custom Mistral AI API URL. Leave empty to use the bot owner's API URL. Timeout: 60 sec",
     "DEEPSEEK_API_URL": "Send your custom DeepSeek AI API URL. Leave empty to use the bot owner's API URL. Timeout: 60 sec",

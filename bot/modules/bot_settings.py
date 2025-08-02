@@ -1,5 +1,8 @@
 import contextlib
 import inspect
+import json
+import os
+import tempfile
 from asyncio import (
     create_subprocess_exec,
     create_subprocess_shell,
@@ -7,19 +10,103 @@ from asyncio import (
     gather,
     sleep,
 )
+from datetime import datetime
 from functools import partial
 from io import BytesIO
 from os import getcwd, path
+from pathlib import Path
 from time import time
 
 import aiofiles
+import toml
 from aiofiles import open as aiopen
 from aioshutil import rmtree
 from pyrogram.filters import create
 from pyrogram.handlers import MessageHandler
 
+# Optional imports
+try:
+    from PIL import Image
+
+    from bot.helper.ext_utils.media_utils import limit_memory_for_pil
+
+    PIL_AVAILABLE = True
+except ImportError:
+    PIL_AVAILABLE = False
+    limit_memory_for_pil = None
+
+# Import LOGGER and other commonly used modules
+try:
+    from bot import LOGGER
+except ImportError:
+    LOGGER = None
+
+# Import auto_restart function
+try:
+    from bot.helper.ext_utils.auto_restart import schedule_auto_restart
+except ImportError:
+    schedule_auto_restart = None
+
+# Import streamrip and zotify config helpers
+try:
+    from bot.helper.mirror_leech_utils.streamrip_utils.streamrip_config import (
+        streamrip_config,
+    )
+except ImportError:
+    streamrip_config = None
+
+try:
+    from bot.helper.mirror_leech_utils.zotify_utils.zotify_config import (
+        zotify_config,
+    )
+except ImportError:
+    zotify_config = None
+
+# Import config_utils functions
+try:
+    from bot.helper.ext_utils.config_utils import (
+        reset_bulk_configs,
+        reset_ddl_configs,
+        reset_gallery_dl_configs,
+        reset_gdrive_upload_configs,
+        reset_jd_configs,
+        reset_leech_configs,
+        reset_mega_configs,
+        reset_mirror_configs,
+        reset_multi_link_configs,
+        reset_nzb_configs,
+        reset_rclone_configs,
+        reset_same_dir_configs,
+        reset_streamrip_configs,
+        reset_tool_configs,
+        reset_torrent_configs,
+        reset_youtube_configs,
+        reset_ytdlp_configs,
+        reset_zotify_configs,
+    )
+except ImportError:
+    # Set all to None if import fails
+    reset_tool_configs = None
+    reset_rclone_configs = None
+    reset_mirror_configs = None
+    reset_leech_configs = None
+    reset_ytdlp_configs = None
+    reset_torrent_configs = None
+    reset_nzb_configs = None
+    reset_jd_configs = None
+    reset_bulk_configs = None
+    reset_multi_link_configs = None
+    reset_same_dir_configs = None
+    reset_streamrip_configs = None
+    reset_gallery_dl_configs = None
+    reset_zotify_configs = None
+    reset_gdrive_upload_configs = None
+    reset_youtube_configs = None
+    reset_ddl_configs = None
+    reset_mega_configs = None
+
 from bot import (
-    LOGGER,
+    DOWNLOAD_DIR,
     aria2_options,
     auth_chats,
     drives_ids,
@@ -46,7 +133,11 @@ from bot.core.startup import (
 )
 from bot.core.torrent_manager import TorrentManager
 from bot.helper.ext_utils.aiofiles_compat import aiopath, makedirs, remove, rename
-from bot.helper.ext_utils.bot_utils import SetInterval, new_task
+from bot.helper.ext_utils.bot_utils import (
+    SetInterval,
+    is_media_tool_enabled,
+    new_task,
+)
 from bot.helper.ext_utils.db_handler import database
 from bot.helper.ext_utils.status_utils import get_readable_file_size
 from bot.helper.ext_utils.task_manager import start_from_queued
@@ -62,6 +153,13 @@ from bot.helper.telegram_helper.message_utils import (
 )
 
 from .rss import add_job
+
+# Import ai_manager for AI-related functionality
+ai_manager = None
+try:
+    from bot.modules.ai import ai_manager
+except ImportError:
+    pass
 
 start = 0
 state = "view"
@@ -172,7 +270,7 @@ DEFAULT_VALUES = {
     "STREAMRIP_YOUTUBE_DOWNLOAD_VIDEOS": False,
     "STREAMRIP_YOUTUBE_VIDEO_FOLDER": "",
     "STREAMRIP_YOUTUBE_VIDEO_DOWNLOADS_FOLDER": "",
-    "STREAMRIP_DATABASE_DOWNLOADS_ENABLED": True,
+    "STREAMRIP_DATABASE_DOWNLOADS_ENABLED": False,
     "STREAMRIP_DATABASE_DOWNLOADS_PATH": "./downloads.db",
     "STREAMRIP_DATABASE_FAILED_DOWNLOADS_ENABLED": True,
     "STREAMRIP_DATABASE_FAILED_DOWNLOADS_PATH": "./failed_downloads.db",
@@ -731,7 +829,6 @@ async def get_buttons(key=None, edit_type=None, page=0, user_id=None):
             in [
                 "CONCAT_DEMUXER_ENABLED",
                 "FILTER_COMPLEX_ENABLED",
-                "DEFAULT_AI_PROVIDER",
             ]
         ):
             msg = ""
@@ -786,9 +883,7 @@ async def get_buttons(key=None, edit_type=None, page=0, user_id=None):
                 buttons.data_button("Back", "botset mediatools_add")
             elif key.startswith("TASK_MONITOR_"):
                 buttons.data_button("⬅️ Back", "botset taskmonitor")
-            elif key == "DEFAULT_AI_PROVIDER" or key.startswith(
-                ("MISTRAL_", "DEEPSEEK_")
-            ):
+            elif key.startswith(("MISTRAL_", "DEEPSEEK_")):
                 buttons.data_button("Back", "botset ai")
             elif key.startswith("MERGE_") and any(
                 x in key
@@ -1516,8 +1611,15 @@ Send one of the following position options:
                         "SWAP_",  # Added SWAP_ to exclude swap configs from main config menu
                         "SCREENSHOT_",
                         "TASK_MONITOR_",
+                        # AI Settings - exclude all AI-related configs from main config menu
                         "MISTRAL_",
                         "DEEPSEEK_",
+                        "OPENAI_",
+                        "ANTHROPIC_",
+                        "GOOGLE_AI_",
+                        "GROQ_",
+                        "VERTEX_",
+                        "AI_",  # Covers all AI_ prefixed settings
                         "STREAMRIP_",  # Added STREAMRIP_ to exclude streamrip configs from main config menu
                         "GALLERY_DL_",  # Added GALLERY_DL_ to exclude gallery-dl configs from main config menu
                         "ZOTIFY_",  # Added ZOTIFY_ to exclude zotify configs from main config menu
@@ -1531,7 +1633,8 @@ Send one of the following position options:
                 in [
                     "CONCAT_DEMUXER_ENABLED",
                     "FILTER_COMPLEX_ENABLED",
-                    "DEFAULT_AI_PROVIDER",
+                    # AI Settings - exclude individual AI configs from main config menu
+                    "DEFAULT_AI_MODEL",
                     "MEDIA_TOOLS_ENABLED",  # Added MEDIA_TOOLS_ENABLED to exclude it from Config menu
                     "YOUTUBE_UPLOAD_ENABLED",  # Keep only the enabled toggle in operations menu
                     "MEGA_ENABLED",  # Keep only the enabled toggle in operations menu
@@ -1890,9 +1993,6 @@ Send one of the following position options:
             except Exception:
                 pass
 
-        # Import after refreshing the config to ensure we use the latest value
-        from bot.helper.ext_utils.bot_utils import is_media_tool_enabled
-
         # Create a new ButtonMaker instance to avoid duplicate buttons
         buttons = ButtonMaker()
 
@@ -2010,56 +2110,541 @@ Configure global settings for media processing tools.
 
 Select a tool category to configure its settings."""
     elif key == "ai":
-        # Add buttons for each AI setting
+        # Enhanced AI Settings Menu with categorized options
 
-        # Always use editvar for Config variables to ensure consistent behavior
-        callback_prefix = "botset editvar"
+        # Main AI Settings Categories - Always show like other settings
+        buttons.data_button("🤖 Model Selection", "botset ai_models")
+        buttons.data_button("⚙️ Provider Settings", "botset ai_providers")
+        buttons.data_button("🔌 Plugin Settings", "botset ai_plugins")
+        buttons.data_button("💬 Conversation Settings", "botset ai_conversation")
+        buttons.data_button("🎛️ Advanced Settings", "botset ai_advanced")
 
-        # Group settings by provider
-        buttons.data_button(
-            "🔄 Set Default Provider", f"{callback_prefix} DEFAULT_AI_PROVIDER"
-        )
-
-        # Mistral settings
-        buttons.data_button(
-            "🔗 Mistral API URL", f"{callback_prefix} MISTRAL_API_URL"
-        )
-
-        # DeepSeek settings
-        buttons.data_button(
-            "🔗 DeepSeek API URL", f"{callback_prefix} DEEPSEEK_API_URL"
-        )
-
+        # Edit/View mode toggle
         if state == "view":
             buttons.data_button("✏️ Edit", "botset edit ai")
         else:
             buttons.data_button("👁️ View", "botset view ai")
 
-        buttons.data_button("🔄 Reset to Default", "botset default_ai")
+        buttons.data_button("🔄 Reset All AI Settings", "botset default_ai")
         buttons.data_button("⬅️ Back", "botset back", "footer")
         buttons.data_button("❌ Close", "botset close", "footer")
 
-        # Get current AI settings
-        default_ai = Config.DEFAULT_AI_PROVIDER.capitalize()
-        mistral_api_url = Config.MISTRAL_API_URL or "Not Set"
-        deepseek_api_url = Config.DEEPSEEK_API_URL or "Not Set"
+        # Get current AI settings status
+        default_model = getattr(Config, "DEFAULT_AI_MODEL", "gpt-4o")
+        ai_enabled = getattr(Config, "AI_ENABLED", True)
 
-        msg = f"""<b>AI Settings</b> | State: {state}
+        # Get model info
+        model_info = ai_manager.get_model_info(default_model) if ai_manager else None
+        provider = (
+            model_info.get("provider", "unknown").upper()
+            if model_info
+            else "UNKNOWN"
+        )
 
-<b>Default AI Provider:</b> <code>{default_ai}</code>
+        # Get provider status
+        providers_status = []
+        if getattr(Config, "OPENAI_API_KEY", ""):
+            providers_status.append("✅ OpenAI")
+        if getattr(Config, "ANTHROPIC_API_KEY", ""):
+            providers_status.append("✅ Anthropic")
+        if getattr(Config, "GOOGLE_AI_API_KEY", ""):
+            providers_status.append("✅ Google AI")
+        if getattr(Config, "GROQ_API_KEY", ""):
+            providers_status.append("✅ Groq")
+        if getattr(Config, "MISTRAL_API_URL", ""):
+            providers_status.append("✅ Mistral")
+        if getattr(Config, "DEEPSEEK_API_URL", ""):
+            providers_status.append("✅ DeepSeek")
 
-<b>Mistral AI:</b>
-• <b>API URL:</b> <code>{mistral_api_url}</code>
+        # Get feature status
+        plugins_enabled = getattr(Config, "AI_PLUGINS_ENABLED", True)
+        multimodal_enabled = getattr(Config, "AI_MULTIMODAL_ENABLED", True)
+        streaming_enabled = getattr(Config, "AI_STREAMING_ENABLED", True)
+        history_enabled = getattr(Config, "AI_CONVERSATION_HISTORY", True)
 
-<b>DeepSeek AI:</b>
-• <b>API URL:</b> <code>{deepseek_api_url}</code>
+        # Get provider info from model
+        if ai_manager:
+            model_info = ai_manager.get_model_info(default_model)
+            default_provider = model_info.get("provider", "unknown").upper()
+        else:
+            default_provider = "unknown"
 
-<b>Usage:</b>
-• Configure at least one AI provider with API URL
-• Set your preferred default provider
-• Use /ask command to chat with the AI
+        msg = f"""<u><b>🧠 Enhanced AI Settings</b></u>
 
-<i>Note: Users can override these settings in their user settings.</i>"""
+🎯 <b>Current Configuration:</b>
+• Provider: <code>{default_provider}</code>
+• Model: <code>{default_model}</code>
+• Status: {"✅ Enabled" if ai_enabled else "❌ Disabled"}
+
+🤖 <b>Available Providers:</b>
+{chr(10).join(providers_status)}
+
+✨ <b>Features Status:</b>
+• 🔌 Plugins: {"✅" if plugins_enabled else "❌"}
+• 🎭 Multimodal: {"✅" if multimodal_enabled else "❌"}
+• ⚡ Streaming: {"✅" if streaming_enabled else "❌"}
+• 💬 History: {"✅" if history_enabled else "❌"}
+
+📝 <b>Configuration:</b>
+Select a category above to configure AI settings. Each category contains related options for easy management.
+
+<i>Note: Users can override these settings in their personal settings.</i>"""
+
+    elif key == "ai_models":
+        # AI Model Selection Settings - Always show like other settings
+
+        # Core model settings with current values
+        default_model = getattr(Config, "DEFAULT_AI_MODEL", "gpt-4o")
+        ai_enabled = getattr(Config, "AI_ENABLED", True)
+
+        # Get model info
+        model_info = ai_manager.get_model_info(default_model)
+        display_name = (
+            model_info.get("display_name", default_model)
+            if model_info
+            else default_model
+        )
+
+        # Show settings with current status
+        buttons.data_button(
+            f"🤖 AI Model: {display_name}", "botset editvar DEFAULT_AI_MODEL"
+        )
+        ai_status = "✅ ON" if ai_enabled else "❌ OFF"
+        buttons.data_button(
+            f"🔄 AI Enabled: {ai_status}",
+            f"botset toggle AI_ENABLED {not ai_enabled}",
+        )
+
+        # Edit/View mode toggle
+        if state == "view":
+            buttons.data_button("✏️ Edit", "botset edit ai_models")
+        else:
+            buttons.data_button("👁️ View", "botset view ai_models")
+
+        buttons.data_button("⬅️ Back", "botset ai", "footer")
+        buttons.data_button("❌ Close", "botset close", "footer")
+
+        # Get provider info from model
+        if ai_manager:
+            model_info = ai_manager.get_model_info(default_model)
+            current_provider = model_info.get("provider", "unknown").upper()
+        else:
+            current_provider = "unknown"
+
+        msg = f"""<u><b>🤖 AI Model Selection</b></u>
+
+<b>Current Configuration:</b>
+• Provider: <code>{current_provider}</code>
+• Model: <code>{default_model}</code>
+• Status: {"✅ Enabled" if ai_enabled else "❌ Disabled"}
+
+<b>Available Providers:</b>
+• GPT (OpenAI) - gpt-3.5-turbo, gpt-4, gpt-4o, o1-preview
+• Claude (Anthropic) - claude-3-haiku, claude-3-sonnet, claude-3.5-sonnet
+• Gemini (Google) - gemini-1.5-pro, gemini-1.5-flash
+• Groq - mixtral-8x7b, llama-3.1-70b
+
+• Mistral/DeepSeek - Legacy providers
+
+<i>Configure your preferred AI provider and model above.</i>"""
+
+    elif key == "ai_providers":
+        # AI Provider Settings - Always show like other settings
+
+        # Provider API Keys with status
+        openai_key = getattr(Config, "OPENAI_API_KEY", "")
+        openai_status = "✅ SET" if openai_key else "❌ NOT SET"
+        buttons.data_button(
+            f"🔑 OpenAI API Key: {openai_status}", "botset editvar OPENAI_API_KEY"
+        )
+
+        anthropic_key = getattr(Config, "ANTHROPIC_API_KEY", "")
+        anthropic_status = "✅ SET" if anthropic_key else "❌ NOT SET"
+        buttons.data_button(
+            f"🔑 Anthropic API Key: {anthropic_status}",
+            "botset editvar ANTHROPIC_API_KEY",
+        )
+
+        google_key = getattr(Config, "GOOGLE_AI_API_KEY", "")
+        google_status = "✅ SET" if google_key else "❌ NOT SET"
+        buttons.data_button(
+            f"🔑 Google AI API Key: {google_status}",
+            "botset editvar GOOGLE_AI_API_KEY",
+        )
+
+        groq_key = getattr(Config, "GROQ_API_KEY", "")
+        groq_status = "✅ SET" if groq_key else "❌ NOT SET"
+        buttons.data_button(
+            f"🔑 Groq API Key: {groq_status}", "botset editvar GROQ_API_KEY"
+        )
+
+        vertex_project = getattr(Config, "VERTEX_PROJECT_ID", "")
+        vertex_status = "✅ SET" if vertex_project else "❌ NOT SET"
+        buttons.data_button(
+            f"🔑 Vertex Project ID: {vertex_status}",
+            "botset editvar VERTEX_PROJECT_ID",
+        )
+
+        # Provider API URLs
+        buttons.data_button("🌐 OpenAI API URL", "botset editvar OPENAI_API_URL")
+        buttons.data_button(
+            "🌐 Anthropic API URL", "botset editvar ANTHROPIC_API_URL"
+        )
+        buttons.data_button(
+            "🌐 Google AI API URL", "botset editvar GOOGLE_AI_API_URL"
+        )
+        buttons.data_button("🌐 Groq API URL", "botset editvar GROQ_API_URL")
+
+        # Legacy providers
+        buttons.data_button("🔗 Mistral API URL", "botset editvar MISTRAL_API_URL")
+        buttons.data_button("🔗 DeepSeek API URL", "botset editvar DEEPSEEK_API_URL")
+
+        # Edit/View mode toggle
+        if state == "view":
+            buttons.data_button("✏️ Edit", "botset edit ai_providers")
+        else:
+            buttons.data_button("👁️ View", "botset view ai_providers")
+
+        buttons.data_button("⬅️ Back", "botset ai", "footer")
+        buttons.data_button("❌ Close", "botset close", "footer")
+
+        # Get provider status
+        openai_key = (
+            "✅ Set" if getattr(Config, "OPENAI_API_KEY", "") else "❌ Not Set"
+        )
+        anthropic_key = (
+            "✅ Set" if getattr(Config, "ANTHROPIC_API_KEY", "") else "❌ Not Set"
+        )
+        google_key = (
+            "✅ Set" if getattr(Config, "GOOGLE_AI_API_KEY", "") else "❌ Not Set"
+        )
+        groq_key = "✅ Set" if getattr(Config, "GROQ_API_KEY", "") else "❌ Not Set"
+        vertex_id = (
+            "✅ Set" if getattr(Config, "VERTEX_PROJECT_ID", "") else "❌ Not Set"
+        )
+
+        msg = f"""<u><b>⚙️ AI Provider Settings</b></u>
+
+<b>API Keys Status:</b>
+• OpenAI: {openai_key}
+• Anthropic: {anthropic_key}
+• Google AI: {google_key}
+• Groq: {groq_key}
+• Vertex AI: {vertex_id}
+
+<b>Legacy Providers:</b>
+• Mistral: {"✅ Set" if getattr(Config, "MISTRAL_API_URL", "") else "❌ Not Set"}
+• DeepSeek: {"✅ Set" if getattr(Config, "DEEPSEEK_API_URL", "") else "❌ Not Set"}
+
+
+
+<i>Configure your API keys and URLs above. Keep your API keys secure!</i>"""
+
+    elif key == "ai_plugins":
+        # AI Plugin Settings - Always show like other settings
+
+        # Main plugin toggle with status
+        plugins_enabled = getattr(Config, "AI_PLUGINS_ENABLED", True)
+        plugins_status = "✅ ON" if plugins_enabled else "❌ OFF"
+        buttons.data_button(
+            f"🔌 Plugins Enabled: {plugins_status}",
+            f"botset toggle AI_PLUGINS_ENABLED {not plugins_enabled}",
+        )
+
+        # Individual plugin settings with status
+        web_search = getattr(Config, "AI_WEB_SEARCH_ENABLED", True)
+        web_status = "✅ ON" if web_search else "❌ OFF"
+        buttons.data_button(
+            f"🔍 Web Search: {web_status}",
+            f"botset toggle AI_WEB_SEARCH_ENABLED {not web_search}",
+        )
+
+        url_summary = getattr(Config, "AI_URL_SUMMARIZATION_ENABLED", True)
+        url_status = "✅ ON" if url_summary else "❌ OFF"
+        buttons.data_button(
+            f"📄 URL Summarization: {url_status}",
+            f"botset toggle AI_URL_SUMMARIZATION_ENABLED {not url_summary}",
+        )
+
+        arxiv = getattr(Config, "AI_ARXIV_ENABLED", True)
+        arxiv_status = "✅ ON" if arxiv else "❌ OFF"
+        buttons.data_button(
+            f"📚 ArXiv Papers: {arxiv_status}",
+            f"botset toggle AI_ARXIV_ENABLED {not arxiv}",
+        )
+
+        code_interpreter = getattr(Config, "AI_CODE_INTERPRETER_ENABLED", True)
+        code_status = "✅ ON" if code_interpreter else "❌ OFF"
+        buttons.data_button(
+            f"💻 Code Interpreter: {code_status}",
+            f"botset toggle AI_CODE_INTERPRETER_ENABLED {not code_interpreter}",
+        )
+
+        image_gen = getattr(Config, "AI_IMAGE_GENERATION_ENABLED", True)
+        image_status = "✅ ON" if image_gen else "❌ OFF"
+        buttons.data_button(
+            f"🎨 Image Generation: {image_status}",
+            f"botset toggle AI_IMAGE_GENERATION_ENABLED {not image_gen}",
+        )
+
+        voice_transcription = getattr(Config, "AI_VOICE_TRANSCRIPTION_ENABLED", True)
+        voice_status = "✅ ON" if voice_transcription else "❌ OFF"
+        buttons.data_button(
+            f"🎵 Voice Transcription: {voice_status}",
+            f"botset toggle AI_VOICE_TRANSCRIPTION_ENABLED {not voice_transcription}",
+        )
+
+        # Edit/View mode toggle
+        if state == "view":
+            buttons.data_button("✏️ Edit", "botset edit ai_plugins")
+        else:
+            buttons.data_button("👁️ View", "botset view ai_plugins")
+
+        buttons.data_button("⬅️ Back", "botset ai", "footer")
+        buttons.data_button("❌ Close", "botset close", "footer")
+
+        # Get plugin status
+        plugins_enabled = getattr(Config, "AI_PLUGINS_ENABLED", True)
+        web_search = getattr(Config, "AI_WEB_SEARCH_ENABLED", True)
+        url_summary = getattr(Config, "AI_URL_SUMMARIZATION_ENABLED", True)
+        arxiv = getattr(Config, "AI_ARXIV_ENABLED", True)
+        code_interpreter = getattr(Config, "AI_CODE_INTERPRETER_ENABLED", True)
+        image_gen = getattr(Config, "AI_IMAGE_GENERATION_ENABLED", True)
+        voice_transcription = getattr(Config, "AI_VOICE_TRANSCRIPTION_ENABLED", True)
+
+        msg = f"""<u><b>🔌 AI Plugin Settings</b></u>
+
+<b>Plugin System:</b>
+• Status: {"✅ Enabled" if plugins_enabled else "❌ Disabled"}
+
+<b>Available Plugins:</b>
+• 🔍 Web Search: {"✅" if web_search else "❌"}
+• 📄 URL Summarization: {"✅" if url_summary else "❌"}
+• 📚 ArXiv Papers: {"✅" if arxiv else "❌"}
+• 💻 Code Interpreter: {"✅" if code_interpreter else "❌"}
+• 🎨 Image Generation: {"✅" if image_gen else "❌"}
+• 🎵 Voice Transcription: {"✅" if voice_transcription else "❌"}
+
+<i>Enable or disable AI plugins above. Plugins extend AI capabilities with external tools.</i>"""
+
+    elif key == "ai_conversation":
+        # AI Conversation Settings - Always show like other settings
+
+        # Conversation settings with status
+        history_enabled = getattr(Config, "AI_CONVERSATION_HISTORY", True)
+        history_status = "✅ ON" if history_enabled else "❌ OFF"
+        buttons.data_button(
+            f"💬 Conversation History: {history_status}",
+            f"botset toggle AI_CONVERSATION_HISTORY {not history_enabled}",
+        )
+
+        max_history = getattr(Config, "AI_MAX_HISTORY_LENGTH", 10)
+        buttons.data_button(
+            f"📝 Max History Length: {max_history}",
+            "botset editvar AI_MAX_HISTORY_LENGTH",
+        )
+
+        question_prediction = getattr(Config, "AI_QUESTION_PREDICTION", True)
+        prediction_status = "✅ ON" if question_prediction else "❌ OFF"
+        buttons.data_button(
+            f"🔮 Question Prediction: {prediction_status}",
+            f"botset toggle AI_QUESTION_PREDICTION {not question_prediction}",
+        )
+
+        group_topic = getattr(Config, "AI_GROUP_TOPIC_MODE", False)
+        topic_status = "✅ ON" if group_topic else "❌ OFF"
+        buttons.data_button(
+            f"🎯 Group Topic Mode: {topic_status}",
+            f"botset toggle AI_GROUP_TOPIC_MODE {not group_topic}",
+        )
+
+        auto_language = getattr(Config, "AI_AUTO_LANGUAGE_DETECTION", True)
+        auto_lang_status = "✅ ON" if auto_language else "❌ OFF"
+        buttons.data_button(
+            f"🌐 Auto Language Detection: {auto_lang_status}",
+            f"botset toggle AI_AUTO_LANGUAGE_DETECTION {not auto_language}",
+        )
+
+        default_language = getattr(Config, "AI_DEFAULT_LANGUAGE", "en")
+        buttons.data_button(
+            f"🗣️ Default Language: {default_language}",
+            "botset editvar AI_DEFAULT_LANGUAGE",
+        )
+
+        # Edit/View mode toggle
+        if state == "view":
+            buttons.data_button("✏️ Edit", "botset edit ai_conversation")
+        else:
+            buttons.data_button("👁️ View", "botset view ai_conversation")
+
+        buttons.data_button("⬅️ Back", "botset ai", "footer")
+        buttons.data_button("❌ Close", "botset close", "footer")
+
+        # Get conversation settings
+        history_enabled = getattr(Config, "AI_CONVERSATION_HISTORY", True)
+        max_history = getattr(Config, "AI_MAX_HISTORY_LENGTH", 10)
+        question_prediction = getattr(Config, "AI_QUESTION_PREDICTION", True)
+        group_topic_mode = getattr(Config, "AI_GROUP_TOPIC_MODE", False)
+        auto_language = getattr(Config, "AI_AUTO_LANGUAGE_DETECTION", True)
+        default_language = getattr(Config, "AI_DEFAULT_LANGUAGE", "en")
+
+        msg = f"""<u><b>💬 AI Conversation Settings</b></u>
+
+<b>Conversation Management:</b>
+• History: {"✅ Enabled" if history_enabled else "❌ Disabled"}
+• Max History: <code>{max_history}</code> messages
+• Question Prediction: {"✅ Enabled" if question_prediction else "❌ Disabled"}
+• Group Topic Mode: {"✅ Enabled" if group_topic_mode else "❌ Disabled"}
+
+<b>Language Settings:</b>
+• Auto Detection: {"✅ Enabled" if auto_language else "❌ Disabled"}
+• Default Language: <code>{default_language}</code>
+
+<i>Configure how AI handles conversations and maintains context.</i>"""
+
+    elif key == "ai_advanced":
+        # AI Advanced Settings - Always show like other settings
+
+        # Advanced settings with status
+        streaming = getattr(Config, "AI_STREAMING_ENABLED", True)
+        streaming_status = "✅ ON" if streaming else "❌ OFF"
+        buttons.data_button(
+            f"⚡ Streaming Enabled: {streaming_status}",
+            f"botset toggle AI_STREAMING_ENABLED {not streaming}",
+        )
+
+        multimodal = getattr(Config, "AI_MULTIMODAL_ENABLED", True)
+        multimodal_status = "✅ ON" if multimodal else "❌ OFF"
+        buttons.data_button(
+            f"🎭 Multimodal Enabled: {multimodal_status}",
+            f"botset toggle AI_MULTIMODAL_ENABLED {not multimodal}",
+        )
+
+        inline_mode = getattr(Config, "AI_INLINE_MODE_ENABLED", True)
+        inline_status = "✅ ON" if inline_mode else "❌ OFF"
+        buttons.data_button(
+            f"📱 Inline Mode Enabled: {inline_status}",
+            f"botset toggle AI_INLINE_MODE_ENABLED {not inline_mode}",
+        )
+
+        # New ChatGPT-Telegram-Bot Features
+        voice_transcription = getattr(Config, "AI_VOICE_TRANSCRIPTION_ENABLED", True)
+        voice_status = "✅ ON" if voice_transcription else "❌ OFF"
+        buttons.data_button(
+            f"🎵 Voice Transcription: {voice_status}",
+            f"botset toggle AI_VOICE_TRANSCRIPTION_ENABLED {not voice_transcription}",
+        )
+
+        image_generation = getattr(Config, "AI_IMAGE_GENERATION_ENABLED", True)
+        image_status = "✅ ON" if image_generation else "❌ OFF"
+        buttons.data_button(
+            f"🎨 Image Generation: {image_status}",
+            f"botset toggle AI_IMAGE_GENERATION_ENABLED {not image_generation}",
+        )
+
+        document_processing = getattr(Config, "AI_DOCUMENT_PROCESSING_ENABLED", True)
+        doc_status = "✅ ON" if document_processing else "❌ OFF"
+        buttons.data_button(
+            f"📄 Document Processing: {doc_status}",
+            f"botset toggle AI_DOCUMENT_PROCESSING_ENABLED {not document_processing}",
+        )
+
+        follow_up_questions = getattr(Config, "AI_FOLLOW_UP_QUESTIONS_ENABLED", True)
+        follow_up_status = "✅ ON" if follow_up_questions else "❌ OFF"
+        buttons.data_button(
+            f"❓ Follow-up Questions: {follow_up_status}",
+            f"botset toggle AI_FOLLOW_UP_QUESTIONS_ENABLED {not follow_up_questions}",
+        )
+
+        typewriter_effect = getattr(Config, "AI_TYPEWRITER_EFFECT_ENABLED", True)
+        typewriter_status = "✅ ON" if typewriter_effect else "❌ OFF"
+        buttons.data_button(
+            f"⌨️ Typewriter Effect: {typewriter_status}",
+            f"botset toggle AI_TYPEWRITER_EFFECT_ENABLED {not typewriter_effect}",
+        )
+
+        context_pruning = getattr(Config, "AI_CONTEXT_PRUNING_ENABLED", True)
+        pruning_status = "✅ ON" if context_pruning else "❌ OFF"
+        buttons.data_button(
+            f"🧹 Context Pruning: {pruning_status}",
+            f"botset toggle AI_CONTEXT_PRUNING_ENABLED {not context_pruning}",
+        )
+
+        max_tokens = getattr(Config, "AI_MAX_TOKENS", 4000)
+        buttons.data_button(
+            f"🔢 Max Tokens: {max_tokens}", "botset editvar AI_MAX_TOKENS"
+        )
+
+        temperature = getattr(Config, "AI_TEMPERATURE", 0.7)
+        buttons.data_button(
+            f"🌡️ Temperature: {temperature}", "botset editvar AI_TEMPERATURE"
+        )
+
+        timeout = getattr(Config, "AI_TIMEOUT", 60)
+        buttons.data_button(f"⏱️ Timeout: {timeout}s", "botset editvar AI_TIMEOUT")
+
+        rate_limit = getattr(Config, "AI_RATE_LIMIT_PER_USER", 50)
+        buttons.data_button(
+            f"⏰ Rate Limit Per User: {rate_limit}/hr",
+            "botset editvar AI_RATE_LIMIT_PER_USER",
+        )
+
+        # Edit/View mode toggle
+        if state == "view":
+            buttons.data_button("✏️ Edit", "botset edit ai_advanced")
+        else:
+            buttons.data_button("👁️ View", "botset view ai_advanced")
+
+        buttons.data_button("⬅️ Back", "botset ai", "footer")
+        buttons.data_button("❌ Close", "botset close", "footer")
+
+        # Get advanced settings
+        streaming_enabled = getattr(Config, "AI_STREAMING_ENABLED", True)
+        multimodal_enabled = getattr(Config, "AI_MULTIMODAL_ENABLED", True)
+        inline_mode_enabled = getattr(Config, "AI_INLINE_MODE_ENABLED", True)
+        voice_transcription_enabled = getattr(
+            Config, "AI_VOICE_TRANSCRIPTION_ENABLED", True
+        )
+        image_generation_enabled = getattr(
+            Config, "AI_IMAGE_GENERATION_ENABLED", True
+        )
+        document_processing_enabled = getattr(
+            Config, "AI_DOCUMENT_PROCESSING_ENABLED", True
+        )
+        follow_up_questions_enabled = getattr(
+            Config, "AI_FOLLOW_UP_QUESTIONS_ENABLED", True
+        )
+        typewriter_effect_enabled = getattr(
+            Config, "AI_TYPEWRITER_EFFECT_ENABLED", True
+        )
+        context_pruning_enabled = getattr(Config, "AI_CONTEXT_PRUNING_ENABLED", True)
+        max_tokens = getattr(Config, "AI_MAX_TOKENS", 4096)
+        temperature = getattr(Config, "AI_TEMPERATURE", 0.7)
+        timeout = getattr(Config, "AI_TIMEOUT", 600)
+        rate_limit = getattr(Config, "AI_RATE_LIMIT_PER_USER", 100)
+
+        msg = f"""<u><b>🎛️ AI Advanced Settings</b></u>
+
+<b>Core Features:</b>
+• Streaming: {"✅ Enabled" if streaming_enabled else "❌ Disabled"}
+• Multimodal: {"✅ Enabled" if multimodal_enabled else "❌ Disabled"}
+• Inline Mode: {"✅ Enabled" if inline_mode_enabled else "❌ Disabled"}
+
+<b>New ChatGPT-Telegram-Bot Features:</b>
+• Voice Transcription: {"✅ Enabled" if voice_transcription_enabled else "❌ Disabled"}
+• Image Generation: {"✅ Enabled" if image_generation_enabled else "❌ Disabled"}
+• Document Processing: {"✅ Enabled" if document_processing_enabled else "❌ Disabled"}
+• Follow-up Questions: {"✅ Enabled" if follow_up_questions_enabled else "❌ Disabled"}
+• Typewriter Effect: {"✅ Enabled" if typewriter_effect_enabled else "❌ Disabled"}
+• Context Pruning: {"✅ Enabled" if context_pruning_enabled else "❌ Disabled"}
+
+<b>Performance Settings:</b>
+• Max Tokens: <code>{max_tokens}</code>
+• Temperature: <code>{temperature}</code>
+• Timeout: <code>{timeout}</code> seconds
+• Rate Limit: <code>{rate_limit}</code> requests/hour
+
+<i>Advanced settings for fine-tuning AI behavior and performance with ChatGPT-Telegram-Bot features.</i>"""
 
     elif key == "streamrip":
         # Streamrip Settings section
@@ -3357,12 +3942,11 @@ These are core Zotify settings that control the basic download behavior."""
         )
 
         # Check if credentials exist (database first, then file)
-        from bot.helper.mirror_leech_utils.zotify_utils.zotify_config import (
-            zotify_config,
-        )
-
-        # Use the user_id parameter passed to get_buttons function
-        creds_exist = await zotify_config.has_credentials(user_id)
+        if not zotify_config:
+            creds_exist = False
+        else:
+            # Use the user_id parameter passed to get_buttons function
+            creds_exist = await zotify_config.has_credentials(user_id)
         creds_status = "✅ Available" if creds_exist else "❌ Not Found"
 
         msg = f"""<b>🎧 Zotify Authentication Settings</b> | State: {state}
@@ -3895,8 +4479,6 @@ These are advanced YouTube upload settings for fine-tuning video properties."""
         buttons.data_button("❌ Close", "botset close", "footer")
 
         # Check if YouTube token exists
-        import os
-
         youtube_token_path = "youtube_token.pickle"
         token_exists = os.path.exists(youtube_token_path)
         token_status = "✅ Available" if token_exists else "❌ Not Found"
@@ -8183,8 +8765,6 @@ async def _process_zotify_credentials_upload(
     try:
         # Validate JSON format
         try:
-            import json
-
             credentials_data = json.loads(credentials_content)
 
             # Basic validation - check if it looks like Spotify credentials
@@ -8195,9 +8775,8 @@ async def _process_zotify_credentials_upload(
             return False, f"Invalid JSON format: {e}"
 
         # Save credentials to database and file using the zotify config helper
-        from bot.helper.mirror_leech_utils.zotify_utils.zotify_config import (
-            zotify_config,
-        )
+        if not zotify_config:
+            return False, "Zotify config helper not available"
 
         success = await zotify_config.save_credentials(credentials_data, user_id)
 
@@ -8233,16 +8812,13 @@ async def _process_streamrip_config_upload(
     try:
         # Validate TOML format
         try:
-            import toml
-
             toml.loads(config_content)
         except Exception as e:
             return False, f"Invalid TOML format: {e}"
 
         # Save to database using streamrip config helper
-        from bot.helper.mirror_leech_utils.streamrip_utils.streamrip_config import (
-            streamrip_config,
-        )
+        if not streamrip_config:
+            return False, "Streamrip config helper not available"
 
         success = await streamrip_config.save_custom_config_to_db(config_content)
 
@@ -8267,10 +8843,6 @@ async def _process_streamrip_config_upload(
 async def _generate_current_config_content() -> str:
     """Generate current streamrip config content based on bot settings"""
     try:
-        from datetime import datetime
-
-        from bot import DOWNLOAD_DIR
-
         # Helper function to safely get config attributes
         def get_config_attr(attr_name, default_value=""):
             return getattr(Config, attr_name, default_value)
@@ -8384,9 +8956,8 @@ check_for_updates = {str(get_config_attr("STREAMRIP_MISC_CHECK_FOR_UPDATES", Tru
 version = "{get_config_attr("STREAMRIP_MISC_VERSION", "2.0.6")}"
 """
     except Exception as e:
-        from bot import LOGGER
-
-        LOGGER.error(f"Error generating config content: {e}")
+        if LOGGER:
+            LOGGER.error(f"Error generating config content: {e}")
         return ""
 
 
@@ -8425,8 +8996,6 @@ async def handle_streamrip_config_upload(_, message, pre_message):
         temp_path = await message.download()
 
         # Read the config content using aiofiles
-        from aiofiles import open as aiopen
-
         async with aiopen(temp_path, encoding="utf-8") as f:
             config_content = await f.read()
 
@@ -8454,9 +9023,8 @@ async def handle_streamrip_config_upload(_, message, pre_message):
             )
 
     except Exception as e:
-        from bot import LOGGER
-
-        LOGGER.error(f"Error handling streamrip config upload: {e}")
+        if LOGGER:
+            LOGGER.error(f"Error handling streamrip config upload: {e}")
         await send_message(
             message,
             f"<b>❌ Error</b>\n\nFailed to process streamrip configuration: {e}",
@@ -8465,11 +9033,8 @@ async def handle_streamrip_config_upload(_, message, pre_message):
         # Clean up temporary file
         if temp_path:
             try:
-                from os import remove
-                from os.path import exists
-
-                if exists(temp_path):
-                    remove(temp_path)
+                if os.path.exists(temp_path):
+                    os.remove(temp_path)
             except Exception:
                 pass
 
@@ -8512,8 +9077,6 @@ async def handle_zotify_credentials_upload(_, message, pre_message):
         temp_path = await message.download()
 
         # Read the credentials content using aiofiles
-        from aiofiles import open as aiopen
-
         async with aiopen(temp_path, encoding="utf-8") as f:
             credentials_content = await f.read()
 
@@ -8542,9 +9105,8 @@ async def handle_zotify_credentials_upload(_, message, pre_message):
             )
 
     except Exception as e:
-        from bot import LOGGER
-
-        LOGGER.error(f"Error handling Zotify credentials upload: {e}")
+        if LOGGER:
+            LOGGER.error(f"Error handling Zotify credentials upload: {e}")
         await send_message(
             message,
             f"<b>❌ Error</b>\n\nFailed to process Zotify credentials: {e}",
@@ -8553,11 +9115,8 @@ async def handle_zotify_credentials_upload(_, message, pre_message):
         # Clean up temporary file
         if temp_path:
             try:
-                from os import remove
-                from os.path import exists
-
-                if exists(temp_path):
-                    remove(temp_path)
+                if os.path.exists(temp_path):
+                    os.remove(temp_path)
             except Exception:
                 pass
 
@@ -8589,12 +9148,12 @@ async def handle_image_upload(_, message, pre_message):
         if file_size > 5 * 1024 * 1024:  # 5MB limit
             # If image is too large, resize it
             try:
-                from PIL import Image
-
-                from bot.helper.ext_utils.media_utils import limit_memory_for_pil
+                if not PIL_AVAILABLE:
+                    raise ImportError("PIL not available")
 
                 # Apply memory limits for PIL operations
-                limit_memory_for_pil()
+                if limit_memory_for_pil:
+                    limit_memory_for_pil()
 
                 img = Image.open(temp_path)
 
@@ -8631,12 +9190,12 @@ async def handle_image_upload(_, message, pre_message):
         else:
             # Get image dimensions for smaller images
             try:
-                from PIL import Image
-
-                from bot.helper.ext_utils.media_utils import limit_memory_for_pil
+                if not PIL_AVAILABLE:
+                    raise ImportError("PIL not available")
 
                 # Apply memory limits for PIL operations
-                limit_memory_for_pil()
+                if limit_memory_for_pil:
+                    limit_memory_for_pil()
 
                 img = Image.open(temp_path)
                 width, height = img.size
@@ -8902,16 +9461,13 @@ async def edit_variable(_, message, pre_message, key):
     elif key == "AUTO_RESTART_ENABLED":
         value = value.lower() in ("true", "1", "yes")
         # Always schedule or cancel auto-restart when this setting is changed
-        from bot.helper.ext_utils.auto_restart import schedule_auto_restart
-
-        create_task(schedule_auto_restart())
+        if schedule_auto_restart:
+            create_task(schedule_auto_restart())
     elif key == "AUTO_RESTART_INTERVAL":
         try:
             value = max(1, int(value))  # Minimum 1 hour
             # Schedule the next auto-restart with the new interval if enabled
-            if Config.AUTO_RESTART_ENABLED:
-                from bot.helper.ext_utils.auto_restart import schedule_auto_restart
-
+            if Config.AUTO_RESTART_ENABLED and schedule_auto_restart:
                 create_task(schedule_auto_restart())
         except ValueError:
             value = 24  # Default to 24 hours if invalid input
@@ -8969,7 +9525,7 @@ async def edit_variable(_, message, pre_message, key):
         return_menu = "mediatools_remove"
     elif key.startswith("TASK_MONITOR_"):
         return_menu = "taskmonitor"
-    elif key == "DEFAULT_AI_PROVIDER" or key.startswith(("MISTRAL_", "DEEPSEEK_")):
+    elif key.startswith(("MISTRAL_", "DEEPSEEK_")):
         return_menu = "ai"
     elif key.startswith("MERGE_") or key in [
         "CONCAT_DEMUXER_ENABLED",
@@ -9418,13 +9974,10 @@ async def handle_watermark_image_upload(_, message):
             if file_size > 5 * 1024 * 1024:  # 5MB limit
                 # If image is too large, resize it
                 try:
-                    # Try to import PIL
+                    # Try to use PIL if available
                     try:
-                        from PIL import Image
-
-                        from bot.helper.ext_utils.media_utils import (
-                            limit_memory_for_pil,
-                        )
+                        if not PIL_AVAILABLE:
+                            raise ImportError("PIL not available")
                     except ImportError:
                         error_msg = await send_message(
                             message,
@@ -9471,12 +10024,8 @@ async def handle_watermark_image_upload(_, message):
             else:
                 # Get image dimensions for smaller images
                 try:
-                    # Try to import PIL
-                    try:
-                        from PIL import Image
-                    except ImportError:
-                        img_info = ""
-                    else:
+                    # Try to use PIL if available
+                    if PIL_AVAILABLE:
                         img = Image.open(temp_path)
                         width, height = img.size
                         img_info = f"Dimensions: {width}x{height}"
@@ -9581,14 +10130,8 @@ async def handle_watermark_image_upload(_, message):
 
             # Get image dimensions
             try:
-                # Try to import PIL
-                try:
-                    from PIL import Image
-
-                    from bot.helper.ext_utils.media_utils import limit_memory_for_pil
-                except ImportError:
-                    img_info = ""
-                else:
+                # Try to use PIL if available
+                if PIL_AVAILABLE and limit_memory_for_pil:
                     # Apply memory limits for PIL operations
                     limit_memory_for_pil()
 
@@ -10141,6 +10684,18 @@ async def edit_bot_settings(client, query):
                 ]
             ):
                 return_menu = "mega"
+            # Check for AI submenu detection
+            elif any(
+                x in message.text
+                for x in [
+                    "AI Model Selection",
+                    "AI Provider Settings",
+                    "AI Plugin Settings",
+                    "AI Conversation Settings",
+                    "Advanced AI Settings",
+                ]
+            ):
+                return_menu = "ai"
             # Otherwise check the message title for submenu detection
             elif "Watermark" in message.text:
                 return_menu = "mediatools_watermark"
@@ -10862,8 +11417,6 @@ async def edit_bot_settings(client, query):
             buttons.build_menu(2),
         )
     elif data[1] == "mediatools_watermark":
-        from bot.helper.ext_utils.bot_utils import is_media_tool_enabled
-
         await query.answer()
         # Get the current state before making changes
         current_state = globals()["state"]
@@ -10880,8 +11433,6 @@ async def edit_bot_settings(client, query):
         await update_buttons(message, "mediatools_watermark")
 
     elif data[1] == "upload_watermark_image":
-        from bot.helper.ext_utils.bot_utils import is_media_tool_enabled
-
         await safe_answer()
 
         # Get the current state before making changes
@@ -10931,8 +11482,6 @@ async def edit_bot_settings(client, query):
         )
 
     elif data[1] == "watermark_text":
-        from bot.helper.ext_utils.bot_utils import is_media_tool_enabled
-
         await query.answer()
         # Get the current state before making changes
         current_state = globals()["state"]
@@ -11034,8 +11583,6 @@ async def edit_bot_settings(client, query):
                 page=globals()["watermark_text_page"],
             )
     elif data[1] == "mediatools_merge":
-        from bot.helper.ext_utils.bot_utils import is_media_tool_enabled
-
         await query.answer()
         # Get the current state before making changes
         current_state = globals()["state"]
@@ -11052,8 +11599,6 @@ async def edit_bot_settings(client, query):
         # Always start at page 0 when first entering merge settings
         await update_buttons(message, "mediatools_merge", page=0)
     elif data[1] == "mediatools_merge_config":
-        from bot.helper.ext_utils.bot_utils import is_media_tool_enabled
-
         await query.answer()
         # Get the current state before making changes
         current_state = globals()["state"]
@@ -11097,8 +11642,6 @@ async def edit_bot_settings(client, query):
         globals()["state"] = current_state
         await update_buttons(message, "mediatools_metadata")
     elif data[1] == "mediatools_convert":
-        from bot.helper.ext_utils.bot_utils import is_media_tool_enabled
-
         await query.answer()
         # Get the current state before making changes
         current_state = globals()["state"]
@@ -11114,8 +11657,6 @@ async def edit_bot_settings(client, query):
         globals()["state"] = current_state
         await update_buttons(message, "mediatools_convert")
     elif data[1] == "mediatools_trim":
-        from bot.helper.ext_utils.bot_utils import is_media_tool_enabled
-
         await query.answer()
         # Get the current state before making changes
         current_state = globals()["state"]
@@ -11132,8 +11673,6 @@ async def edit_bot_settings(client, query):
         await update_buttons(message, "mediatools_trim")
 
     elif data[1] == "mediatools_extract":
-        from bot.helper.ext_utils.bot_utils import is_media_tool_enabled
-
         await query.answer()
         # Get the current state before making changes
         current_state = globals()["state"]
@@ -11150,8 +11689,6 @@ async def edit_bot_settings(client, query):
         await update_buttons(message, "mediatools_extract")
 
     elif data[1] == "mediatools_add":
-        from bot.helper.ext_utils.bot_utils import is_media_tool_enabled
-
         await query.answer()
         # Get the current state before making changes
         current_state = globals()["state"]
@@ -11168,8 +11705,6 @@ async def edit_bot_settings(client, query):
         await update_buttons(message, "mediatools_add")
 
     elif data[1] == "mediatools_swap":
-        from bot.helper.ext_utils.bot_utils import is_media_tool_enabled
-
         await query.answer()
         # Get the current state before making changes
         current_state = globals()["state"]
@@ -11186,8 +11721,6 @@ async def edit_bot_settings(client, query):
         await update_buttons(message, "mediatools_swap")
 
     elif data[1] == "mediatools_compression":
-        from bot.helper.ext_utils.bot_utils import is_media_tool_enabled
-
         await query.answer()
         # Get the current state before making changes
         current_state = globals()["state"]
@@ -13091,18 +13624,112 @@ async def edit_bot_settings(client, query):
     elif data[1] == "default_ai":
         await query.answer("Resetting all AI settings to default...")
         # Reset all AI settings to default
-        Config.DEFAULT_AI_PROVIDER = "mistral"
+
+        # Core AI settings
+        Config.AI_ENABLED = True
+        Config.DEFAULT_AI_MODEL = "gpt-4o"
+
+        # Provider API Keys (clear for security)
+        Config.OPENAI_API_KEY = ""
+        Config.ANTHROPIC_API_KEY = ""
+        Config.GOOGLE_AI_API_KEY = ""
+        Config.GROQ_API_KEY = ""
+        Config.VERTEX_PROJECT_ID = ""
+
+        # Provider API URLs
+        Config.OPENAI_API_URL = ""
+        Config.ANTHROPIC_API_URL = ""
+        Config.GOOGLE_AI_API_URL = ""
+        Config.GROQ_API_URL = ""
+
+        # Legacy providers
         Config.MISTRAL_API_URL = ""
         Config.DEEPSEEK_API_URL = ""
 
-        # Update the database
-        await database.update_config(
-            {
-                "DEFAULT_AI_PROVIDER": "mistral",
-                "MISTRAL_API_URL": "",
-                "DEEPSEEK_API_URL": "",
-            }
-        )
+        # AI Features
+        Config.AI_PLUGINS_ENABLED = True
+        Config.AI_MULTIMODAL_ENABLED = True
+        Config.AI_STREAMING_ENABLED = True
+        Config.AI_CONVERSATION_HISTORY = True
+        Config.AI_MAX_HISTORY_LENGTH = 10
+        Config.AI_QUESTION_PREDICTION = True
+        Config.AI_GROUP_TOPIC_MODE = False
+        Config.AI_INLINE_MODE_ENABLED = True
+        Config.AI_AUTO_LANGUAGE_DETECTION = True
+        Config.AI_DEFAULT_LANGUAGE = "en"
+        # New ChatGPT-Telegram-Bot Features
+        Config.AI_VOICE_TRANSCRIPTION_ENABLED = True
+        Config.AI_IMAGE_GENERATION_ENABLED = True
+        Config.AI_DOCUMENT_PROCESSING_ENABLED = True
+        Config.AI_FOLLOW_UP_QUESTIONS_ENABLED = True
+        Config.AI_CONVERSATION_EXPORT_ENABLED = True
+        Config.AI_TYPEWRITER_EFFECT_ENABLED = True
+        Config.AI_CONTEXT_PRUNING_ENABLED = True
+
+        # AI Plugins
+        Config.AI_WEB_SEARCH_ENABLED = True
+        Config.AI_URL_SUMMARIZATION_ENABLED = True
+        Config.AI_ARXIV_ENABLED = True
+        Config.AI_CODE_INTERPRETER_ENABLED = True
+        Config.AI_IMAGE_GENERATION_ENABLED = True
+        Config.AI_VOICE_TRANSCRIPTION_ENABLED = True
+
+        # AI Performance
+        Config.AI_MAX_TOKENS = 4096
+        Config.AI_TEMPERATURE = 0.7
+        Config.AI_TIMEOUT = 600
+        Config.AI_RATE_LIMIT_PER_USER = 100
+
+        # Update the database with all AI settings
+        ai_settings = {
+            # Core settings
+            "AI_ENABLED": True,
+            "DEFAULT_AI_MODEL": "gpt-4o",
+            # Provider credentials (cleared)
+            "OPENAI_API_KEY": "",
+            "ANTHROPIC_API_KEY": "",
+            "GOOGLE_AI_API_KEY": "",
+            "GROQ_API_KEY": "",
+            "VERTEX_PROJECT_ID": "",
+            # Provider URLs
+            "OPENAI_API_URL": "",
+            "ANTHROPIC_API_URL": "",
+            "GOOGLE_AI_API_URL": "",
+            "GROQ_API_URL": "",
+            "MISTRAL_API_URL": "",
+            "DEEPSEEK_API_URL": "",
+            # Features
+            "AI_PLUGINS_ENABLED": True,
+            "AI_MULTIMODAL_ENABLED": True,
+            "AI_STREAMING_ENABLED": True,
+            "AI_CONVERSATION_HISTORY": True,
+            "AI_MAX_HISTORY_LENGTH": 10,
+            "AI_QUESTION_PREDICTION": True,
+            "AI_GROUP_TOPIC_MODE": False,
+            "AI_INLINE_MODE_ENABLED": True,
+            "AI_AUTO_LANGUAGE_DETECTION": True,
+            "AI_DEFAULT_LANGUAGE": "en",
+            # New ChatGPT-Telegram-Bot Features
+            "AI_VOICE_TRANSCRIPTION_ENABLED": True,
+            "AI_IMAGE_GENERATION_ENABLED": True,
+            "AI_DOCUMENT_PROCESSING_ENABLED": True,
+            "AI_FOLLOW_UP_QUESTIONS_ENABLED": True,
+            "AI_CONVERSATION_EXPORT_ENABLED": True,
+            "AI_TYPEWRITER_EFFECT_ENABLED": True,
+            "AI_CONTEXT_PRUNING_ENABLED": True,
+            # Plugins
+            "AI_WEB_SEARCH_ENABLED": True,
+            "AI_URL_SUMMARIZATION_ENABLED": True,
+            "AI_ARXIV_ENABLED": True,
+            "AI_CODE_INTERPRETER_ENABLED": True,
+            # Performance
+            "AI_MAX_TOKENS": 4096,
+            "AI_TEMPERATURE": 0.7,
+            "AI_TIMEOUT": 600,
+            "AI_RATE_LIMIT_PER_USER": 100,
+        }
+
+        await database.update_config(ai_settings)
         # Get the current state before making changes
         current_state = globals()["state"]
         # Set the state back to what it was
@@ -13742,6 +14369,8 @@ async def edit_bot_settings(client, query):
             and not data[2].startswith("ZOTIFY_")
             and not data[2].startswith("YOUTUBE_UPLOAD_")
             and not data[2].startswith("MEGA_")
+            and not data[2].startswith("AI_")
+            and data[2] not in ["DEFAULT_AI_MODEL"]
         ):
             # In view mode, show the current value in a popup
             value = f"{Config.get(data[2])}"
@@ -14085,10 +14714,53 @@ async def edit_bot_settings(client, query):
             return
 
         # Special handling for DEFAULT_AI_PROVIDER
-        if data[2] == "DEFAULT_AI_PROVIDER":
+        # Removed: DEFAULT_AI_PROVIDER special handling - use DEFAULT_AI_MODEL instead
+
+        # Special handling for DEFAULT_AI_MODEL
+        if data[2] == "DEFAULT_AI_MODEL":
             buttons = ButtonMaker()
-            buttons.data_button("Mistral", "botset setprovider mistral")
-            buttons.data_button("DeepSeek", "botset setprovider deepseek")
+
+            # Get available models grouped by provider
+            if ai_manager:
+                available_models = ai_manager.get_available_models()
+            else:
+                available_models = {}
+            current_model = getattr(Config, "DEFAULT_AI_MODEL", "gpt-4o")
+
+            # Add models grouped by provider (limit to avoid too many buttons)
+            model_count = 0
+            for group_name, models in available_models.items():
+                if model_count >= 20:  # Limit total models shown
+                    break
+
+                # Add a few models from each group
+                for model_id in models[:4]:  # Max 4 models per group
+                    if model_count >= 20:
+                        break
+
+                    model_info = ai_manager.get_model_info(model_id)
+                    display_name = model_info.get("display_name", model_id)
+
+                    # Shorten display name if too long
+                    if len(display_name) > 25:
+                        display_name = display_name[:22] + "..."
+
+                    # Mark current model
+                    if model_id == current_model:
+                        display_name = f"🎯 {display_name}"
+
+                    # Add status indicator
+                    status = ai_manager.get_model_status(model_id)
+                    status_icon = "✅" if status.startswith("✅") else "❌"
+
+                    buttons.data_button(
+                        f"{status_icon} {display_name}",
+                        f"botset setmodel {model_id}",
+                    )
+                    model_count += 1
+
+            # Add utility options
+            buttons.data_button("🔄 Reset to Default", "botset setmodel default")
             buttons.data_button("Cancel", "botset cancel")
 
             # Get the current state before updating the UI
@@ -14098,7 +14770,10 @@ async def edit_bot_settings(client, query):
 
             await edit_message(
                 message,
-                "<b>Select Default AI Provider</b>\n\nChoose which AI provider to use with the /ask command:",
+                f"<b>🤖 Select AI Model</b>\n\n"
+                f"🎯 <b>Current:</b> {current_model}\n"
+                f"📊 <b>Status:</b> {ai_manager.get_model_status(current_model)}\n\n"
+                f"Choose from available models:",
                 buttons.build_menu(2),
             )
             return
@@ -14250,9 +14925,7 @@ async def edit_bot_settings(client, query):
             return_menu = "mediatools_add"
         elif data[2].startswith("TASK_MONITOR_"):
             return_menu = "taskmonitor"
-        elif data[2] == "DEFAULT_AI_PROVIDER" or data[2].startswith(
-            ("MISTRAL_", "DEEPSEEK_", "DEFAULT_AI_")
-        ):
+        elif data[2].startswith(("MISTRAL_", "DEEPSEEK_", "DEFAULT_AI_")):
             return_menu = "ai"
         elif data[2].startswith("STREAMRIP_"):
             # For streamrip settings, determine which submenu to return to based on the key
@@ -14513,7 +15186,7 @@ async def edit_bot_settings(client, query):
                     except (ValueError, IndexError):
                         pass
 
-        # Special handling for DEFAULT_AI_PROVIDER is now done earlier in the function
+        # Removed: DEFAULT_AI_PROVIDER special handling
 
         # For all other settings, proceed with normal edit flow
         pfunc = partial(edit_variable, pre_message=message, key=data[2])
@@ -14720,6 +15393,11 @@ async def edit_bot_settings(client, query):
         "mediatools_remove",
         "mediatools_add",
         "ai",
+        "ai_models",
+        "ai_providers",
+        "ai_plugins",
+        "ai_conversation",
+        "ai_advanced",
         "taskmonitor",
         "operations",
         "streamrip",
@@ -14894,9 +15572,7 @@ async def edit_bot_settings(client, query):
             previous_menu = "mediatools_swap"
         elif data[2].startswith("TASK_MONITOR_"):
             previous_menu = "taskmonitor"
-        elif data[2] == "DEFAULT_AI_PROVIDER" or data[2].startswith(
-            ("MISTRAL_", "DEEPSEEK_", "DEFAULT_AI_")
-        ):
+        elif data[2].startswith(("MISTRAL_", "DEEPSEEK_", "DEFAULT_AI_")):
             previous_menu = "ai"
         elif data[2].startswith("STREAMRIP_"):
             # For streamrip settings, determine which submenu to return to based on the key
@@ -16012,21 +16688,7 @@ No database-only files found."""
         pfunc = partial(edit_variable, pre_message=message, key=data[2])
 
         # Special case for DEFAULT_AI_PROVIDER - create a special menu for selecting the AI provider
-        if data[2] == "DEFAULT_AI_PROVIDER":
-            buttons = ButtonMaker()
-            buttons.data_button("Mistral", "botset setprovider mistral")
-            buttons.data_button("DeepSeek", "botset setprovider deepseek")
-            buttons.data_button("Cancel", "botset cancel")
-
-            # Set the state back to what it was
-            globals()["state"] = current_state
-
-            await edit_message(
-                message,
-                "<b>Select Default AI Provider</b>\n\nChoose which AI provider to use with the /ask command:",
-                buttons.build_menu(2),
-            )
-            return
+        # Removed: DEFAULT_AI_PROVIDER special case - use DEFAULT_AI_MODEL instead
 
         # For merge settings, check if we need to return to a specific page
         if (
@@ -16694,18 +17356,35 @@ No database-only files found."""
         # This will show the Media Tools Settings menu with only the Configure Tools button
         await update_buttons(message, "mediatools")
 
-    elif data[1] == "setprovider":
-        await query.answer(f"Setting default AI provider to {data[2].capitalize()}")
-        # Update the default AI provider
-        Config.DEFAULT_AI_PROVIDER = data[2]
+    # Removed: setprovider handler - use setmodel instead
+
+    elif data[1] == "setmodel":
+        if data[2] == "default":
+            # Set to default model
+            model = "gpt-4o"
+        else:
+            model = data[2]
+
+        # Validate the model exists
+        model_info = ai_manager.get_model_info(model)
+        if not model_info:
+            await query.answer(f"❌ Invalid model: {model}", show_alert=True)
+            return
+
+        display_name = model_info.get("display_name", model)
+        await query.answer(f"✅ Setting AI model to {display_name}")
+
+        # Update the default AI model
+        Config.DEFAULT_AI_MODEL = model
         # Update the database
-        await database.update_config({"DEFAULT_AI_PROVIDER": data[2]})
+        await database.update_config({"DEFAULT_AI_MODEL": model})
         # Update the UI - maintain the current state (edit/view)
         # Get the current state before updating the UI
         current_state = globals()["state"]
         # Set the state back to what it was
         globals()["state"] = current_state
         await update_buttons(message, "ai")
+
     elif data[1] == "cancel_image_upload":
         await query.answer("Upload cancelled")
         # Reset the handler_dict for this user
@@ -17610,15 +18289,49 @@ No database-only files found."""
             else:
                 return_menu = "ddl"
         elif key in {
-            "AI_ENABLED",
             "IMDB_ENABLED",
             "TRUECALLER_ENABLED",
             "MEDIA_TOOLS_ENABLED",
         }:
             return_menu = "var"
-        elif key == "DEFAULT_AI_PROVIDER" or key.startswith(
-            ("MISTRAL_", "DEEPSEEK_")
-        ):
+        elif key == "AI_ENABLED":
+            return_menu = "ai"
+        elif key == "DEFAULT_AI_MODEL":
+            return_menu = "ai"
+        elif key.startswith(("MISTRAL_", "DEEPSEEK_")):
+            return_menu = "ai"
+        elif key.startswith("AI_") and key in {
+            "AI_PLUGINS_ENABLED",
+            "AI_WEB_SEARCH_ENABLED",
+            "AI_URL_SUMMARIZATION_ENABLED",
+            "AI_ARXIV_ENABLED",
+            "AI_CODE_INTERPRETER_ENABLED",
+            "AI_IMAGE_GENERATION_ENABLED",
+            "AI_VOICE_TRANSCRIPTION_ENABLED",
+        }:
+            return_menu = "ai_plugins"
+        elif key.startswith("AI_") and key in {
+            "AI_CONVERSATION_HISTORY",
+            "AI_QUESTION_PREDICTION",
+            "AI_GROUP_TOPIC_MODE",
+            "AI_AUTO_LANGUAGE_DETECTION",
+        }:
+            return_menu = "ai_conversation"
+        elif key.startswith("AI_") and key in {
+            "AI_STREAMING_ENABLED",
+            "AI_MULTIMODAL_ENABLED",
+            "AI_INLINE_MODE_ENABLED",
+            "AI_VOICE_TRANSCRIPTION_ENABLED",
+            "AI_IMAGE_GENERATION_ENABLED",
+            "AI_DOCUMENT_PROCESSING_ENABLED",
+            "AI_FOLLOW_UP_QUESTIONS_ENABLED",
+            "AI_CONVERSATION_EXPORT_ENABLED",
+            "AI_TYPEWRITER_EFFECT_ENABLED",
+            "AI_CONTEXT_PRUNING_ENABLED",
+        }:
+            return_menu = "ai_advanced"
+        elif key.startswith("AI_"):
+            # For any other AI settings, return to main AI menu
             return_menu = "ai"
         elif key.startswith("MERGE_") or key in [
             "CONCAT_DEMUXER_ENABLED",

@@ -3,20 +3,13 @@ import re
 import time
 from pathlib import Path
 
-from bot import (
-    DOWNLOAD_DIR,
-    LOGGER,
-    task_dict,
-    task_dict_lock,
-)
+from bot import DOWNLOAD_DIR, LOGGER, task_dict, task_dict_lock
 from bot.core.config_manager import Config
 from bot.helper.ext_utils.task_manager import check_running_tasks
 from bot.helper.mirror_leech_utils.status_utils.streamrip_status import (
     StreamripDownloadStatus,
 )
-from bot.helper.telegram_helper.message_utils import (
-    send_status_message,
-)
+from bot.helper.telegram_helper.message_utils import send_status_message
 
 try:
     from streamrip.client import (
@@ -58,17 +51,34 @@ class StreamripDownloadHelper:
         "database": "View and modify the downloads database",
     }
 
-    # Quality mappings for different platforms
+    # Quality mappings for different platforms (Bot UI Quality -> Streamrip Quality)
+    # Based on streamrip library source code and platform capabilities
     QUALITY_MAPPINGS = {
-        "qobuz": {0: 1, 1: 2, 2: 3, 3: 4},  # 320kbps MP3, 16/44.1, 24/<=96, 24/>=96
+        "qobuz": {
+            0: 1,  # 128 kbps -> 320kbps MP3 (streamrip min quality)
+            1: 1,  # 320 kbps -> 320kbps MP3
+            2: 2,  # CD Quality -> 16-bit/44.1kHz FLAC
+            3: 3,  # Hi-Res -> 24-bit/≤96kHz FLAC
+            4: 4,  # Hi-Res+ -> 24-bit/≥96kHz FLAC
+        },
         "tidal": {
-            0: 0,
-            1: 1,
-            2: 2,
-            3: 3,
-        },  # 256kbps AAC, 320kbps AAC, 16/44.1 FLAC, 24/44.1 MQA
-        "deezer": {0: 0, 1: 1, 2: 2},  # 128kbps MP3, 320kbps MP3, FLAC
-        "soundcloud": {0: 0},  # Only 0 available
+            0: 0,  # 128 kbps -> 256kbps AAC
+            1: 1,  # 320 kbps -> 320kbps AAC
+            2: 2,  # CD Quality -> 16-bit/44.1kHz FLAC (HiFi)
+            3: 3,  # Hi-Res -> 24-bit/44.1kHz MQA (Master)
+        },
+        "deezer": {
+            0: 0,  # 128 kbps -> 128kbps MP3
+            1: 1,  # 320 kbps -> 320kbps MP3
+            2: 2,  # CD Quality -> 16-bit/44.1kHz FLAC
+        },
+        "soundcloud": {
+            0: 0,  # All qualities -> MP3 (various bitrates)
+            1: 0,
+            2: 0,
+            3: 0,
+            4: 0,
+        },
         "youtube": {0: 0},  # Only 0 available
     }
 
@@ -106,6 +116,7 @@ class StreamripDownloadHelper:
         "_is_cancelled",
         "_is_downloading",
         "_media",
+        "_platform",
         "_quality",
         "_start_time",
         "_temp_files",
@@ -118,6 +129,7 @@ class StreamripDownloadHelper:
         self._is_cancelled = False
         self._download_path = None
         self._current_track = ""
+        self._platform = None
         self._is_downloading = False
         # Cache frequently accessed values for O(1) access
         self._cached_config = None
@@ -132,6 +144,70 @@ class StreamripDownloadHelper:
     def current_track(self):
         """Get current track being downloaded"""
         return self._current_track
+
+    def _set_track_name_from_files(self, downloaded_files: list) -> None:
+        """Set the track name from downloaded files for proper task naming"""
+        try:
+            # Find the first audio file
+            audio_extensions = {
+                ".flac",
+                ".mp3",
+                ".wav",
+                ".m4a",
+                ".aac",
+                ".ogg",
+                ".opus",
+            }
+
+            for file_path in downloaded_files:
+                if isinstance(file_path, (str, Path)):
+                    file_path = Path(file_path)
+                    if file_path.suffix.lower() in audio_extensions:
+                        # Extract track name from filename
+                        filename = file_path.stem
+
+                        # Handle common streamrip patterns:
+                        # "01. Artist - Title" -> "Artist - Title"
+                        # "Artist - Title" -> "Artist - Title"
+                        if ". " in filename and " - " in filename:
+                            # Remove track number prefix
+                            parts = filename.split(". ", 1)
+                            if len(parts) > 1:
+                                track_name = parts[1]
+                            else:
+                                track_name = filename
+                        else:
+                            track_name = filename
+
+                        # Set the track name
+                        self._current_track = track_name
+
+                        # Also update the listener's name if it's still the default
+                        if (
+                            not self.listener.name
+                            or self.listener.name == "Streamrip Download"
+                            or self.listener.name.strip() == ""
+                        ):
+                            self.listener.name = track_name
+
+                        return
+
+            # Fallback: use the first file's name
+            if downloaded_files:
+                first_file = Path(downloaded_files[0])
+                self._current_track = first_file.stem
+
+                # Also update the listener's name if it's still the default
+                if (
+                    not self.listener.name
+                    or self.listener.name == "Streamrip Download"
+                    or self.listener.name.strip() == ""
+                ):
+                    self.listener.name = self._current_track
+
+        except Exception as e:
+            LOGGER.warning(f"Failed to set track name: {e}")
+            self._current_track = "Streamrip Download"
 
     async def download(
         self, url: str, quality: int | None = None, codec: str | None = None
@@ -167,6 +243,7 @@ class StreamripDownloadHelper:
                 return False
 
             platform, _, _ = parsed
+            self._platform = platform  # Store platform for quality mapping
 
             # Set download path using existing DOWNLOAD_DIR pattern
             # Ensure all path components are strings to avoid path division errors
@@ -344,6 +421,8 @@ class StreamripDownloadHelper:
                 # Validate downloaded files
                 downloaded_files = await self._find_downloaded_files()
                 if downloaded_files:
+                    # Set the track name from the first downloaded audio file
+                    self._set_track_name_from_files(downloaded_files)
                     return True
                 LOGGER.error("No files were downloaded")
                 return False
@@ -781,9 +860,11 @@ class StreamripDownloadHelper:
         cmd.extend(["--config-path", str(self._get_streamrip_config_path())])
         cmd.extend(["--folder", str(self._download_path)])
 
-        # Quality option
-        quality = getattr(self, "_quality", 3)
-        cmd.extend(["--quality", str(quality)])
+        # Quality option - map bot UI quality to streamrip quality
+        bot_quality = getattr(self, "_quality", 3)
+        platform = getattr(self, "_platform", "qobuz")
+        streamrip_quality = self._map_quality_for_platform(bot_quality, platform)
+        cmd.extend(["--quality", str(streamrip_quality)])
 
         # Codec option if specified
         if hasattr(self, "_codec") and self._codec:
@@ -874,6 +955,24 @@ class StreamripDownloadHelper:
 
         else:
             LOGGER.error(f"Unknown streamrip error: {error_output[:100]}...")
+
+    def _map_quality_for_platform(self, bot_quality: int, platform: str) -> int:
+        """Map bot UI quality to streamrip quality for specific platform"""
+        try:
+            if platform and platform in self.QUALITY_MAPPINGS:
+                mapped_quality = self.QUALITY_MAPPINGS[platform].get(
+                    bot_quality, bot_quality
+                )
+                return mapped_quality
+            LOGGER.info(
+                f"No mapping found for platform {platform}, using quality {bot_quality}"
+            )
+            return bot_quality
+        except Exception as e:
+            LOGGER.warning(
+                f"Failed to map quality {bot_quality} for platform {platform}: {e}"
+            )
+            return bot_quality
 
     def _get_streamrip_config_path(self) -> str:
         """Get the path to the streamrip config file"""
