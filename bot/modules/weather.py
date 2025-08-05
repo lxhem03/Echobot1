@@ -162,7 +162,9 @@ class WeatherAPI:
         """Get current weather data with caching"""
         return await self._make_request("current", lat=lat, lon=lon)
 
-    async def get_forecast_5day(self, lat: float, lon: float) -> dict[str, Any] | None:
+    async def get_forecast_5day(
+        self, lat: float, lon: float
+    ) -> dict[str, Any] | None:
         """Get 5-day weather forecast with 3-hour intervals"""
         return await self._make_request("forecast", lat=lat, lon=lon)
 
@@ -178,7 +180,9 @@ class WeatherAPI:
         """Get daily forecast up to 16 days - Requires subscription"""
         return await self._make_request("daily", lat=lat, lon=lon, cnt=cnt)
 
-    async def get_air_pollution(self, lat: float, lon: float) -> dict[str, Any] | None:
+    async def get_air_pollution(
+        self, lat: float, lon: float
+    ) -> dict[str, Any] | None:
         """Get current air pollution data"""
         return await self._make_request("air_pollution", lat=lat, lon=lon)
 
@@ -215,7 +219,9 @@ class WeatherAPI:
         self, lat: float, lon: float, start: int, end: int
     ) -> dict[str, Any] | None:
         """Get solar radiation data - Requires subscription"""
-        return await self._make_request("solar", lat=lat, lon=lon, start=start, end=end)
+        return await self._make_request(
+            "solar", lat=lat, lon=lon, start=start, end=end
+        )
 
     async def get_weather_history(
         self, lat: float, lon: float, start: int, end: int
@@ -313,7 +319,9 @@ class WeatherAPI:
             LOGGER.error(f"Solar irradiance error: {e}")
             return None
 
-    async def get_weather_alerts(self, lat: float, lon: float) -> dict[str, Any] | None:
+    async def get_weather_alerts(
+        self, lat: float, lon: float
+    ) -> dict[str, Any] | None:
         """Get weather alerts for location (requires One Call API 3.0)"""
         try:
             session = await self._get_session()
@@ -468,7 +476,9 @@ class WeatherAPI:
                     features["road_risk_api"] = True
 
             # Test Weather Maps 2.0 (requires paid subscription)
-            url = "https://maps.openweathermap.org/maps/2.0/weather/1h/temp_new/1/0/0"
+            url = (
+                "https://maps.openweathermap.org/maps/2.0/weather/1h/temp_new/1/0/0"
+            )
             async with session.get(url, params={"appid": self.api_key}) as response:
                 if response.status == 200:
                     features["weather_maps_2_0"] = True
@@ -501,7 +511,9 @@ class WeatherFormatter:
             unit_symbol = (
                 "°C"
                 if Config.WEATHER_UNITS == "metric"
-                else "°F" if Config.WEATHER_UNITS == "imperial" else "K"
+                else "°F"
+                if Config.WEATHER_UNITS == "imperial"
+                else "K"
             )
 
             # Format location
@@ -533,9 +545,7 @@ class WeatherFormatter:
 
             text = f"🌤️ <b>Weather in {location_name}</b>\n\n"
             text += f"{emoji} <b>{weather['description'].title()}</b>\n"
-            text += (
-                f"🌡️ <b>Temperature:</b> <code>{main['temp']:.1f}{unit_symbol}</code>\n"
-            )
+            text += f"🌡️ <b>Temperature:</b> <code>{main['temp']:.1f}{unit_symbol}</code>\n"
             text += f"🤔 <b>Feels like:</b> <code>{main['feels_like']:.1f}{unit_symbol}</code>\n"
             text += f"📊 <b>Min/Max:</b> <code>{main['temp_min']:.1f}{unit_symbol}</code> / <code>{main['temp_max']:.1f}{unit_symbol}</code>\n"
             text += f"💧 <b>Humidity:</b> <code>{main['humidity']}%</code>\n"
@@ -633,7 +643,9 @@ class WeatherFormatter:
             text += f"• <b>NO₂:</b> <code>{components.get('no2', 0):.2f}</code>\n"
             text += f"• <b>O₃:</b> <code>{components.get('o3', 0):.2f}</code>\n"
             text += f"• <b>SO₂:</b> <code>{components.get('so2', 0):.2f}</code>\n"
-            text += f"• <b>PM2.5:</b> <code>{components.get('pm2_5', 0):.2f}</code>\n"
+            text += (
+                f"• <b>PM2.5:</b> <code>{components.get('pm2_5', 0):.2f}</code>\n"
+            )
             text += f"• <b>PM10:</b> <code>{components.get('pm10', 0):.2f}</code>\n"
             text += f"• <b>NH₃:</b> <code>{components.get('nh3', 0):.2f}</code>\n"
 
@@ -710,9 +722,7 @@ class WeatherFormatter:
             text += "**Risk Assessment:**\n"
 
             if fwi_value < 5.2:
-                text += (
-                    "• Very low fire danger\n• Safe conditions for outdoor activities"
-                )
+                text += "• Very low fire danger\n• Safe conditions for outdoor activities"
             elif fwi_value < 11.2:
                 text += "• Low fire danger\n• Exercise normal caution"
             elif fwi_value < 21.3:
@@ -967,7 +977,9 @@ class WeatherFormatter:
                 text += f"• Wind Speed: {conditions.get('wind_speed', 0):.1f}m/s\n"
 
                 if conditions.get("precipitation"):
-                    text += f"• Precipitation: {conditions['precipitation']:.1f}mm/h\n"
+                    text += (
+                        f"• Precipitation: {conditions['precipitation']:.1f}mm/h\n"
+                    )
 
             return text
 
@@ -1000,7 +1012,9 @@ class WeatherFormatter:
             unit_symbol = (
                 "°C"
                 if Config.WEATHER_UNITS == "metric"
-                else "°F" if Config.WEATHER_UNITS == "imperial" else "K"
+                else "°F"
+                if Config.WEATHER_UNITS == "imperial"
+                else "K"
             )
 
             for date, day_forecasts in list(daily_forecasts.items())[:5]:
@@ -1509,7 +1523,9 @@ async def weather_callback_handler(_client: TgClient, callback_query: CallbackQu
             action == "air" and len(parts) > 3 and parts[2] == "forecast"
         ) or action == "air_forecast":
             # Get air pollution forecast
-            pollution_forecast = await weather_api.get_air_pollution_forecast(lat, lon)
+            pollution_forecast = await weather_api.get_air_pollution_forecast(
+                lat, lon
+            )
             if pollution_forecast:
                 text = WeatherFormatter.format_air_pollution_forecast(
                     pollution_forecast
@@ -1518,7 +1534,9 @@ async def weather_callback_handler(_client: TgClient, callback_query: CallbackQu
                 keyboard = create_weather_keyboard(location_info)
                 await edit_message(callback_query.message, text, buttons=keyboard)
             else:
-                await callback_query.answer("❌ Failed to fetch air quality forecast")
+                await callback_query.answer(
+                    "❌ Failed to fetch air quality forecast"
+                )
 
         elif action == "subscription":
             # Show subscription information
@@ -1627,7 +1645,9 @@ async def weather_callback_handler(_client: TgClient, callback_query: CallbackQu
             # Get road risk weather data (requires paid subscription)
             # For demo, use a simple route around the location
             route_points = [(lat, lon), (lat + 0.01, lon + 0.01)]
-            road_data = await weather_api.get_road_risk_weather(lat, lon, route_points)
+            road_data = await weather_api.get_road_risk_weather(
+                lat, lon, route_points
+            )
             if road_data:
                 text = WeatherFormatter.format_road_risk_weather(road_data)
                 location_info = {"lat": lat, "lon": lon, "name": "Location"}
@@ -1715,7 +1735,9 @@ async def weather_callback_handler(_client: TgClient, callback_query: CallbackQu
                             "🔙 Back to Weather",
                             callback_data=f"weather_current_{location_key}",
                         ),
-                        InlineKeyboardButton("❌ Close", callback_data="weather_close"),
+                        InlineKeyboardButton(
+                            "❌ Close", callback_data="weather_close"
+                        ),
                     ],
                 ]
             )
@@ -1751,7 +1773,9 @@ async def weather_callback_handler(_client: TgClient, callback_query: CallbackQu
                 aqi = air_data["list"][0]["main"]["aqi"]
                 aqi_levels = ["Good", "Fair", "Moderate", "Poor", "Very Poor"]
                 aqi_text = aqi_levels[aqi - 1] if 1 <= aqi <= 5 else "Unknown"
-                text += f"<b>🌬️ Air Quality:</b> <code>{aqi_text} (AQI {aqi})</code>\n"
+                text += (
+                    f"<b>🌬️ Air Quality:</b> <code>{aqi_text} (AQI {aqi})</code>\n"
+                )
 
             location_info = {"lat": lat, "lon": lon, "name": "Location"}
             keyboard = create_weather_keyboard(location_info)
@@ -1856,7 +1880,9 @@ class WeatherScheduler:
             current_time = datetime.now(tz)
 
             # Parse update time
-            update_hour, update_minute = map(int, Config.WEATHER_UPDATE_TIME.split(":"))
+            update_hour, update_minute = map(
+                int, Config.WEATHER_UPDATE_TIME.split(":")
+            )
 
             # Check if it's time for update (within 1 hour window)
             if (
@@ -1878,7 +1904,9 @@ class WeatherScheduler:
             # Geocode location
             location_info = await weather_api.geocode_location(Config.WEATHER_PLACE)
             if not location_info:
-                LOGGER.error(f"Failed to geocode weather place: {Config.WEATHER_PLACE}")
+                LOGGER.error(
+                    f"Failed to geocode weather place: {Config.WEATHER_PLACE}"
+                )
                 return
 
             # Get current weather
@@ -1902,10 +1930,14 @@ class WeatherScheduler:
 
             # Format comprehensive weather report
             text = "🌅 **Daily Weather Update**\n\n"
-            text += WeatherFormatter.format_current_weather(weather_data, location_info)
+            text += WeatherFormatter.format_current_weather(
+                weather_data, location_info
+            )
 
             if forecast_data:
-                text += f"\n\n{WeatherFormatter.format_forecast_summary(forecast_data)}"
+                text += (
+                    f"\n\n{WeatherFormatter.format_forecast_summary(forecast_data)}"
+                )
 
             if air_data:
                 text += f"\n\n{WeatherFormatter.format_air_pollution(air_data)}"

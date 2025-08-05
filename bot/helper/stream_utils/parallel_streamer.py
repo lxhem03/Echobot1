@@ -3,7 +3,6 @@ Optimized Parallel Byte Streamer using HyperDL's proven raw API approach
 Completely bypasses Pyrogram's 1MB streaming limitations
 """
 
-import asyncio
 
 # Import required modules
 
@@ -93,7 +92,9 @@ class ParallelByteStreamer:
         async for chunk in self._fallback_streaming(message_id, offset, limit):
             yield chunk
 
-    async def _multi_client_streaming(self, message_id: int, offset: int, limit: int):
+    async def _multi_client_streaming(
+        self, message_id: int, offset: int, limit: int
+    ):
         """
         Multi-client streaming using Telegram-compatible approach
         Uses small chunks and round-robin client distribution (like real HyperDL)
@@ -101,7 +102,9 @@ class ParallelByteStreamer:
 
         # Use small chunk size compatible with Telegram API (like real HyperDL)
         chunk_size = 1024 * 1024  # 1MB chunks (Telegram compatible)
-        num_clients = min(len(self.helper_clients), 3)  # Use available helper clients
+        num_clients = min(
+            len(self.helper_clients), 3
+        )  # Use available helper clients
 
         # Calculate total chunks needed
         total_chunks = (limit + chunk_size - 1) // chunk_size
@@ -128,7 +131,6 @@ class ParallelByteStreamer:
                 break
 
             try:
-
                 # Download chunk using selected client
                 message = await self.get_message(message_id, client)
                 chunk_data = b""

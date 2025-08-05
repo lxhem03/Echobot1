@@ -35,9 +35,9 @@ class RawByteStreamer:
         self.clients = clients
         self.chat_id = chat_id
         self.cached_file_properties: dict[int, dict] = {}
-        self.cached_media_sessions: dict[tuple[int, int], Session] = (
-            {}
-        )  # (client_id, dc_id) -> Session
+        self.cached_media_sessions: dict[
+            tuple[int, int], Session
+        ] = {}  # (client_id, dc_id) -> Session
         self.client_loads: dict[int, int] = dict.fromkeys(clients, 0)
 
         # Start cleanup task
@@ -210,7 +210,9 @@ class RawByteStreamer:
                     # Export and import authorization
                     for _ in range(6):
                         exported_auth = await client.invoke(
-                            raw.functions.auth.ExportAuthorization(dc_id=file_id.dc_id)
+                            raw.functions.auth.ExportAuthorization(
+                                dc_id=file_id.dc_id
+                            )
                         )
 
                         try:
@@ -309,7 +311,9 @@ class RawByteStreamer:
                     # Get chunk from Telegram
                     r = await media_session.send(
                         raw.functions.upload.GetFile(
-                            location=location, offset=current_offset, limit=chunk_size
+                            location=location,
+                            offset=current_offset,
+                            limit=chunk_size,
                         )
                     )
 
@@ -407,7 +411,6 @@ def create_raw_streamer(chat_id: int) -> RawByteStreamer | None:
                     clients[client_id] = client
 
         if not clients:
-
             return None
 
         return RawByteStreamer(clients, chat_id)

@@ -317,8 +317,7 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
             # Check if subname is essentially the same as the task name
             # This handles cases where task name comes from subname due to empty main name
             subname_is_duplicate = (
-                task.listener.subname == original_task_name
-                or task.listener.subname == task_name
+                task.listener.subname in (original_task_name, task_name)
                 or (
                     len(original_task_name) > 50
                     and task.listener.subname.startswith(original_task_name[:47])
@@ -329,9 +328,7 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
                 )
                 or (
                     len(task_name) > 47
-                    and task.listener.subname.startswith(
-                        task_name[:44]
-                    )  # Account for "..."
+                    and task.listener.subname.startswith(task_name[:44])
                 )
             )
 
@@ -350,7 +347,9 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
             and task.listener.progress
         ):
             progress = task.progress()
-            task_msg += f"\n<blockquote>{get_progress_bar_string(progress)} {progress}"
+            task_msg += (
+                f"\n<blockquote>{get_progress_bar_string(progress)} {progress}"
+            )
             if (
                 task.listener
                 and hasattr(task.listener, "subname")
@@ -377,7 +376,10 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
             task_msg += f"\n<b>Speed:</b> {task.speed()}"
             task_msg += f"\n<b>Estimated:</b> {task.eta()}"
             if task.listener and (
-                (tstatus == MirrorStatus.STATUS_DOWNLOAD and task.listener.is_torrent)
+                (
+                    tstatus == MirrorStatus.STATUS_DOWNLOAD
+                    and task.listener.is_torrent
+                )
                 or task.listener.is_qbit
             ):
                 with contextlib.suppress(Exception):
@@ -422,7 +424,9 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
         remaining_tasks = (
             len(tasks[start_position : status_limit + start_position]) - tasks_added
         )
-        msg += f"<i>... and {remaining_tasks} more task(s) (message truncated)</i>\n\n"
+        msg += (
+            f"<i>... and {remaining_tasks} more task(s) (message truncated)</i>\n\n"
+        )
 
     if len(msg) == 0:
         if status == "All":
@@ -437,7 +441,9 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
         buttons.data_button("next", f"status {sid} nex", position="header")
         if tasks_no > 30:
             for i in [1, 2, 4, 6, 8, 10, 15]:
-                buttons.data_button(str(i), f"status {sid} ps {i}", position="footer")
+                buttons.data_button(
+                    str(i), f"status {sid} ps {i}", position="footer"
+                )
     if status != "All" or tasks_no > 20:
         for label, status_value in list(STATUSES.items()):
             if status_value != status:

@@ -109,7 +109,9 @@ class JDownloaderStatus:
         return get_readable_file_size(self._info.get("bytesTotal", 0))
 
     def eta(self):
-        return get_readable_time(eta) if (eta := self._info.get("eta", False)) else "-"
+        return (
+            get_readable_time(eta) if (eta := self._info.get("eta", False)) else "-"
+        )
 
     async def status(self):
         await self._update()

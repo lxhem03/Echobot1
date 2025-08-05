@@ -459,7 +459,7 @@ class AutoThumbnailHelper:
 
         # Try TMDB first (better quality images)
         if Config.TMDB_API_KEY and Config.TMDB_ENABLED:
-            for variation_name, search_query, search_year in search_variations:
+            for _variation_name, search_query, search_year in search_variations:
                 thumbnail_url = await cls._get_tmdb_thumbnail(
                     search_query, search_year, is_tv_show
                 )
@@ -477,12 +477,14 @@ class AutoThumbnailHelper:
 
         # Fallback to IMDB with same variations
         if Config.IMDB_ENABLED:
-            for variation_name, search_query, search_year in search_variations:
+            for _variation_name, search_query, search_year in search_variations:
                 # Format query for IMDB
                 imdb_query = (
                     f"{search_query} {search_year}" if search_year else search_query
                 )
-                thumbnail_url = await cls._get_imdb_thumbnail(imdb_query, search_year)
+                thumbnail_url = await cls._get_imdb_thumbnail(
+                    imdb_query, search_year
+                )
 
                 if thumbnail_url:
                     return thumbnail_url
@@ -553,7 +555,9 @@ class AutoThumbnailHelper:
             "by",
         }
         meaningful_words = [
-            word for word in words if word.lower() not in stop_words and len(word) > 2
+            word
+            for word in words
+            if word.lower() not in stop_words and len(word) > 2
         ]
 
         # 1. Individual meaningful words (most important)
@@ -694,7 +698,9 @@ class AutoThumbnailHelper:
         for pattern, replacement in transformations:
             new_variants = []
             for variant in current_variants:
-                new_variant = re.sub(pattern, replacement, variant, flags=re.IGNORECASE)
+                new_variant = re.sub(
+                    pattern, replacement, variant, flags=re.IGNORECASE
+                )
                 if new_variant != variant and new_variant not in current_variants:
                     new_variants.append(new_variant)
             current_variants.extend(new_variants)
@@ -945,7 +951,9 @@ class AutoThumbnailHelper:
         ]
 
         for pattern, replacement in transformations:
-            variant = re.sub(pattern, replacement, title, flags=re.IGNORECASE).strip()
+            variant = re.sub(
+                pattern, replacement, title, flags=re.IGNORECASE
+            ).strip()
             if variant and variant != title and variant not in variations:
                 variations.append(variant)
 
@@ -957,7 +965,8 @@ class AutoThumbnailHelper:
         # Try with different word orders (for titles with particles)
         words = title.split()
         if len(words) >= 3 and any(
-            word.lower() in ["no", "wa", "ga", "wo", "ni", "de", "to"] for word in words
+            word.lower() in ["no", "wa", "ga", "wo", "ni", "de", "to"]
+            for word in words
         ):
             # Try moving particles to different positions
             for i, word in enumerate(words):
@@ -1180,7 +1189,9 @@ class TMDBHelper:
             if year:
                 no_year_result = await cls.search_movie(title, None)
                 if no_year_result and no_year_result != primary_result:
-                    score = cls._score_search_result(no_year_result, title, year, False)
+                    score = cls._score_search_result(
+                        no_year_result, title, year, False
+                    )
                     search_results.append((no_year_result, score, "no_year"))
 
             # Multi-search (searches across movies, TV, and people)
@@ -1190,7 +1201,9 @@ class TMDBHelper:
                     r[0].get("id") == multi_result.get("id")
                     for r, _, _ in search_results
                 ):
-                    score = cls._score_search_result(multi_result, title, year, False)
+                    score = cls._score_search_result(
+                        multi_result, title, year, False
+                    )
                     search_results.append((multi_result, score, "multi"))
 
             # Return best result with validation
@@ -1220,7 +1233,9 @@ class TMDBHelper:
             error_msg = str(e) if e else "Unknown error"
             if not error_msg or error_msg.strip() in ["", "0"]:
                 error_msg = f"Empty or invalid error for title: '{title}'"
-            LOGGER.error(f"Error in enhanced movie search for '{title}': {error_msg}")
+            LOGGER.error(
+                f"Error in enhanced movie search for '{title}': {error_msg}"
+            )
             return await cls.search_movie(title, year)  # Fallback to basic search
 
     @classmethod
@@ -1256,7 +1271,9 @@ class TMDBHelper:
             if year:
                 no_year_result = await cls.search_tv_show(title, None)
                 if no_year_result and no_year_result != primary_result:
-                    score = cls._score_search_result(no_year_result, title, year, True)
+                    score = cls._score_search_result(
+                        no_year_result, title, year, True
+                    )
                     search_results.append((no_year_result, score, "no_year"))
 
             # Multi-search
@@ -1324,7 +1341,9 @@ class TMDBHelper:
 
             async with (
                 aiohttp.ClientSession() as session,
-                session.get(f"{cls.BASE_URL}/search/multi", params=params) as response,
+                session.get(
+                    f"{cls.BASE_URL}/search/multi", params=params
+                ) as response,
             ):
                 if response.status == 200:
                     data = await response.json()
@@ -1345,7 +1364,10 @@ class TMDBHelper:
                                                 continue
                                     elif media_type == "tv":
                                         first_air_date = result.get("first_air_date")
-                                        if first_air_date and len(first_air_date) >= 4:
+                                        if (
+                                            first_air_date
+                                            and len(first_air_date) >= 4
+                                        ):
                                             try:
                                                 result_year = int(first_air_date[:4])
                                             except (ValueError, TypeError):
@@ -1699,7 +1721,9 @@ class TMDBHelper:
             return None
 
     @classmethod
-    async def search_tv_show(cls, title: str, year: int | None = None) -> dict | None:
+    async def search_tv_show(
+        cls, title: str, year: int | None = None
+    ) -> dict | None:
         """Search for a TV show by title and optional year"""
         try:
             if not Config.TMDB_API_KEY:
@@ -1891,7 +1915,9 @@ class TMDBHelper:
             # Strategy 2: Search with just the main title (remove episode info)
             main_title = re.sub(r"\s+S\d+E\d+.*", "", title, flags=re.IGNORECASE)
             main_title = re.sub(r"\s+Episode.*", "", main_title, flags=re.IGNORECASE)
-            main_title = re.sub(r"\s+\d+.*", "", main_title)  # Remove trailing numbers
+            main_title = re.sub(
+                r"\s+\d+.*", "", main_title
+            )  # Remove trailing numbers
             search_attempts.append(("main title", main_title))
 
             # Strategy 3: Try first few words only (for long titles)
@@ -1956,7 +1982,9 @@ class TMDBHelper:
             # Strategy 2: Search with just the main title (remove episode info)
             main_title = re.sub(r"\s+S\d+E\d+.*", "", title, flags=re.IGNORECASE)
             main_title = re.sub(r"\s+Episode.*", "", main_title, flags=re.IGNORECASE)
-            main_title = re.sub(r"\s+\d+.*", "", main_title)  # Remove trailing numbers
+            main_title = re.sub(
+                r"\s+\d+.*", "", main_title
+            )  # Remove trailing numbers
             search_attempts.append(("main title", main_title))
 
             # Strategy 3: Try first few words only (for long titles)

@@ -3742,7 +3742,6 @@ class AIManager:
 
         try:
             file_content = ""
-            file_type = None
             file_size = 0
 
             # Handle different file types with size checks
@@ -3750,7 +3749,6 @@ class AIManager:
                 # Image processing
                 photo = message.photo[-1]  # Get highest resolution
                 file_size = getattr(photo, "file_size", 0)
-                file_type = "image"
 
                 if file_size > 20 * 1024 * 1024:  # 20MB limit
                     return (
@@ -3763,7 +3761,6 @@ class AIManager:
                 # Document processing
                 document = message.document
                 file_size = getattr(document, "file_size", 0)
-                file_type = "document"
 
                 if file_size > 50 * 1024 * 1024:  # 50MB limit for documents
                     return "[DOCUMENT_TOO_LARGE: Please send a document smaller than 50MB]"
@@ -3774,7 +3771,6 @@ class AIManager:
                 # Voice/audio processing
                 audio = message.voice or message.audio
                 file_size = getattr(audio, "file_size", 0)
-                file_type = "audio"
 
                 if file_size > 25 * 1024 * 1024:  # 25MB limit for audio
                     return "[AUDIO_TOO_LARGE: Please send an audio file smaller than 25MB]"
@@ -3785,7 +3781,6 @@ class AIManager:
                 # Video note processing
                 video_note = message.video_note
                 file_size = getattr(video_note, "file_size", 0)
-                file_type = "video_note"
 
                 if file_size > 30 * 1024 * 1024:  # 30MB limit for video notes
                     return "[VIDEO_NOTE_TOO_LARGE: Please send a video note smaller than 30MB]"
@@ -3796,7 +3791,6 @@ class AIManager:
                 # Video processing (new feature)
                 video = message.video
                 file_size = getattr(video, "file_size", 0)
-                file_type = "video"
 
                 if file_size > 100 * 1024 * 1024:  # 100MB limit for videos
                     return (

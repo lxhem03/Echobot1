@@ -280,7 +280,9 @@ async def edit_message(
                 client_available = message._client.is_connected
             except AttributeError:
                 # Fallback: check if TgClient instances are available
-                client_available = TgClient.bot is not None or TgClient.user is not None
+                client_available = (
+                    TgClient.bot is not None or TgClient.user is not None
+                )
         else:
             # Fallback: check if TgClient instances are available
             client_available = TgClient.bot is not None or TgClient.user is not None
@@ -418,9 +420,7 @@ async def send_rss(text, chat_id, thread_id):
         LOGGER.error("Telegram says: Message is empty")
         # Try with a simplified message as a fallback
         try:
-            simplified_text = (
-                "RSS Update: Unable to display full content due to formatting issues."
-            )
+            simplified_text = "RSS Update: Unable to display full content due to formatting issues."
             return await app.send_message(
                 chat_id=chat_id,
                 text=simplified_text,
@@ -494,7 +494,9 @@ async def delete_message(*args):
                     )
             else:
                 # Fallback: check if TgClient instances are available
-                client_available = TgClient.bot is not None or TgClient.user is not None
+                client_available = (
+                    TgClient.bot is not None or TgClient.user is not None
+                )
 
             if not client_available:
                 LOGGER.warning(
@@ -568,7 +570,9 @@ async def delete_message(*args):
                     )
             else:
                 # Log other errors as actual errors
-                LOGGER.error(f"Failed to delete message {msg}: {result}", exc_info=True)
+                LOGGER.error(
+                    f"Failed to delete message {msg}: {result}", exc_info=True
+                )
 
 
 async def delete_links(message):

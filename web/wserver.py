@@ -55,7 +55,9 @@ try:
         and ReloadedConfig.FILE2LINK_BIN_CHANNEL
     ):
         Config.FILE2LINK_BIN_CHANNEL = ReloadedConfig.FILE2LINK_BIN_CHANNEL
-        Config.FILE2LINK_ENABLED = getattr(ReloadedConfig, "FILE2LINK_ENABLED", False)
+        Config.FILE2LINK_ENABLED = getattr(
+            ReloadedConfig, "FILE2LINK_ENABLED", False
+        )
 
     # Load database settings asynchronously when needed
     import asyncio
@@ -124,7 +126,9 @@ try:
                     Config.FILE2LINK_BIN_CHANNEL = int(env_bin_channel)
 
                 except ValueError:
-                    LOGGER.error(f"Invalid emergency fallback value: {env_bin_channel}")
+                    LOGGER.error(
+                        f"Invalid emergency fallback value: {env_bin_channel}"
+                    )
 
     # Store the config loading function for later use
     _config_loader = load_web_server_config
@@ -233,7 +237,9 @@ async def init_streaming_client(TgClient):
             session_dir = tempfile.mkdtemp(prefix="web_sessions_")
 
             # Check if max_concurrent_transmissions is supported (kurigram vs pyrofork compatibility)
-            client_params = list(inspect.signature(Client.__init__).parameters.keys())
+            client_params = list(
+                inspect.signature(Client.__init__).parameters.keys()
+            )
             client_args = {
                 "name": f"web_main_{TgClient.ID}",  # Different session name to avoid conflicts
                 "api_id": Config.TELEGRAM_API,
@@ -258,7 +264,6 @@ async def init_streaming_client(TgClient):
 
         # Initialize helper bots for streaming if HELPER_TOKENS is available
         if Config.HELPER_TOKENS and not TgClient.helper_bots:
-
             await init_helper_bots_for_streaming(TgClient)
             if hasattr(TgClient, "helper_bots") and TgClient.helper_bots:
                 pass
@@ -283,7 +288,6 @@ async def init_helper_bots_for_streaming(TgClient):
 
         async def start_helper_bot(no, b_token):
             try:
-
                 # Use in-memory session for helper bots to avoid auth issues
                 import inspect
                 import tempfile
@@ -767,7 +771,9 @@ async def protected_proxy(
 async def sabnzbd_proxy(path: str = "", request: Request = None):
     # Get username and password from query params or cookies
     username = (
-        request.query_params.get("user") or request.cookies.get("nzb_user") or "admin"
+        request.query_params.get("user")
+        or request.cookies.get("nzb_user")
+        or "admin"
     )
     password = (
         request.query_params.get("pass")
@@ -794,7 +800,9 @@ async def sabnzbd_proxy(path: str = "", request: Request = None):
 async def qbittorrent_proxy(path: str = "", request: Request = None):
     # Get username and password from query params or cookies
     username = (
-        request.query_params.get("user") or request.cookies.get("qbit_user") or "admin"
+        request.query_params.get("user")
+        or request.cookies.get("qbit_user")
+        or "admin"
     )
     password = request.query_params.get("pass") or request.cookies.get("qbit_pass")
 
@@ -885,12 +893,16 @@ async def health_check():
             "streaming_ready": streaming_ready,
             "bin_channel_configured": bool(Config.FILE2LINK_BIN_CHANNEL),
             "bin_channel_id": (
-                Config.FILE2LINK_BIN_CHANNEL if Config.FILE2LINK_BIN_CHANNEL else None
+                Config.FILE2LINK_BIN_CHANNEL
+                if Config.FILE2LINK_BIN_CHANNEL
+                else None
             ),
             "helper_tokens_configured": bool(Config.HELPER_TOKENS),
             "total_clients": client_info.get("total_clients", 1),
             "helper_bots_count": client_info.get("helper_bots_count", 0),
-            "workload_distribution": client_info.get("workload_distribution", {0: 0}),
+            "workload_distribution": client_info.get(
+                "workload_distribution", {0: 0}
+            ),
             "hyperdl_enabled": hyperdl_enabled,
             "hyper_threads_config": Config.HYPER_THREADS,
         }
@@ -1321,7 +1333,6 @@ async def download_file(path: str, request: Request):
             streamer = None  # Will be set in HyperDL logic if needed
 
         try:
-
             file_size = file_info.get("file_size", 0)
 
             # Get filename with comprehensive fallback handling
@@ -1409,7 +1420,9 @@ async def download_file(path: str, request: Request):
                                 stream_start, stream_end = 0, file_size - 1
 
                             # Stream using HyperDL's get_file method (yields chunks directly)
-                            offset = stream_start - (stream_start % hyperdl.chunk_size)
+                            offset = stream_start - (
+                                stream_start % hyperdl.chunk_size
+                            )
                             first_part_cut = stream_start - offset
                             last_part_cut = (stream_end % hyperdl.chunk_size) + 1
                             part_count = (
@@ -1430,7 +1443,7 @@ async def download_file(path: str, request: Request):
                                     ):
                                         break
 
-                        except Exception as e:
+                        except Exception:
                             raise
 
                     # Return HyperDL streaming response (no disk write, streams directly)
@@ -1455,62 +1468,59 @@ async def download_file(path: str, request: Request):
                         stream_method = streamer.stream_file(
                             message_id, offset=start, limit=content_length
                         )
-                    else:
-                        # Legacy fallback methods
+                    # Legacy fallback methods
 
-                        # Create fallback streamer if needed
-                        if streamer is None:
-                            # Create stream_media() fallback
-                            class StreamMediaDownloader:
-                                def __init__(self, client, chat_id):
-                                    self.client = client
-                                    self.chat_id = chat_id
+                    # Create fallback streamer if needed
+                    elif streamer is None:
+                        # Create stream_media() fallback
+                        class StreamMediaDownloader:
+                            def __init__(self, client, chat_id):
+                                self.client = client
+                                self.chat_id = chat_id
 
-                                async def stream_file(
-                                    self, message_id, offset=0, limit=0
-                                ):
-                                    """Stream file using high-level stream_media() API"""
-                                    message = await self.client.get_messages(
-                                        self.chat_id, message_id
-                                    )
-                                    bytes_streamed = 0
+                            async def stream_file(
+                                self, message_id, offset=0, limit=0
+                            ):
+                                """Stream file using high-level stream_media() API"""
+                                message = await self.client.get_messages(
+                                    self.chat_id, message_id
+                                )
+                                bytes_streamed = 0
 
-                                    async for chunk in self.client.stream_media(
-                                        message
+                                async for chunk in self.client.stream_media(message):
+                                    if not chunk:
+                                        break
+
+                                    # Handle offset and limit
+                                    if offset > 0:
+                                        if bytes_streamed + len(chunk) <= offset:
+                                            bytes_streamed += len(chunk)
+                                            continue
+                                        elif bytes_streamed < offset:
+                                            skip_bytes = offset - bytes_streamed
+                                            chunk = chunk[skip_bytes:]
+                                            bytes_streamed = offset
+
+                                    yield chunk
+                                    bytes_streamed += len(chunk)
+
+                                    if (
+                                        limit > 0
+                                        and bytes_streamed >= offset + limit
                                     ):
-                                        if not chunk:
-                                            break
+                                        break
 
-                                        # Handle offset and limit
-                                        if offset > 0:
-                                            if bytes_streamed + len(chunk) <= offset:
-                                                bytes_streamed += len(chunk)
-                                                continue
-                                            elif bytes_streamed < offset:
-                                                skip_bytes = offset - bytes_streamed
-                                                chunk = chunk[skip_bytes:]
-                                                bytes_streamed = offset
-
-                                        yield chunk
-                                        bytes_streamed += len(chunk)
-
-                                        if (
-                                            limit > 0
-                                            and bytes_streamed >= offset + limit
-                                        ):
-                                            break
-
-                            fallback_streamer = StreamMediaDownloader(
-                                client, storage_channel
-                            )
-                            stream_method = fallback_streamer.stream_file(
-                                message_id, offset=start, limit=content_length
-                            )
-                        else:
-                            # Use existing streamer (HyperDL or other)
-                            stream_method = streamer.stream_file(
-                                message_id, offset=start, limit=content_length
-                            )
+                        fallback_streamer = StreamMediaDownloader(
+                            client, storage_channel
+                        )
+                        stream_method = fallback_streamer.stream_file(
+                            message_id, offset=start, limit=content_length
+                        )
+                    else:
+                        # Use existing streamer (HyperDL or other)
+                        stream_method = streamer.stream_file(
+                            message_id, offset=start, limit=content_length
+                        )
 
                     chunk_count = 0
                     last_log_time = start_time

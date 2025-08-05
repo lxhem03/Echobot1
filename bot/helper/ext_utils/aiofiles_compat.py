@@ -344,13 +344,12 @@ async def rename(src, dst):
                     try:
                         if AIOFILES_HAS_RENAME:
                             return await aio_rename(src, truncated_dst)
-                        else:
-                            import os as _os
+                        import os as _os
 
-                            loop = asyncio.get_event_loop()
-                            return await loop.run_in_executor(
-                                None, lambda: _os.rename(src, truncated_dst)
-                            )
+                        loop = asyncio.get_event_loop()
+                        return await loop.run_in_executor(
+                            None, lambda: _os.rename(src, truncated_dst)
+                        )
                     except Exception:
                         raise e
                 else:

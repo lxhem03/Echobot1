@@ -1888,7 +1888,7 @@ async def gen_mediainfo(
                         )
                         is_split_archive = False
                         is_archive = False
-                except (Exception, TimeoutError) as e:
+                except (Exception, TimeoutError):
                     # If verification fails or times out, don't assume it's an archive
                     # This prevents false positives with split video files
                     is_split_archive = False

@@ -177,7 +177,9 @@ def format_link_message(links: dict[str, str], chat_title: str | None = None) ->
 
         # Source information
         if chat_title:
-            message_parts.extend([f"📂 <b>Source:</b> <code>{chat_title}</code>", ""])
+            message_parts.extend(
+                [f"📂 <b>Source:</b> <code>{chat_title}</code>", ""]
+            )
 
         # File information with better formatting
         message_parts.extend(
@@ -205,7 +207,9 @@ def format_link_message(links: dict[str, str], chat_title: str | None = None) ->
                 f'┗ ⬇️ <b>Download:</b> <a href="{links["online_link"]}">📥 Direct Download</a>'
             )
 
-        message_parts.extend(["", "─────────────────────────", "💡 <b>Quick Tips:</b>"])
+        message_parts.extend(
+            ["", "─────────────────────────", "💡 <b>Quick Tips:</b>"]
+        )
 
         # Add appropriate tips based on streamability
         if links.get("stream_link"):
