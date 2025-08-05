@@ -11,6 +11,7 @@ from re import sub as re_sub
 from time import time
 
 import psutil
+from aiofiles.os import path as aiopath
 from aioshutil import rmtree
 from natsort import natsorted
 from PIL import Image
@@ -135,9 +136,7 @@ class TelegramUploader:
         self._error = ""
 
         # Streamrip-specific attributes
-        self._is_streamrip = hasattr(listener, "url") and hasattr(
-            listener, "quality"
-        )
+        self._is_streamrip = hasattr(listener, "url") and hasattr(listener, "quality")
         self._streamrip_platform = getattr(listener, "platform", None)
         self._streamrip_media_type = getattr(listener, "media_type", None)
 
@@ -189,6 +188,7 @@ class TelegramUploader:
                     if not clean_suffix.startswith(" "):
                         clean_suffix = f" {clean_suffix}"
                     result = f"{name}{clean_suffix}{ext}"
+                # Files without extension: name -> name suffix
                 else:
                     if not clean_suffix.startswith(" "):
                         clean_suffix = f" {clean_suffix}"
@@ -242,9 +242,7 @@ class TelegramUploader:
         # Add HTML suffix if available (preserve HTML tags for caption)
         if self._lsuffix:
             # Add space before suffix if it doesn't start with one and doesn't start with HTML tag
-            if not self._lsuffix.startswith(" ") and not self._lsuffix.startswith(
-                "<"
-            ):
+            if not self._lsuffix.startswith(" ") and not self._lsuffix.startswith("<"):
                 caption = f"{caption} {self._lsuffix}"
             else:
                 caption = f"{caption}{self._lsuffix}"
@@ -266,9 +264,7 @@ class TelegramUploader:
                     TgClient.user.stop_transmission()
                 elif self._listener.client:
                     self._listener.client.stop_transmission()
-                self._transmission_stopped = (
-                    True  # Set flag to prevent further calls
-                )
+                self._transmission_stopped = True  # Set flag to prevent further calls
             except Exception:
                 self._transmission_stopped = (
                     True  # Set flag even on error to prevent spam
@@ -301,6 +297,7 @@ class TelegramUploader:
             if "LEECH_SUFFIX" not in self._listener.user_dict
             else ""
         )
+
         self._lfont = self._listener.user_dict.get("LEECH_FONT") or (
             Config.LEECH_FONT if "LEECH_FONT" not in self._listener.user_dict else ""
         )
@@ -458,9 +455,7 @@ class TelegramUploader:
                 # Rename the file first so caption generation uses the correct filename
                 if working_filename != file_:
                     new_path = ospath.join(dirpath, working_filename)
-                    LOGGER.info(
-                        f"Renaming for caption: {self._up_path} -> {new_path}"
-                    )
+                    LOGGER.info(f"Renaming for caption: {self._up_path} -> {new_path}")
                     await rename(self._up_path, new_path)
                     self._up_path = new_path
 
@@ -485,14 +480,10 @@ class TelegramUploader:
                 if self._lfont:
                     # Apply the font style to the core filename only
                     try:
-                        styled_core = await apply_font_style(
-                            core_filename, self._lfont
-                        )
+                        styled_core = await apply_font_style(core_filename, self._lfont)
                         # Set caption to styled core (prefix/suffix will be added later)
                         cap_mono = styled_core
-                        LOGGER.info(
-                            f"Applied font style '{self._lfont}' to filename"
-                        )
+                        LOGGER.info(f"Applied font style '{self._lfont}' to filename")
                     except Exception as e:
                         LOGGER.error(f"Error applying font style: {e}")
                         # If font styling fails, use the core filename with HTML formatting
@@ -542,18 +533,40 @@ class TelegramUploader:
                 cap_mono = self._build_caption_with_html_prefix_suffix(cap_mono)
 
             # Rename the file with the final filename (if not already renamed for caption)
-            if final_filename != file_ and final_filename != ospath.basename(
-                self._up_path
-            ):
+            current_basename = ospath.basename(self._up_path)
+            if final_filename != current_basename:
                 new_path = ospath.join(dirpath, final_filename)
                 try:
-                    await rename(self._up_path, new_path)
-                    self._up_path = new_path
-                    LOGGER.info(f"File renamed to: {final_filename}")
+                    # Check if source file actually exists before attempting rename
+                    if await aiopath.exists(self._up_path):
+                        await rename(self._up_path, new_path)
+                        self._up_path = new_path
+                        LOGGER.info(f"File renamed to: {final_filename}")
+                    else:
+                        # Source file doesn't exist at expected path, try to find the actual file
+                        LOGGER.warning(f"Source file not found: {self._up_path}")
+
+                        # Try to find the file with current basename in the directory
+                        potential_path = ospath.join(dirpath, current_basename)
+
+                        if await aiopath.exists(potential_path):
+                            self._up_path = potential_path
+                            await rename(self._up_path, new_path)
+                            # Update path to the actual renamed file (may be truncated)
+                            self._up_path = new_path
+                            # Update final_filename to match the actual file (in case it was truncated)
+                            final_filename = ospath.basename(self._up_path)
+                            LOGGER.info(f"File renamed to: {final_filename}")
+                        else:
+                            # Still can't find the file, keep original filename
+                            LOGGER.warning(
+                                f"File not found at potential path either, keeping original filename: {current_basename}"
+                            )
+                            final_filename = current_basename
                 except Exception as e:
                     LOGGER.error(f"Failed to rename file: {e}")
                     # Update final_filename to match the actual file
-                    final_filename = ospath.basename(self._up_path)
+                    final_filename = current_basename
 
                 # Immediately add renamed filename to processed list to prevent double processing
                 if hasattr(self, "_processed_files"):
@@ -619,14 +632,43 @@ class TelegramUploader:
 
     def _get_input_media(self, subkey, key):
         rlist = []
+
+        # Validate media_dict structure
+        if (
+            not self._media_dict
+            or key not in self._media_dict
+            or subkey not in self._media_dict[key]
+        ):
+            LOGGER.error(
+                f"Invalid media_dict structure for key: {key}, subkey: {subkey}"
+            )
+            return rlist
+
         for msg in self._media_dict[key][subkey]:
+            # Validate message object
+            if msg is None:
+                LOGGER.error("Skipping None message in media group")
+                continue
+
             if key == "videos":
+                if not hasattr(msg, "video") or msg.video is None:
+                    LOGGER.error("Skipping message without video attribute")
+                    continue
+                if not hasattr(msg.video, "file_id"):
+                    LOGGER.error("Skipping video message without file_id")
+                    continue
                 input_media = InputMediaVideo(
-                    media=msg.video.file_id, caption=msg.caption
+                    media=msg.video.file_id, caption=getattr(msg, "caption", None)
                 )
             else:
+                if not hasattr(msg, "document") or msg.document is None:
+                    LOGGER.error("Skipping message without document attribute")
+                    continue
+                if not hasattr(msg.document, "file_id"):
+                    LOGGER.error("Skipping document message without file_id")
+                    continue
                 input_media = InputMediaDocument(
-                    media=msg.document.file_id, caption=msg.caption
+                    media=msg.document.file_id, caption=getattr(msg, "caption", None)
                 )
             rlist.append(input_media)
         return rlist
@@ -642,6 +684,26 @@ class TelegramUploader:
 
             # Get the reply message details
             reply_to_message = self._sent_msg
+
+            # Safety check for reply_to_message
+            if reply_to_message is None:
+                LOGGER.error("Cannot send screenshots: reply_to_message is None")
+                return
+
+            if not hasattr(reply_to_message, "chat") or reply_to_message.chat is None:
+                LOGGER.error(
+                    "Cannot send screenshots: reply_to_message has no chat attribute or chat is None"
+                )
+                return
+
+            if not hasattr(reply_to_message.chat, "id") or not hasattr(
+                reply_to_message, "id"
+            ):
+                LOGGER.error(
+                    "Cannot send screenshots: reply_to_message.chat or reply_to_message has no id attribute"
+                )
+                return
+
             target_chat_id = reply_to_message.chat.id
             reply_to_message_id = reply_to_message.id
 
@@ -687,10 +749,35 @@ class TelegramUploader:
         # Determine the target chat and reply message ID
         if reply_to_message:
             # If there's a reply_to_message, use its chat and reply to it
+            if not hasattr(reply_to_message, "chat") or reply_to_message.chat is None:
+                LOGGER.error(
+                    "Cannot send media group: reply_to_message has no chat attribute or chat is None"
+                )
+                return
+            if not hasattr(reply_to_message.chat, "id") or not hasattr(
+                reply_to_message, "id"
+            ):
+                LOGGER.error(
+                    "Cannot send media group: reply_to_message.chat or reply_to_message has no id attribute"
+                )
+                return
             target_chat_id = reply_to_message.chat.id
             reply_to_message_id = reply_to_message.id
         else:
             # If no reply_to_message, use the original message's chat
+            if not msgs or len(msgs) == 0:
+                LOGGER.error("Cannot send media group: msgs list is empty")
+                return
+            if not hasattr(msgs[0], "chat") or msgs[0].chat is None:
+                LOGGER.error(
+                    "Cannot send media group: msgs[0] has no chat attribute or chat is None"
+                )
+                return
+            if not hasattr(msgs[0].chat, "id"):
+                LOGGER.error(
+                    "Cannot send media group: msgs[0].chat has no id attribute"
+                )
+                return
             target_chat_id = msgs[0].chat.id
             reply_to_message_id = None
 
@@ -709,6 +796,11 @@ class TelegramUploader:
                 reply_to_message_id=reply_to_message_id,
                 disable_notification=True,
             )
+
+        # Log successful media group creation
+        LOGGER.info(
+            f"Leech media group successfully created with {len(msgs_list)} files for: {subkey}"
+        )
 
         # Clean up original messages
         for msg in msgs:
@@ -903,16 +995,12 @@ class TelegramUploader:
                     # Use the current file path (after renaming) for media group pattern matching
                     original_file_path = self._up_path
                     if self._last_msg_in_group:
-                        group_lists = [
-                            x for v in self._media_dict.values() for x in v
-                        ]
+                        group_lists = [x for v in self._media_dict.values() for x in v]
                         match = re_match(
                             r".+(?=\.0*\d+$)|.+(?=\.part\d+\..+$)",
                             original_file_path,
                         )
-                        if not match or (
-                            match and match.group(0) not in group_lists
-                        ):
+                        if not match or (match and match.group(0) not in group_lists):
                             for key, value in list(self._media_dict.items()):
                                 for subkey, msgs in list(value.items()):
                                     if len(msgs) > 1:
@@ -1235,6 +1323,24 @@ class TelegramUploader:
         return file_ext in media_extensions
 
     async def _upload_file(self, cap_mono, file, o_path, force_document=False):
+        # Validate _sent_msg before proceeding with upload
+        if self._sent_msg is None:
+            LOGGER.error(
+                f"Cannot upload file: _sent_msg is None. Path: {self._up_path}"
+            )
+            return None
+
+        if (
+            not hasattr(self._sent_msg, "reply_document")
+            or not hasattr(self._sent_msg, "reply_video")
+            or not hasattr(self._sent_msg, "reply_audio")
+            or not hasattr(self._sent_msg, "reply_photo")
+        ):
+            LOGGER.error(
+                f"Cannot upload file: _sent_msg missing required reply methods. Path: {self._up_path}"
+            )
+            return None
+
         # Generate MediaInfo only for media files
         if (
             hasattr(self._listener, "user_dict")
@@ -1304,24 +1410,33 @@ class TelegramUploader:
                             original_filename = (
                                 self._get_original_filename_for_thumbnail(file)
                             )
-                            auto_thumb = (
-                                await AutoThumbnailHelper.get_auto_thumbnail(
-                                    original_filename, self._listener.user_id
-                                )
+                            # Pass the enabled status to override config check
+                            auto_thumb = await AutoThumbnailHelper.get_auto_thumbnail(
+                                original_filename, self._listener.user_id, enabled=True
                             )
                             if auto_thumb:
                                 thumb = auto_thumb
                                 LOGGER.info(
                                     f"✅ Using auto thumbnail for: {file} (original: {original_filename})"
                                 )
+                            else:
+                                LOGGER.info(f"❌ No auto thumbnail found for: {file}")
                         except Exception as e:
                             LOGGER.error(f"Error getting auto thumbnail: {e}")
+                    elif not auto_thumb_enabled:
+                        LOGGER.info(f"Auto thumbnail disabled for: {file}")
+                    else:
+                        LOGGER.info(f"Auto thumbnail skipped - not video/audio: {file}")
 
                 if thumb is None and is_audio and not is_video:
                     # Enhanced thumbnail handling for streamrip audio files
                     if self._is_streamrip:
                         # For streamrip, try to extract embedded album art first
                         thumb = await get_audio_thumbnail(self._up_path)
+                        if thumb:
+                            LOGGER.info(
+                                f"Leech audio thumbnail (embedded album art) successfully extracted for streamrip: {file}"
+                            )
 
                         # If no embedded thumbnail found, check for cover art files in the same directory
                         if thumb is None:
@@ -1344,7 +1459,7 @@ class TelegramUploader:
                                     if await aiopath.isfile(cover_path):
                                         thumb = cover_path
                                         LOGGER.info(
-                                            f"Using cover art file for streamrip audio: {cover_path}"
+                                            f"Leech audio thumbnail (cover art file) successfully applied for streamrip: {cover_file}"
                                         )
                                         break
                             except Exception as e:
@@ -1355,6 +1470,10 @@ class TelegramUploader:
                     elif self._is_zotify:
                         # For Zotify, try to extract embedded album art first
                         thumb = await get_audio_thumbnail(self._up_path)
+                        if thumb:
+                            LOGGER.info(
+                                f"Leech audio thumbnail (embedded album art) successfully extracted for Zotify: {file}"
+                            )
 
                         # If no embedded thumbnail found, check for cover art files in the same directory
                         if thumb is None:
@@ -1379,6 +1498,9 @@ class TelegramUploader:
                                     cover_path = ospath.join(audio_dir, cover_file)
                                     if await aiopath.isfile(cover_path):
                                         thumb = cover_path
+                                        LOGGER.info(
+                                            f"Leech audio thumbnail (cover art file) successfully applied for Zotify: {cover_file}"
+                                        )
                                         break
                             except Exception as e:
                                 LOGGER.error(
@@ -1386,6 +1508,16 @@ class TelegramUploader:
                                 )
                     else:
                         thumb = await get_audio_thumbnail(self._up_path)
+                        if thumb:
+                            LOGGER.info(
+                                f"Leech audio thumbnail (embedded album art) successfully extracted for: {file}"
+                            )
+
+                # Log when user-provided thumbnail is being used for audio
+                if thumb and thumb != "none" and thumb == self._thumb and is_audio:
+                    LOGGER.info(
+                        f"Leech user thumbnail successfully applied to audio: {file}"
+                    )
 
             if (
                 self._listener.as_doc
@@ -1395,11 +1527,29 @@ class TelegramUploader:
                 key = "documents"
                 if is_video and thumb is None:
                     thumb = await get_video_thumbnail(self._up_path, None)
+                    if thumb:
+                        LOGGER.info(
+                            f"Leech document video thumbnail successfully generated for: {file}"
+                        )
+
+                # Log when user-provided thumbnail is being used for documents
+                if thumb and thumb != "none" and thumb == self._thumb:
+                    LOGGER.info(
+                        f"Leech user thumbnail successfully applied to document: {file}"
+                    )
 
                 if self._listener.is_cancelled:
                     return None
                 if thumb == "none":
                     thumb = None
+
+                # Additional validation before document upload
+                if self._sent_msg is None:
+                    LOGGER.error(
+                        f"Cannot upload document: _sent_msg is None. Path: {self._up_path}"
+                    )
+                    return None
+
                 self._sent_msg = await self._sent_msg.reply_document(
                     document=self._up_path,
                     quote=True,
@@ -1410,6 +1560,7 @@ class TelegramUploader:
                     progress=self._upload_progress,
                     parse_mode=enums.ParseMode.HTML,
                 )
+                LOGGER.info(f"Leech document successfully uploaded: {file}")
             elif is_video:
                 key = "videos"
                 try:
@@ -1424,8 +1575,21 @@ class TelegramUploader:
                         self._listener.thumbnail_layout,
                         self._listener.screen_shots,
                     )
+                    if thumb:
+                        LOGGER.info(
+                            f"Leech thumbnail layout ({self._listener.thumbnail_layout}) successfully applied to: {file}"
+                        )
                 if thumb is None:
                     thumb = await get_video_thumbnail(self._up_path, duration)
+                    if thumb:
+                        LOGGER.info(
+                            f"Leech video thumbnail successfully generated for: {file}"
+                        )
+
+                # Log when user-provided thumbnail is being used
+                if thumb and thumb != "none" and thumb == self._thumb:
+                    LOGGER.info(f"Leech user thumbnail successfully applied to: {file}")
+
                 if thumb is not None and thumb != "none":
                     with Image.open(thumb) as img:
                         width, height = img.size
@@ -1437,6 +1601,14 @@ class TelegramUploader:
                     return None
                 if thumb == "none":
                     thumb = None
+
+                # Additional validation before video upload
+                if self._sent_msg is None:
+                    LOGGER.error(
+                        f"Cannot upload video: _sent_msg is None. Path: {self._up_path}"
+                    )
+                    return None
+
                 self._sent_msg = await self._sent_msg.reply_video(
                     video=self._up_path,
                     quote=True,
@@ -1450,6 +1622,7 @@ class TelegramUploader:
                     progress=self._upload_progress,
                     parse_mode=enums.ParseMode.HTML,
                 )
+                LOGGER.info(f"Leech video successfully uploaded: {file}")
             elif is_audio:
                 key = "audios"
                 duration, artist, title = await get_media_info(self._up_path)
@@ -1546,6 +1719,14 @@ class TelegramUploader:
 
                 if self._listener.is_cancelled:
                     return None
+
+                # Additional validation before audio upload
+                if self._sent_msg is None:
+                    LOGGER.error(
+                        f"Cannot upload audio: _sent_msg is None. Path: {self._up_path}"
+                    )
+                    return None
+
                 self._sent_msg = await self._sent_msg.reply_audio(
                     audio=self._up_path,
                     quote=True,
@@ -1558,6 +1739,7 @@ class TelegramUploader:
                     progress=self._upload_progress,
                     parse_mode=enums.ParseMode.HTML,
                 )
+                LOGGER.info(f"Leech audio successfully uploaded: {file}")
             else:
                 key = "photos"
                 if self._listener.is_cancelled:
@@ -1573,6 +1755,14 @@ class TelegramUploader:
                         f"File has image type but unsupported extension for Telegram photos: {file_ext}. Sending as document."
                     )
                     key = "documents"
+
+                    # Additional validation before document upload (for unsupported image extensions)
+                    if self._sent_msg is None:
+                        LOGGER.error(
+                            f"Cannot upload document (unsupported image): _sent_msg is None. Path: {self._up_path}"
+                        )
+                        return None
+
                     self._sent_msg = await self._sent_msg.reply_document(
                         document=self._up_path,
                         quote=True,
@@ -1586,6 +1776,13 @@ class TelegramUploader:
                 else:
                     # Try to send as photo, but be prepared to fall back to document
                     try:
+                        # Additional validation before photo upload
+                        if self._sent_msg is None:
+                            LOGGER.error(
+                                f"Cannot upload photo: _sent_msg is None. Path: {self._up_path}"
+                            )
+                            return None
+
                         self._sent_msg = await self._sent_msg.reply_photo(
                             photo=self._up_path,
                             quote=True,
@@ -1594,12 +1791,21 @@ class TelegramUploader:
                             progress=self._upload_progress,
                             parse_mode=enums.ParseMode.HTML,
                         )
+                        LOGGER.info(f"Leech image successfully uploaded: {file}")
                     except BadRequest as e:
                         if "PHOTO_EXT_INVALID" in str(e):
                             LOGGER.info(
                                 f"Failed to send as photo due to invalid extension. Sending as document: {self._up_path}"
                             )
                             key = "documents"
+
+                            # Additional validation before fallback document upload
+                            if self._sent_msg is None:
+                                LOGGER.error(
+                                    f"Cannot upload fallback document: _sent_msg is None. Path: {self._up_path}"
+                                )
+                                return None
+
                             self._sent_msg = await self._sent_msg.reply_document(
                                 document=self._up_path,
                                 quote=True,
@@ -1627,10 +1833,7 @@ class TelegramUploader:
                 and hasattr(self._sent_msg, "id")
                 and (
                     (hasattr(self._sent_msg, "video") and self._sent_msg.video)
-                    or (
-                        hasattr(self._sent_msg, "document")
-                        and self._sent_msg.document
-                    )
+                    or (hasattr(self._sent_msg, "document") and self._sent_msg.document)
                 )
             ):
                 key = "documents" if self._sent_msg.document else "videos"
@@ -1743,9 +1946,13 @@ class TelegramUploader:
             )
             return
 
-        source_chat_id = msgs_list[0].chat.id
+        # Check if the chat has an id attribute
+        if not hasattr(msgs_list[0].chat, "id"):
+            LOGGER.error(
+                "Cannot copy media group: First message's chat has no id attribute"
+            )
+            return
 
-        # Use the first message in the group to determine the source chat
         source_chat_id = msgs_list[0].chat.id
 
         # Skip copying if we're already in the user's PM and no other destinations are needed
@@ -1777,11 +1984,7 @@ class TelegramUploader:
             user_dump = self._user_dump
 
             # Case 1: If user set their own dump and owner has set leech dump chat
-            if (
-                user_dump
-                and Config.LEECH_DUMP_CHAT
-                and len(Config.LEECH_DUMP_CHAT) > 0
-            ):
+            if user_dump and Config.LEECH_DUMP_CHAT and len(Config.LEECH_DUMP_CHAT) > 0:
                 # Send to user dump, leech dump chat, and bot PM
                 if source_chat_id != int(user_dump):
                     destinations.append(int(user_dump))
@@ -1875,9 +2078,7 @@ class TelegramUploader:
         async def _send_media_group_to_dest(dest):
             # Check if task is cancelled before sending media group
             if self._listener.is_cancelled:
-                LOGGER.info(
-                    f"Task is cancelled, skipping media group copy to {dest}"
-                )
+                LOGGER.info(f"Task is cancelled, skipping media group copy to {dest}")
                 return
 
             try:
@@ -1931,15 +2132,15 @@ class TelegramUploader:
                             if isinstance(processed_chat_id, str):
                                 # Remove any prefixes like "b:", "u:", "h:" if present
                                 if ":" in processed_chat_id:
-                                    processed_chat_id = processed_chat_id.split(
-                                        ":", 1
-                                    )[1]
+                                    processed_chat_id = processed_chat_id.split(":", 1)[
+                                        1
+                                    ]
 
                                 # Remove any suffixes after | if present (for hybrid format)
                                 if "|" in processed_chat_id:
-                                    processed_chat_id = processed_chat_id.split(
-                                        "|", 1
-                                    )[0]
+                                    processed_chat_id = processed_chat_id.split("|", 1)[
+                                        0
+                                    ]
 
                             # Check if the processed chat ID matches the destination
                             if str(processed_chat_id) == dest_str:
@@ -1947,7 +2148,7 @@ class TelegramUploader:
                                 break
 
                 # If we found a command message for this destination, reply to it
-                if found_cmd_msg:
+                if found_cmd_msg and hasattr(found_cmd_msg, "id"):
                     # Reply to the command message with the media group
                     if self._user_session:
                         await TgClient.user.send_media_group(
@@ -2011,9 +2212,7 @@ class TelegramUploader:
 
         # Check if task is cancelled or _sent_msg is None (due to cancellation)
         if self._listener.is_cancelled or self._sent_msg is None:
-            LOGGER.info(
-                "Task is cancelled or _sent_msg is None, skipping message copy"
-            )
+            LOGGER.info("Task is cancelled or _sent_msg is None, skipping message copy")
             return
 
         # Additional safety check for _sent_msg.chat
@@ -2031,11 +2230,32 @@ class TelegramUploader:
                         LOGGER.info("Task cancelled during copy attempt, aborting")
                         return
 
+                    # Additional safety check for _sent_msg attributes
+                    if (
+                        not hasattr(self._sent_msg, "chat")
+                        or self._sent_msg.chat is None
+                    ):
+                        LOGGER.error(
+                            "Cannot copy message: _sent_msg has no chat attribute or chat is None"
+                        )
+                        return
+
+                    if not hasattr(self._sent_msg.chat, "id") or not hasattr(
+                        self._sent_msg, "id"
+                    ):
+                        LOGGER.error(
+                            "Cannot copy message: _sent_msg.chat or _sent_msg has no id attribute"
+                        )
+                        return
+
                     msg = await TgClient.bot.get_messages(
                         self._sent_msg.chat.id,
                         self._sent_msg.id,
                     )
                     await msg.copy(target)
+                    LOGGER.info(
+                        f"Leech media store: Successfully copied to destination {target}"
+                    )
                     return
                 except Exception as e:
                     error_str = str(e)
@@ -2059,7 +2279,17 @@ class TelegramUploader:
             LOGGER.error(f"Failed to copy message after {retries} attempts")
 
         # Follow the same destination logic as _copy_media_group for consistency
-        # Additional safety check for chat.id
+        # Additional safety check for _sent_msg and its attributes
+        if self._sent_msg is None:
+            LOGGER.error("Cannot copy message: _sent_msg is None")
+            return
+
+        if not hasattr(self._sent_msg, "chat") or self._sent_msg.chat is None:
+            LOGGER.error(
+                "Cannot copy message: _sent_msg has no chat attribute or chat is None"
+            )
+            return
+
         if not hasattr(self._sent_msg.chat, "id"):
             LOGGER.error("Cannot copy message: _sent_msg.chat has no id attribute")
             return
@@ -2092,11 +2322,7 @@ class TelegramUploader:
             user_dump = self._user_dump
 
             # Case 1: If user set their own dump and owner has set leech dump chat
-            if (
-                user_dump
-                and Config.LEECH_DUMP_CHAT
-                and len(Config.LEECH_DUMP_CHAT) > 0
-            ):
+            if user_dump and Config.LEECH_DUMP_CHAT and len(Config.LEECH_DUMP_CHAT) > 0:
                 # Send to user dump, leech dump chat, and bot PM
                 if source_chat_id != int(user_dump):
                     destinations.append(int(user_dump))

@@ -1369,6 +1369,100 @@ class Config:
         25 * 1024 * 1024
     )  # 25MB max file size for trace.moe (API limit)
 
+    # Weather Settings - OpenWeatherMap API
+    WEATHER_ENABLED: bool = True  # Enable/disable weather functionality
+    OPENWEATHER_API_KEY: str = ""  # OpenWeatherMap API key
+    WEATHER_PLACE: str = "London,UK"  # Default weather location
+    AUTO_WEATHER: bool = True  # Enable/disable automatic daily weather updates
+    WEATHER_RISK_NOTIFICATIONS: bool = (
+        True  # Enable/disable weather risk notifications to owner
+    )
+    WEATHER_UNITS: str = "metric"  # Units: standard, metric, imperial
+    WEATHER_LANGUAGE: str = "en"  # Language code for weather descriptions
+    WEATHER_UPDATE_TIME: str = (
+        "08:00"  # Time for daily weather updates (HH:MM format)
+    )
+    WEATHER_TIMEZONE: str = "UTC"  # Timezone for weather updates
+
+    # Advanced Weather Features
+    WEATHER_SHOW_MAPS: bool = True  # Enable/disable weather maps
+    WEATHER_SHOW_AIR_QUALITY: bool = True  # Enable/disable air quality data
+    WEATHER_SHOW_FIRE_INDEX: bool = (
+        False  # Enable/disable fire weather index (requires special access)
+    )
+    WEATHER_HISTORICAL_DAYS: int = (
+        7  # Days of historical data to show (requires paid plan)
+    )
+    WEATHER_FORECAST_DAYS: int = 5  # Days of forecast to show (max 5 for free plan)
+    WEATHER_MAP_ZOOM: int = 10  # Default zoom level for weather maps
+    WEATHER_IMAGE_QUALITY: str = "high"  # Image quality: low, medium, high
+    WEATHER_CACHE_DURATION: int = 600  # Cache duration in seconds (10 minutes)
+
+    # Weather Alert Settings
+    WEATHER_ALERT_TEMPERATURE_HIGH: float = (
+        35.0  # High temperature alert threshold (Celsius)
+    )
+    WEATHER_ALERT_TEMPERATURE_LOW: float = (
+        -10.0
+    )  # Low temperature alert threshold (Celsius)
+    WEATHER_ALERT_WIND_SPEED: float = 15.0  # High wind speed alert threshold (m/s)
+    WEATHER_ALERT_VISIBILITY: int = 1000  # Low visibility alert threshold (meters)
+    WEATHER_ALERT_AQI: int = 3  # Air quality alert threshold (1-5 scale)
+    WEATHER_ALERT_FIRE_DANGER: int = (
+        3  # Fire weather index alert threshold (0-5 scale)
+    )
+
+    # Weather Map Settings
+    WEATHER_MAP_LAYERS: list = [
+        "temp_new",  # Temperature
+        "precipitation_new",  # Precipitation
+        "pressure_new",  # Pressure
+        "wind_new",  # Wind
+        "clouds_new",  # Clouds
+    ]  # Available weather map layers
+    WEATHER_MAP_OPACITY: float = 0.6  # Map layer opacity (0.0-1.0)
+    WEATHER_USE_ADVANCED_MAPS: bool = (
+        False  # Use Weather Maps 2.0 (requires paid plan)
+    )
+    WEATHER_USE_HOURLY_MAPS: bool = (
+        False  # Use Weather Maps 2.0 with 1-hour step (requires paid plan)
+    )
+
+    # Air Quality Settings
+    WEATHER_AQI_FORECAST_DAYS: int = 4  # Days of air quality forecast (max 4)
+    WEATHER_AQI_HISTORICAL_DAYS: int = 7  # Days of historical air quality data
+    WEATHER_SHOW_POLLUTANTS: list = [
+        "co",
+        "no",
+        "no2",
+        "o3",
+        "so2",
+        "pm2_5",
+        "pm10",
+        "nh3",
+    ]  # Pollutants to display
+
+    # Premium Features Settings
+    WEATHER_HOURLY_FORECAST_HOURS: int = (
+        96  # Hours of hourly forecast (max 96 for 4 days)
+    )
+    WEATHER_STATISTICAL_DATA: bool = (
+        False  # Enable statistical weather data (requires paid plan)
+    )
+    WEATHER_ROAD_RISK_API: bool = False  # Enable road risk API (requires paid plan)
+    WEATHER_SOLAR_IRRADIANCE: bool = (
+        False  # Enable solar irradiance data (requires paid plan)
+    )
+
+    # Weather Data Sources
+    WEATHER_BACKUP_SOURCES: bool = (
+        True  # Use backup weather data sources if primary fails
+    )
+    WEATHER_DATA_VALIDATION: bool = True  # Validate weather data before displaying
+    WEATHER_METRIC_CONVERSION: bool = (
+        True  # Auto-convert units based on user location
+    )
+
     # Enhanced NSFW Detection Settings
     NSFW_DETECTION_ENABLED: bool = True  # Master toggle for NSFW detection
     NSFW_DETECTION_SENSITIVITY: str = "moderate"  # strict, moderate, permissive

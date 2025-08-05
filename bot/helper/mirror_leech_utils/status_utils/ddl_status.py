@@ -27,7 +27,16 @@ class DDLStatus:
         return MirrorStatus.STATUS_UPLOADING
 
     def name(self):
-        return self.__obj.name
+        ddl_name = self.__obj.name
+
+        # For operations where ddl name might be empty, use subname if available
+        if (
+            (not ddl_name or ddl_name.strip() == "")
+            and hasattr(self.listener, "subname")
+            and self.listener.subname
+        ):
+            return self.listener.subname
+        return ddl_name
 
     def progress(self):
         try:

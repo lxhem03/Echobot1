@@ -39,8 +39,17 @@ class TelegramStatus:
             current_filename = os.path.basename(self._obj._up_path)
             if current_filename:
                 return current_filename
-        # Otherwise use the original name
-        return self.listener.name
+        # Otherwise use the original name, with subname fallback
+        listener_name = self.listener.name
+
+        # For operations where main name might be empty, use subname if available
+        if (
+            (not listener_name or listener_name.strip() == "")
+            and hasattr(self.listener, "subname")
+            and self.listener.subname
+        ):
+            return self.listener.subname
+        return listener_name
 
     def progress(self):
         try:

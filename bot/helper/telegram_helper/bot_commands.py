@@ -96,3 +96,5 @@ class BotCommands:
     ContactCommand = f"contact{i}"
     BanCommand = f"ban{i}"
     UnbanCommand = f"unban{i}"
+    # Weather Commands
+    WeatherCommand = [f"weather{i}", f"w{i}"]

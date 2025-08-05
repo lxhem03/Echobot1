@@ -301,15 +301,29 @@ async def unified_inline_search_handler(client, inline_query: InlineQuery):
             # Create modified inline query for AI handler
             modified_inline_query = ModifiedInlineQuery(inline_query, modified_query)
 
-            # Import and call AI inline handler
+            # Import and call AI inline handler with enhanced error handling
             try:
-                from bot.modules.ai import handle_ai_inline_query
+                from bot.modules.ai import AIENT_AVAILABLE, handle_ai_inline_query
+
+                # Check if AI dependencies are available
+                if not AIENT_AVAILABLE:
+                    await show_ai_unavailable_error(
+                        inline_query, "AI dependencies not available"
+                    )
+                    return
 
                 await handle_ai_inline_query(client, modified_inline_query)
                 return
+            except ImportError as e:
+                LOGGER.error(f"AI module import error: {e}")
+                await show_ai_unavailable_error(
+                    inline_query, "AI module not available"
+                )
+                return
             except Exception as e:
                 LOGGER.error(f"AI inline handler error: {e}")
-                # Fall through to show error
+                await show_ai_error(inline_query, str(e))
+                return
 
         # AI disabled, show error
         from pyrogram.types import InlineQueryResultArticle, InputTextMessageContent
@@ -467,12 +481,25 @@ async def unified_inline_search_handler(client, inline_query: InlineQuery):
     # If music search is disabled but AI is enabled, route to AI
     if Config.AI_ENABLED and getattr(Config, "AI_INLINE_MODE_ENABLED", True):
         try:
-            from bot.modules.ai import handle_ai_inline_query
+            from bot.modules.ai import AIENT_AVAILABLE, handle_ai_inline_query
+
+            # Check if AI dependencies are available
+            if not AIENT_AVAILABLE:
+                await show_ai_unavailable_error(
+                    inline_query, "AI dependencies not available"
+                )
+                return
 
             await handle_ai_inline_query(client, inline_query)
             return
+        except ImportError as e:
+            LOGGER.error(f"AI module import error: {e}")
+            await show_ai_unavailable_error(inline_query, "AI module not available")
+            return
         except Exception as e:
             LOGGER.error(f"AI inline handler error: {e}")
+            await show_ai_error(inline_query, str(e))
+            return
 
     # If neither search nor AI is enabled, show help
     await show_search_help(inline_query)
@@ -946,6 +973,44 @@ async def send_search_results(
 
         LOGGER.error(f"Failed to send search results: {e}")
         return
+
+
+async def show_ai_unavailable_error(inline_query: InlineQuery, error_msg: str):
+    """Show AI unavailable error in inline mode."""
+    from pyrogram.types import InlineQueryResultArticle, InputTextMessageContent
+
+    await inline_query.answer(
+        results=[
+            InlineQueryResultArticle(
+                id="ai_unavailable",
+                title="❌ AI Assistant Unavailable",
+                description=error_msg,
+                input_message_content=InputTextMessageContent(
+                    f"❌ **AI Assistant Unavailable**\n\n{error_msg}\n\nPlease contact the bot administrator."
+                ),
+            )
+        ],
+        cache_time=60,
+    )
+
+
+async def show_ai_error(inline_query: InlineQuery, error_msg: str):
+    """Show AI error in inline mode."""
+    from pyrogram.types import InlineQueryResultArticle, InputTextMessageContent
+
+    await inline_query.answer(
+        results=[
+            InlineQueryResultArticle(
+                id="ai_error",
+                title="⚠️ AI Assistant Error",
+                description="An error occurred while processing your request",
+                input_message_content=InputTextMessageContent(
+                    f"⚠️ **AI Assistant Error**\n\nAn error occurred while processing your request. Please try again later.\n\n<code>{error_msg}</code>"
+                ),
+            )
+        ],
+        cache_time=30,
+    )
 
 
 async def show_search_help(inline_query: InlineQuery):

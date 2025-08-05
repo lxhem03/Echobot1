@@ -88,10 +88,10 @@ async def generate_stream_links(
         enc_fname = quote(m_name)
         f_hash = get_hash(message)
 
-        # Generate download link (always available)
-        download_link = f"{base_url}/stream/{f_hash}{fid}/{enc_fname}"
+        # Generate download link (always available) - uses /download/ endpoint for actual downloading
+        download_link = f"{base_url}/download/{f_hash}{fid}/{enc_fname}"
 
-        # Generate stream link only if file is streamable
+        # Generate stream link only if file is streamable - uses /stream/ endpoint for streaming
         stream_link = None
         if is_streamable_file(message):
             stream_link = f"{base_url}/watch/{f_hash}{fid}/{enc_fname}"
@@ -177,9 +177,7 @@ def format_link_message(links: dict[str, str], chat_title: str | None = None) ->
 
         # Source information
         if chat_title:
-            message_parts.extend(
-                [f"📂 <b>Source:</b> <code>{chat_title}</code>", ""]
-            )
+            message_parts.extend([f"📂 <b>Source:</b> <code>{chat_title}</code>", ""])
 
         # File information with better formatting
         message_parts.extend(
@@ -207,9 +205,7 @@ def format_link_message(links: dict[str, str], chat_title: str | None = None) ->
                 f'┗ ⬇️ <b>Download:</b> <a href="{links["online_link"]}">📥 Direct Download</a>'
             )
 
-        message_parts.extend(
-            ["", "─────────────────────────", "💡 <b>Quick Tips:</b>"]
-        )
+        message_parts.extend(["", "─────────────────────────", "💡 <b>Quick Tips:</b>"])
 
         # Add appropriate tips based on streamability
         if links.get("stream_link"):

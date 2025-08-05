@@ -166,6 +166,12 @@ if Config.WOT_ENABLED or Config.ABUSEIPDB_ENABLED:
 # Add OSINT command (sudo only)
 COMMANDS["OSINTCommand"] = "- Comprehensive OSINT intelligence suite (sudo only)"
 
+# Add Weather commands if enabled
+if Config.WEATHER_ENABLED:
+    COMMANDS["WeatherCommand"] = (
+        "- Get current weather with beautiful images and forecasts"
+    )
+
 # Setup Commands
 COMMAND_OBJECTS = [
     BotCommand(

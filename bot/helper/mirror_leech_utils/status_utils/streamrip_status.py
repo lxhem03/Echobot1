@@ -1,9 +1,7 @@
 import time
 
 from bot import LOGGER
-from bot.helper.ext_utils.status_utils import (
-    MirrorStatus,
-)
+from bot.helper.ext_utils.status_utils import MirrorStatus
 
 
 class StreamripDownloadStatus:
@@ -40,7 +38,20 @@ class StreamripDownloadStatus:
             and self.download_helper.current_track
         ):
             return self.download_helper.current_track
-        return self.listener.name or "Streamrip Download"
+
+        # For operations where main name might be empty, use subname if available
+        listener_name = self.listener.name or "Streamrip Download"
+        if (
+            (
+                not listener_name
+                or listener_name.strip() == ""
+                or listener_name == "Streamrip Download"
+            )
+            and hasattr(self.listener, "subname")
+            and self.listener.subname
+        ):
+            return self.listener.subname
+        return listener_name
 
     def size(self):
         """Get total size"""

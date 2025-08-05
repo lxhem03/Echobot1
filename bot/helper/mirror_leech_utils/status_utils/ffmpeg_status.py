@@ -32,6 +32,15 @@ class FFmpegStatus:
         return self._gid
 
     def name(self):
+        # For split operations, if the main name is empty or not meaningful,
+        # use the current file being processed (subname) instead
+        if (
+            self._cstatus == "Split"
+            and hasattr(self.listener, "subname")
+            and self.listener.subname
+            and (not self.listener.name or self.listener.name.strip() == "")
+        ):
+            return self.listener.subname
         return self.listener.name
 
     def size(self):

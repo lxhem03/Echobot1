@@ -83,7 +83,16 @@ class SabnzbdStatus:
         return f"{get_readable_file_size(self.speed_raw())}/s"
 
     def name(self):
-        return self._info["filename"]
+        nzb_filename = self._info["filename"]
+
+        # For operations where nzb filename might be empty, use subname if available
+        if (
+            (not nzb_filename or nzb_filename.strip() == "")
+            and hasattr(self.listener, "subname")
+            and self.listener.subname
+        ):
+            return self.listener.subname
+        return nzb_filename
 
     def size(self):
         return self._info["size"]

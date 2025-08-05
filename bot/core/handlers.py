@@ -1,3 +1,6 @@
+import importlib.util
+import os
+
 from pyrogram import filters
 from pyrogram.filters import command, regex
 from pyrogram.handlers import (
@@ -6,10 +9,11 @@ from pyrogram.handlers import (
     MessageHandler,
 )
 
+from bot import LOGGER
 from bot.core.config_manager import Config
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
-from bot.modules import (
+from bot.modules import (  # Encoding/Decoding imports; index_command removed - media indexing functionality disabled; QuickInfo imports
     add_sudo,
     aeon_callback,
     aioexecute,
@@ -38,7 +42,6 @@ from bot.modules import (
     edit_bot_settings,
     edit_media_tools_settings,
     edit_user_settings,
-    # Encoding/Decoding imports
     encode_command,
     encoding_callback,
     execute,
@@ -67,7 +70,6 @@ from bot.modules import (
     hydra_search,
     imdb_callback,
     imdb_search,
-    # index_command removed - media indexing functionality disabled
     jd_leech,
     jd_mirror,
     leech,
@@ -93,7 +95,6 @@ from bot.modules import (
     phish_check_command,
     ping,
     quickinfo_callback,
-    # QuickInfo imports
     quickinfo_command,
     remove_from_queue,
     remove_sudo,
@@ -477,10 +478,7 @@ def add_handlers():
 
     # Add Enhanced NSFW Detection handlers if enabled
     if Config.NSFW_DETECTION_ENABLED:
-        from bot.modules.nsfw_management import (
-            nsfw_stats_command,
-            nsfw_test_command,
-        )
+        from bot.modules.nsfw_management import nsfw_stats_command, nsfw_test_command
 
         nsfw_handlers = {
             "nsfw_stats": (
@@ -529,11 +527,7 @@ def add_handlers():
 
     # Add zotify handlers if zotify is enabled
     if Config.ZOTIFY_ENABLED:
-        from bot.modules.zotify import (
-            zotify_leech,
-            zotify_mirror,
-            zotify_search,
-        )
+        from bot.modules.zotify import zotify_leech, zotify_mirror, zotify_search
 
         zotify_handlers = {
             "zotify_mirror": (
@@ -1113,6 +1107,25 @@ def add_handlers():
     from bot.modules.ad_broadcaster import init_ad_broadcaster
 
     init_ad_broadcaster()
+
+    # Import and register weather module handlers
+    if Config.WEATHER_ENABLED:
+        try:
+            # Import weather module directly to avoid __init__.py issues
+            weather_module_path = os.path.join(
+                os.path.dirname(__file__), "..", "modules", "weather.py"
+            )
+            spec = importlib.util.spec_from_file_location(
+                "weather", weather_module_path
+            )
+            weather_module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(weather_module)
+
+            # Register weather handlers
+            weather_module.register_weather_handlers()
+            LOGGER.info("Weather module loaded successfully")
+        except Exception as e:
+            LOGGER.error(f"Failed to load weather module: {e}")
 
     # Add QuickInfo handlers for forwarded messages and shared entities
     TgClient.bot.add_handler(

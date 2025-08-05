@@ -17,13 +17,16 @@ from .link_generator import (
 )
 from .parallel_downloader import ParallelDownloader
 from .parallel_streamer import ParallelByteStreamer
+from .raw_streamer import RawByteStreamer, create_raw_streamer
 from .stream_handler import ByteStreamer, get_mime_type
 
 __all__ = [
     "ByteStreamer",
     "ParallelByteStreamer",
     "ParallelDownloader",
+    "RawByteStreamer",
     "StreamClientManager",
+    "create_raw_streamer",
     "format_link_message",
     "generate_stream_links",
     "get_file_info",

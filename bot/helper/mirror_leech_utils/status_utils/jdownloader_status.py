@@ -90,19 +90,26 @@ class JDownloaderStatus:
         return f"{get_readable_file_size(self._info.get('speed', 0))}/s"
 
     def name(self):
-        return (
+        jd_name = (
             self._info.get("name").strip("/").split("/")[0]
             if self._info.get("name")
             else self.listener.name
         )
 
+        # For operations where jdownloader name might be empty, use subname if available
+        if (
+            (not jd_name or jd_name.strip() == "")
+            and hasattr(self.listener, "subname")
+            and self.listener.subname
+        ):
+            return self.listener.subname
+        return jd_name
+
     def size(self):
         return get_readable_file_size(self._info.get("bytesTotal", 0))
 
     def eta(self):
-        return (
-            get_readable_time(eta) if (eta := self._info.get("eta", False)) else "-"
-        )
+        return get_readable_time(eta) if (eta := self._info.get("eta", False)) else "-"
 
     async def status(self):
         await self._update()

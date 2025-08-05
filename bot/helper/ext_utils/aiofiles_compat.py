@@ -286,13 +286,79 @@ async def rename(src, dst):
     """
     Async version of os.rename with fallback
     """
-    if AIOFILES_HAS_RENAME:
-        return await aio_rename(src, dst)
-    # Fallback to sync version in thread pool
-    import os as _os  # Local import to ensure availability in executor
+    import os
 
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, lambda: _os.rename(src, dst))
+    try:
+        if AIOFILES_HAS_RENAME:
+            return await aio_rename(src, dst)
+        # Fallback to sync version in thread pool
+        import os as _os  # Local import to ensure availability in executor
+
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, lambda: _os.rename(src, dst))
+    except OSError as e:
+        if e.errno == 36:  # File name too long
+            # Extract directory and filename
+            dst_dir = os.path.dirname(dst)
+            dst_filename = os.path.basename(dst)
+
+            # Calculate maximum filename length (usually 255, but let's be safe with 240)
+            max_filename_length = 240
+
+            if len(dst_filename) > max_filename_length:
+                # Extract prefix, suffix, and extension
+                name, ext = os.path.splitext(dst_filename)
+
+                # Try to identify prefix and suffix patterns
+                prefix = ""
+                suffix = ""
+                core_name = name
+
+                # Look for prefix pattern (starts with @hello or similar)
+                if name.startswith("@"):
+                    parts = name.split(" ", 1)
+                    if len(parts) > 1:
+                        prefix = parts[0] + " "
+                        core_name = parts[1]
+
+                # Look for suffix pattern (ends with @hello or similar)
+                if " @" in core_name:
+                    core_parts = core_name.rsplit(" @", 1)
+                    if len(core_parts) > 1:
+                        core_name = core_parts[0]
+                        suffix = " @" + core_parts[1]
+
+                # Calculate available space for core name
+                reserved_length = len(prefix) + len(suffix) + len(ext)
+                available_length = max_filename_length - reserved_length
+
+                if (
+                    available_length > 10
+                ):  # Ensure we have reasonable space for core name
+                    # Truncate core name
+                    truncated_core = core_name[:available_length]
+                    truncated_filename = f"{prefix}{truncated_core}{suffix}{ext}"
+                    truncated_dst = os.path.join(dst_dir, truncated_filename)
+
+                    # Try rename with truncated filename
+                    try:
+                        if AIOFILES_HAS_RENAME:
+                            return await aio_rename(src, truncated_dst)
+                        else:
+                            import os as _os
+
+                            loop = asyncio.get_event_loop()
+                            return await loop.run_in_executor(
+                                None, lambda: _os.rename(src, truncated_dst)
+                            )
+                    except Exception:
+                        raise e
+                else:
+                    raise e
+            else:
+                raise e
+        else:
+            raise e
 
 
 async def rmdir(path):

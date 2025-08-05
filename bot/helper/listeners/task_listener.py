@@ -160,15 +160,15 @@ class TaskListener(TaskConfig):
                             if isinstance(processed_chat_id, str):
                                 # Remove any prefixes like "b:", "u:", "h:" if present
                                 if ":" in processed_chat_id:
-                                    processed_chat_id = processed_chat_id.split(
-                                        ":", 1
-                                    )[1]
+                                    processed_chat_id = processed_chat_id.split(":", 1)[
+                                        1
+                                    ]
 
                                 # Remove any suffixes after | if present (for hybrid format)
                                 if "|" in processed_chat_id:
-                                    processed_chat_id = processed_chat_id.split(
-                                        "|", 1
-                                    )[0]
+                                    processed_chat_id = processed_chat_id.split("|", 1)[
+                                        0
+                                    ]
 
                             # Skip if this is the up_dest (already sent there) or the user's PM
                             try:
@@ -358,9 +358,7 @@ class TaskListener(TaskConfig):
                             f"{msg}<blockquote expandable>{fmsg}</blockquote>",
                         )
                 except Exception as e:
-                    LOGGER.error(
-                        f"Failed to send leech log to destination {dest}: {e}"
-                    )
+                    LOGGER.error(f"Failed to send leech log to destination {dest}: {e}")
 
     async def remove_from_same_dir(self):
         async with task_dict_lock:
@@ -437,9 +435,7 @@ class TaskListener(TaskConfig):
                                 des_id = next(
                                     iter(self.same_dir[self.folder_name]["tasks"]),
                                 )
-                                des_path = (
-                                    f"{DOWNLOAD_DIR}{des_id}{self.folder_name}"
-                                )
+                                des_path = f"{DOWNLOAD_DIR}{des_id}{self.folder_name}"
                                 try:
                                     await makedirs(des_path, exist_ok=True)
                                 except Exception as e:
@@ -486,25 +482,19 @@ class TaskListener(TaskConfig):
                                             )
                                             # Try to create the directory again
                                             try:
-                                                await makedirs(
-                                                    des_path, exist_ok=True
-                                                )
+                                                await makedirs(des_path, exist_ok=True)
                                             except Exception as makedirs_e:
                                                 LOGGER.error(
                                                     f"Error creating directory {des_path}: {makedirs_e}"
                                                 )
                                                 continue
-                                            await move(
-                                                item_path, f"{des_path}/{item}"
-                                            )
+                                            await move(item_path, f"{des_path}/{item}")
                                         except Exception as e:
                                             LOGGER.error(
                                                 f"Error moving file {item}: {e}"
                                             )
                                 except FileNotFoundError:
-                                    LOGGER.error(
-                                        f"Source path does not exist: {spath}"
-                                    )
+                                    LOGGER.error(f"Source path does not exist: {spath}")
                                     break
                                 except Exception as e:
                                     LOGGER.error(
@@ -689,9 +679,7 @@ class TaskListener(TaskConfig):
                                 f"Found {len(files)} files after retry: {files}"
                             )
                         except Exception as retry_error:
-                            LOGGER.error(
-                                f"Error during retry listing: {retry_error}"
-                            )
+                            LOGGER.error(f"Error during retry listing: {retry_error}")
                             await self.on_upload_error(
                                 f"Directory is empty: {self.dir}"
                             )
@@ -711,9 +699,7 @@ class TaskListener(TaskConfig):
                             return
                 except FileNotFoundError:
                     LOGGER.error(f"Directory does not exist: {self.dir}")
-                    await self.on_upload_error(
-                        f"Directory does not exist: {self.dir}"
-                    )
+                    await self.on_upload_error(f"Directory does not exist: {self.dir}")
                     return
                 except Exception as e:
                     LOGGER.error(f"Error listing directory {self.dir}: {e}")
@@ -1020,7 +1006,13 @@ class TaskListener(TaskConfig):
                 LOGGER.info("Task cancelled before Telegram upload, aborting")
                 return
 
-            LOGGER.info(f"Leech Name: {self.name}")
+            # Use the actual name that will be used for leech, with fallback
+            leech_name = (
+                self.name
+                if self.name and self.name.strip()
+                else (ospath.basename(up_dir) if up_dir else "Unknown")
+            )
+            LOGGER.info(f"Leech Name: {leech_name}")
             tg = TelegramUploader(self, up_dir)
             # Store a reference to the telegram uploader for later use (e.g., during cancellation)
             self.telegram_uploader = tg
@@ -1057,15 +1049,11 @@ class TaskListener(TaskConfig):
                         if isinstance(processed_chat_id, str):
                             # Remove any prefixes like "b:", "u:", "h:" if present
                             if ":" in processed_chat_id:
-                                processed_chat_id = processed_chat_id.split(":", 1)[
-                                    1
-                                ]
+                                processed_chat_id = processed_chat_id.split(":", 1)[1]
 
                             # Remove any suffixes after | if present (for hybrid format)
                             if "|" in processed_chat_id:
-                                processed_chat_id = processed_chat_id.split("|", 1)[
-                                    0
-                                ]
+                                processed_chat_id = processed_chat_id.split("|", 1)[0]
 
                         # Check if the processed chat ID matches the original chat ID (handle different formats)
                         if (
@@ -1076,8 +1064,7 @@ class TaskListener(TaskConfig):
                             )
                             or (
                                 not original_chat_id.startswith("-100")
-                                and f"-100{original_chat_id}"
-                                == str(processed_chat_id)
+                                and f"-100{original_chat_id}" == str(processed_chat_id)
                             )
                         ):
                             original_chat_in_dump = True
@@ -1241,9 +1228,7 @@ class TaskListener(TaskConfig):
                     LOGGER.info(f"Rclone Upload Name: {upload_name}")
                     RCTransfer = RcloneTransferHelper(self)
                     async with task_dict_lock:
-                        task_dict[self.mid] = RcloneStatus(
-                            self, RCTransfer, gid, "up"
-                        )
+                        task_dict[self.mid] = RcloneStatus(self, RCTransfer, gid, "up")
                     await gather(
                         update_status_message(self.message.chat.id),
                         RCTransfer.upload(up_path),
@@ -1354,9 +1339,7 @@ class TaskListener(TaskConfig):
                 msg += f"\n\n<b>Media Links:</b>\n┖ <a href='{store_link}'>Store Link</a> | <a href='https://t.me/share/url?url={store_link}'>Share Link</a>"
 
                 # Add MediaInfo link if it was generated before upload
-                user_mediainfo_enabled = self.user_dict.get(
-                    "MEDIAINFO_ENABLED", None
-                )
+                user_mediainfo_enabled = self.user_dict.get("MEDIAINFO_ENABLED", None)
                 if user_mediainfo_enabled is None:
                     user_mediainfo_enabled = (
                         Config.MEDIAINFO_ENABLED
@@ -1420,7 +1403,9 @@ class TaskListener(TaskConfig):
                             "MEDIAINFO_ENABLED", None
                         )
                         if user_mediainfo_enabled is None:
-                            user_mediainfo_enabled = Config.MEDIAINFO_ENABLED  # Use the pre-generated MediaInfo link if available and valid
+                            user_mediainfo_enabled = (
+                                Config.MEDIAINFO_ENABLED
+                            )  # Use the pre-generated MediaInfo link if available and valid
                         if (
                             user_mediainfo_enabled
                             and hasattr(self, "mediainfo_link")
@@ -1430,9 +1415,7 @@ class TaskListener(TaskConfig):
                             # Support all media types including archives, documents, images, etc.
                             file_entry += f"\n┖ <b>MediaInfo</b> → <a href='https://graph.org/{self.mediainfo_link}'>View</a>"
                             # Log that MediaInfo link was successfully added to the message
-                        elif user_mediainfo_enabled and hasattr(
-                            self, "mediainfo_link"
-                        ):
+                        elif user_mediainfo_enabled and hasattr(self, "mediainfo_link"):
                             # MediaInfo was attempted but failed or returned empty
                             pass
 
@@ -1521,7 +1504,9 @@ class TaskListener(TaskConfig):
                         buttons.url_button(f"📺 {video_title}", video["video_url"])
 
                     if len(youtube_result) > 5:
-                        msg += f"\n<i>Showing first 5 of {len(youtube_result)} videos</i>"
+                        msg += (
+                            f"\n<i>Showing first 5 of {len(youtube_result)} videos</i>"
+                        )
 
                     button = buttons.build_menu(1)
                 else:
@@ -1559,9 +1544,7 @@ class TaskListener(TaskConfig):
                     msg += f"\n<b>Files: </b>{files}"
 
                 # Add MediaInfo link for DDL uploads if enabled
-                user_mediainfo_enabled = self.user_dict.get(
-                    "MEDIAINFO_ENABLED", None
-                )
+                user_mediainfo_enabled = self.user_dict.get("MEDIAINFO_ENABLED", None)
                 if user_mediainfo_enabled is None:
                     user_mediainfo_enabled = Config.MEDIAINFO_ENABLED
                 if (
@@ -1604,9 +1587,7 @@ class TaskListener(TaskConfig):
 
                 # Add MediaInfo link for mirror tasks if enabled
                 # Check if MediaInfo is enabled for this user
-                user_mediainfo_enabled = self.user_dict.get(
-                    "MEDIAINFO_ENABLED", None
-                )
+                user_mediainfo_enabled = self.user_dict.get("MEDIAINFO_ENABLED", None)
                 if user_mediainfo_enabled is None:
                     user_mediainfo_enabled = (
                         Config.MEDIAINFO_ENABLED
@@ -1685,10 +1666,7 @@ class TaskListener(TaskConfig):
                     # Send to the specified destination
                     await send_message(int(self.up_dest), msg, button)
                     # Also send to user's PM if it's not the same as the specified destination and BOT_PM is enabled
-                    if (
-                        int(self.up_dest) != self.user_id
-                        and self._is_bot_pm_enabled()
-                    ):
+                    if int(self.up_dest) != self.user_id and self._is_bot_pm_enabled():
                         await send_message(self.user_id, msg, button)
 
                     # Send to user's dump if it's set and not the same as up_dest or user's PM
@@ -1785,8 +1763,7 @@ class TaskListener(TaskConfig):
 
         # For leech operations, send simple completion message to groups/supergroups
         if self.is_leech and (
-            self.message.chat.type != "private"
-            and self.message.chat.id != self.user_id
+            self.message.chat.type != "private" and self.message.chat.id != self.user_id
         ):
             # Send simple completion message to groups/supergroups for leech operations
             buttons = ButtonMaker()

@@ -55,9 +55,7 @@ try:
         and ReloadedConfig.FILE2LINK_BIN_CHANNEL
     ):
         Config.FILE2LINK_BIN_CHANNEL = ReloadedConfig.FILE2LINK_BIN_CHANNEL
-        Config.FILE2LINK_ENABLED = getattr(
-            ReloadedConfig, "FILE2LINK_ENABLED", False
-        )
+        Config.FILE2LINK_ENABLED = getattr(ReloadedConfig, "FILE2LINK_ENABLED", False)
 
     # Load database settings asynchronously when needed
     import asyncio
@@ -126,9 +124,7 @@ try:
                     Config.FILE2LINK_BIN_CHANNEL = int(env_bin_channel)
 
                 except ValueError:
-                    LOGGER.error(
-                        f"Invalid emergency fallback value: {env_bin_channel}"
-                    )
+                    LOGGER.error(f"Invalid emergency fallback value: {env_bin_channel}")
 
     # Store the config loading function for later use
     _config_loader = load_web_server_config
@@ -136,7 +132,6 @@ try:
 
 except Exception as e:
     LOGGER.error(f"Failed to load configuration for web server: {e}")
-    LOGGER.warning("File2Link functionality may not work properly")
     _config_loader = None
 
 
@@ -147,7 +142,9 @@ def get_stream_utils():
         ByteStreamer,
         ParallelByteStreamer,
         ParallelDownloader,
+        RawByteStreamer,
         StreamClientManager,
+        create_raw_streamer,
         get_fname,
         get_hash,
         get_mime_type,
@@ -160,6 +157,8 @@ def get_stream_utils():
         ByteStreamer,
         ParallelByteStreamer,
         ParallelDownloader,
+        RawByteStreamer,
+        create_raw_streamer,
         get_hash,
         get_fname,
         validate_stream_request,
@@ -234,9 +233,7 @@ async def init_streaming_client(TgClient):
             session_dir = tempfile.mkdtemp(prefix="web_sessions_")
 
             # Check if max_concurrent_transmissions is supported (kurigram vs pyrofork compatibility)
-            client_params = list(
-                inspect.signature(Client.__init__).parameters.keys()
-            )
+            client_params = list(inspect.signature(Client.__init__).parameters.keys())
             client_args = {
                 "name": f"web_main_{TgClient.ID}",  # Different session name to avoid conflicts
                 "api_id": Config.TELEGRAM_API,
@@ -251,7 +248,7 @@ async def init_streaming_client(TgClient):
 
             # Add kurigram-specific parameters if supported
             if "max_concurrent_transmissions" in client_params:
-                client_args["max_concurrent_transmissions"] = 50
+                client_args["max_concurrent_transmissions"] = 100
 
             TgClient.bot = Client(**client_args)
 
@@ -261,7 +258,10 @@ async def init_streaming_client(TgClient):
 
         # Initialize helper bots for streaming if HELPER_TOKENS is available
         if Config.HELPER_TOKENS and not TgClient.helper_bots:
+
             await init_helper_bots_for_streaming(TgClient)
+            if hasattr(TgClient, "helper_bots") and TgClient.helper_bots:
+                pass
 
     except Exception as e:
         LOGGER.error(f"Failed to initialize streaming clients: {e}")
@@ -283,6 +283,7 @@ async def init_helper_bots_for_streaming(TgClient):
 
         async def start_helper_bot(no, b_token):
             try:
+
                 # Use in-memory session for helper bots to avoid auth issues
                 import inspect
                 import tempfile
@@ -313,6 +314,7 @@ async def init_helper_bots_for_streaming(TgClient):
                 await hbot.start()
                 TgClient.helper_bots[no] = hbot
                 TgClient.helper_loads[no] = 0
+
             except Exception as e:
                 LOGGER.error(f"Failed to start helper bot {no} for streaming: {e}")
                 TgClient.helper_bots.pop(no, None)
@@ -327,7 +329,7 @@ async def init_helper_bots_for_streaming(TgClient):
         )
 
         if not TgClient.helper_bots:
-            LOGGER.warning("Failed to start any helper bots for streaming")
+            pass
 
     except Exception as e:
         LOGGER.error(f"Error initializing helper bots for streaming: {e}")
@@ -765,9 +767,7 @@ async def protected_proxy(
 async def sabnzbd_proxy(path: str = "", request: Request = None):
     # Get username and password from query params or cookies
     username = (
-        request.query_params.get("user")
-        or request.cookies.get("nzb_user")
-        or "admin"
+        request.query_params.get("user") or request.cookies.get("nzb_user") or "admin"
     )
     password = (
         request.query_params.get("pass")
@@ -794,9 +794,7 @@ async def sabnzbd_proxy(path: str = "", request: Request = None):
 async def qbittorrent_proxy(path: str = "", request: Request = None):
     # Get username and password from query params or cookies
     username = (
-        request.query_params.get("user")
-        or request.cookies.get("qbit_user")
-        or "admin"
+        request.query_params.get("user") or request.cookies.get("qbit_user") or "admin"
     )
     password = request.query_params.get("pass") or request.cookies.get("qbit_pass")
 
@@ -833,6 +831,8 @@ async def health_check():
             ByteStreamer,
             ParallelByteStreamer,
             ParallelDownloader,
+            RawByteStreamer,
+            create_raw_streamer,
             get_hash,
             get_fname,
             validate_stream_request,
@@ -870,6 +870,11 @@ async def health_check():
         # Get client info for additional details
         client_info = StreamClientManager.get_client_info() if bot_ready else {}
 
+        # Check hyperdl status
+        hyperdl_enabled = (
+            Config.HYPER_THREADS and client_info.get("helper_bots_count", 0) > 0
+        )
+
         return {
             "status": "ok" if streaming_ready else "not_ready",
             "message": "health check",
@@ -879,15 +884,15 @@ async def health_check():
             "channel_access": channel_access,
             "streaming_ready": streaming_ready,
             "bin_channel_configured": bool(Config.FILE2LINK_BIN_CHANNEL),
-            "bin_channel_id": Config.FILE2LINK_BIN_CHANNEL
-            if Config.FILE2LINK_BIN_CHANNEL
-            else None,
+            "bin_channel_id": (
+                Config.FILE2LINK_BIN_CHANNEL if Config.FILE2LINK_BIN_CHANNEL else None
+            ),
             "helper_tokens_configured": bool(Config.HELPER_TOKENS),
             "total_clients": client_info.get("total_clients", 1),
             "helper_bots_count": client_info.get("helper_bots_count", 0),
-            "workload_distribution": client_info.get(
-                "workload_distribution", {0: 0}
-            ),
+            "workload_distribution": client_info.get("workload_distribution", {0: 0}),
+            "hyperdl_enabled": hyperdl_enabled,
+            "hyper_threads_config": Config.HYPER_THREADS,
         }
 
     except Exception as e:
@@ -932,6 +937,8 @@ def parse_stream_request(path: str) -> tuple[int, str]:
         ByteStreamer,
         ParallelByteStreamer,
         ParallelDownloader,
+        RawByteStreamer,
+        create_raw_streamer,
         get_hash,
         get_fname,
         validate_stream_request,
@@ -983,6 +990,8 @@ async def stream_preview(path: str, request: Request):
             ByteStreamer,
             ParallelByteStreamer,
             ParallelDownloader,
+            RawByteStreamer,
+            create_raw_streamer,
             get_hash,
             get_fname,
             validate_stream_request,
@@ -1006,42 +1015,84 @@ async def stream_preview(path: str, request: Request):
                     detail="FILE2LINK_BIN_CHANNEL not configured. Please set a storage channel for File2Link streaming.",
                 )
 
-        # Check if parallel streaming is enabled and multiple clients are available
-        from bot.core.aeon_client import TgClient
+        # Try Raw API Streaming first
+        raw_streamer = create_raw_streamer(storage_channel)
 
-        use_parallel = (
-            Config.HYPER_THREADS
-            and hasattr(TgClient, "helper_bots")
-            and TgClient.helper_bots
-            and len(TgClient.helper_bots) > 1
-        )
-
-        if use_parallel:
-            streamer = ParallelByteStreamer(chat_id=storage_channel)
+        if raw_streamer:
+            streamer = raw_streamer
+            # Get a client for message validation (Raw streamer manages its own clients for streaming)
+            client = next(iter(raw_streamer.clients.values()))
+            client_id = None
         else:
-            # Fallback to single client streaming
-            client, client_id = StreamClientManager.get_optimal_client()
-            if client is None:
-                raise HTTPException(
-                    status_code=503,
-                    detail="Bot not initialized yet, please try again later",
-                )
-            streamer = ByteStreamer(client, client_id, chat_id=storage_channel)
+            # Fallback to existing streaming methods
 
-        # Get file info
-        file_info = await streamer.get_file_info(message_id)
-        if "error" in file_info:
-            raise HTTPException(status_code=404, detail="File not found")
+            # Check if parallel streaming is available
+            from bot.core.aeon_client import TgClient
+
+            effective_threads = Config.HYPER_THREADS or (
+                max(8, len(TgClient.helper_bots))
+                if hasattr(TgClient, "helper_bots") and TgClient.helper_bots
+                else 0
+            )
+
+            use_parallel = (
+                effective_threads > 0
+                and hasattr(TgClient, "helper_bots")
+                and TgClient.helper_bots
+                and len(TgClient.helper_bots) > 1
+            )
+
+            if use_parallel:
+                LOGGER.info(
+                    f"File2Link Stream - Using parallel streaming fallback for message {message_id}"
+                )
+                streamer = ParallelByteStreamer(chat_id=storage_channel)
+                # Get a client for hash validation when using parallel streaming
+                client, client_id = StreamClientManager.get_optimal_client()
+                if client is None:
+                    raise HTTPException(
+                        status_code=503,
+                        detail="Bot not initialized yet, please try again later",
+                    )
+            else:
+                # Fallback to single client streaming
+                LOGGER.info(
+                    f"File2Link Stream - Using single client streaming fallback for message {message_id}"
+                )
+                client, client_id = StreamClientManager.get_optimal_client()
+                if client is None:
+                    raise HTTPException(
+                        status_code=503,
+                        detail="Bot not initialized yet, please try again later",
+                    )
+                streamer = ByteStreamer(client, client_id, chat_id=storage_channel)
+
+        # Get file info (different approach for raw streamer)
+        if isinstance(streamer, RawByteStreamer):
+            # Raw streamer uses async get_file_properties
+            try:
+                file_info = await streamer.get_file_properties(message_id)
+            except Exception:
+                raise HTTPException(status_code=404, detail="File not found")
+        else:
+            # Legacy streamers use sync get_file_info
+            file_info = await streamer.get_file_info(message_id)
+            if "error" in file_info:
+                raise HTTPException(status_code=404, detail="File not found")
+
+        # Check if this is a streaming request (has range header) or HTML page request
+        range_header = request.headers.get("range")
+        is_streaming_request = range_header is not None
 
         # Get the message to check if file is streamable
         message = await streamer.get_message(message_id)
         if not is_streamable_file(message):
             # Redirect non-streamable files to download
-            download_url = f"/stream/{path}"
+            download_url = f"/download/{path}"
             return RedirectResponse(url=download_url, status_code=302)
 
         # Validate hash and get stored message
-        stored_msg = await client.get_messages(storage_channel, message_id)
+        stored_msg = message  # We already have the message from above
         if not stored_msg or get_hash(stored_msg) != secure_hash:
             raise HTTPException(status_code=404, detail="Invalid file hash")
 
@@ -1063,13 +1114,66 @@ async def stream_preview(path: str, request: Request):
             LOGGER.error(f"Error extracting filename from watch path {path}: {e}")
             filename = "Unknown File"
 
+        # If this is a streaming request (range header present), serve the video data directly
+        if is_streaming_request:
+            # Handle streaming request - serve actual video data
+            file_size = file_info.get("file_size", 0)
+            mime_type = file_info.get("mime_type") or get_mime_type(filename)
+
+            # Parse range header
+            start, end = parse_range_header(range_header, file_size)
+            content_length = end - start + 1
+
+            # Prepare headers for streaming
+            headers = {
+                "Content-Type": mime_type,
+                "Content-Length": str(content_length),
+                "Content-Range": f"bytes {start}-{end}/{file_size}",
+                "Accept-Ranges": "bytes",
+                "Cache-Control": "public, max-age=86400",
+                "Access-Control-Allow-Origin": "*",
+            }
+
+            # Stream the video data
+            async def video_stream():
+                if isinstance(streamer, RawByteStreamer):
+                    # Raw streamer - direct streaming
+                    stream_method = streamer.stream_file(
+                        message_id, offset=start, limit=content_length
+                    )
+                else:
+                    # Legacy streamers
+                    is_parallel = (
+                        hasattr(streamer, "is_parallel") and streamer.is_parallel()
+                    )
+                    if is_parallel:
+                        stream_method = streamer.stream_file_parallel(
+                            message_id, offset=start, limit=content_length
+                        )
+                    else:
+                        stream_method = streamer.stream_file(
+                            message_id, offset=start, limit=content_length
+                        )
+
+                async for chunk in stream_method:
+                    if chunk:
+                        yield chunk
+
+            return StreamingResponse(
+                video_stream(),
+                status_code=206,  # Partial Content
+                headers=headers,
+                media_type=mime_type,
+            )
+
+        # If no range header, serve the HTML player page
         # Determine media type for player
         media_type = "video"
         if file_info.get("media_type") in ["audio", "voice"]:
             media_type = "audio"
 
-        # Generate stream URL
-        stream_url = f"/stream/{secure_hash}{message_id}/{quote(filename)}"
+        # Generate stream URL (self-reference for streaming)
+        stream_url = f"/watch/{secure_hash}{message_id}/{quote(filename)}"
 
         # Render template
         return stream_templates.TemplateResponse(
@@ -1116,6 +1220,8 @@ async def download_file(path: str, request: Request):
             ByteStreamer,
             ParallelByteStreamer,
             ParallelDownloader,
+            RawByteStreamer,
+            create_raw_streamer,
             get_hash,
             get_fname,
             validate_stream_request,
@@ -1142,15 +1248,7 @@ async def download_file(path: str, request: Request):
         if not validate_stream_request(secure_hash, message_id):
             raise HTTPException(status_code=400, detail="Invalid request")
 
-        # Get optimal client for download (same as streaming)
-        client, client_id = StreamClientManager.get_optimal_client()
-        if client is None:
-            raise HTTPException(
-                status_code=503,
-                detail="Bot not initialized yet, please try again later",
-            )
-
-        # Get storage channel
+        # Get storage channel first
         storage_channel = await get_file2link_bin_channel()
         if not storage_channel:
             storage_channel = getattr(Config, "FILE2LINK_BIN_CHANNEL", None)
@@ -1160,19 +1258,69 @@ async def download_file(path: str, request: Request):
                     detail="FILE2LINK_BIN_CHANNEL not configured. Please set a storage channel for File2Link downloads.",
                 )
 
-        # Initialize streamer (same as streaming)
-        streamer = ByteStreamer(client, client_id, chat_id=storage_channel)
+        # Try Raw API Streaming first for downloads
+        raw_streamer = create_raw_streamer(storage_channel)
 
-        try:
-            # Get file info
-            file_info = await streamer.get_file_info(message_id)
-            if "error" in file_info:
+        if raw_streamer:
+            # Get file info using raw streamer
+            try:
+                file_info = await raw_streamer.get_file_properties(message_id)
+                # Verify hash by getting the message
+                client = next(
+                    iter(raw_streamer.clients.values())
+                )  # Get any client for hash verification
+                stored_msg = await client.get_messages(storage_channel, message_id)
+                if not stored_msg or get_hash(stored_msg) != secure_hash:
+                    raise HTTPException(status_code=404, detail="Invalid file hash")
+
+            except Exception:
                 raise HTTPException(status_code=404, detail="File not found")
 
-            # Verify file hash (using the client we already have)
+            streamer = raw_streamer
+            hyperdl_available = False  # Skip HyperDL since we're using Raw API
+
+        else:
+            # Fallback to HyperDL/legacy methods
+
+            from bot.core.aeon_client import TgClient
+
+            # Check HyperDL availability (like hyperdl_utils.py)
+            effective_threads = Config.HYPER_THREADS or (
+                len(TgClient.helper_bots)
+                if hasattr(TgClient, "helper_bots") and TgClient.helper_bots
+                else 0
+            )
+
+            hyperdl_available = (
+                effective_threads > 0
+                and hasattr(TgClient, "helper_bots")
+                and TgClient.helper_bots
+                and len(TgClient.helper_bots) > 0
+            )
+
+            # Get a client for file validation
+            client, _ = StreamClientManager.get_optimal_client()
+            if client is None:
+                raise HTTPException(
+                    status_code=503,
+                    detail="Bot not initialized yet, please try again later",
+                )
+
+            # Verify file hash first
             stored_msg = await client.get_messages(storage_channel, message_id)
             if not stored_msg or get_hash(stored_msg) != secure_hash:
                 raise HTTPException(status_code=404, detail="Invalid file hash")
+
+            # Get file info
+            from bot.helper.stream_utils.file_processor import get_file_info
+
+            file_info = get_file_info(stored_msg)
+            if not file_info:
+                raise HTTPException(status_code=404, detail="File not found")
+
+            streamer = None  # Will be set in HyperDL logic if needed
+
+        try:
 
             file_size = file_info.get("file_size", 0)
 
@@ -1233,24 +1381,146 @@ async def download_file(path: str, request: Request):
             if request.method == "HEAD":
                 return Response(status_code=status_code, headers=headers)
 
+            # Try HyperDL streaming if available
+            if hyperdl_available:
+                try:
+                    # Import HyperDL directly
+                    from bot.helper.ext_utils.hyperdl_utils import HyperTGDownload
+
+                    # Create HyperDL instance
+                    hyperdl = HyperTGDownload()
+
+                    # Create HyperDL streaming generator (streams chunks directly, no disk write)
+                    async def hyperdl_stream_generator():
+                        bytes_sent = 0
+
+                        try:
+                            # Set up HyperDL for streaming (similar to download_media but streaming)
+                            hyperdl.message = stored_msg
+                            hyperdl.dump_chat = storage_channel
+                            hyperdl.file_size = file_size
+
+                            # Calculate streaming range
+                            if range_header:
+                                # For range requests, stream only the requested range
+                                stream_start, stream_end = start, end
+                            else:
+                                # For full file, stream everything
+                                stream_start, stream_end = 0, file_size - 1
+
+                            # Stream using HyperDL's get_file method (yields chunks directly)
+                            offset = stream_start - (stream_start % hyperdl.chunk_size)
+                            first_part_cut = stream_start - offset
+                            last_part_cut = (stream_end % hyperdl.chunk_size) + 1
+                            part_count = (
+                                (stream_end // hyperdl.chunk_size)
+                                - (offset // hyperdl.chunk_size)
+                                + 1
+                            )
+
+                            async for chunk in hyperdl.get_file(
+                                offset, first_part_cut, last_part_cut, part_count
+                            ):
+                                if chunk:
+                                    yield chunk
+                                    bytes_sent += len(chunk)
+
+                                    if range_header and bytes_sent >= (
+                                        stream_end - stream_start + 1
+                                    ):
+                                        break
+
+                        except Exception as e:
+                            raise
+
+                    # Return HyperDL streaming response (no disk write, streams directly)
+                    return StreamingResponse(
+                        hyperdl_stream_generator(),
+                        status_code=status_code,
+                        headers=headers,
+                        media_type="application/octet-stream",
+                    )
+
+                except Exception:
+                    pass
+
             # Stream generator for download
             async def download_generator():
                 bytes_sent = 0
                 start_time = asyncio.get_event_loop().time()
-                timeout_seconds = 600
 
                 try:
-                    if hasattr(streamer, "is_parallel") and streamer.is_parallel():
-                        stream_method = streamer.stream_file_parallel(
-                            message_id, offset=start, limit=content_length
-                        )
-                    else:
+                    if isinstance(streamer, RawByteStreamer):
+                        # Raw API streaming (Priority 1)
                         stream_method = streamer.stream_file(
                             message_id, offset=start, limit=content_length
                         )
+                    else:
+                        # Legacy fallback methods
+
+                        # Create fallback streamer if needed
+                        if streamer is None:
+                            # Create stream_media() fallback
+                            class StreamMediaDownloader:
+                                def __init__(self, client, chat_id):
+                                    self.client = client
+                                    self.chat_id = chat_id
+
+                                async def stream_file(
+                                    self, message_id, offset=0, limit=0
+                                ):
+                                    """Stream file using high-level stream_media() API"""
+                                    message = await self.client.get_messages(
+                                        self.chat_id, message_id
+                                    )
+                                    bytes_streamed = 0
+
+                                    async for chunk in self.client.stream_media(
+                                        message
+                                    ):
+                                        if not chunk:
+                                            break
+
+                                        # Handle offset and limit
+                                        if offset > 0:
+                                            if bytes_streamed + len(chunk) <= offset:
+                                                bytes_streamed += len(chunk)
+                                                continue
+                                            elif bytes_streamed < offset:
+                                                skip_bytes = offset - bytes_streamed
+                                                chunk = chunk[skip_bytes:]
+                                                bytes_streamed = offset
+
+                                        yield chunk
+                                        bytes_streamed += len(chunk)
+
+                                        if (
+                                            limit > 0
+                                            and bytes_streamed >= offset + limit
+                                        ):
+                                            break
+
+                            fallback_streamer = StreamMediaDownloader(
+                                client, storage_channel
+                            )
+                            stream_method = fallback_streamer.stream_file(
+                                message_id, offset=start, limit=content_length
+                            )
+                        else:
+                            # Use existing streamer (HyperDL or other)
+                            stream_method = streamer.stream_file(
+                                message_id, offset=start, limit=content_length
+                            )
+
+                    chunk_count = 0
+                    last_log_time = start_time
+                    log_interval = 5.0  # Log every 5 seconds
 
                     async for chunk in stream_method:
+                        chunk_count += 1
                         current_time = asyncio.get_event_loop().time()
+
+                        timeout_seconds = 600  # 10 minute timeout
                         if current_time - start_time > timeout_seconds:
                             LOGGER.warning(
                                 f"Download timeout after {timeout_seconds}s, {bytes_sent} bytes sent"
@@ -1265,6 +1535,10 @@ async def download_file(path: str, request: Request):
                             if chunk:
                                 yield chunk
                                 bytes_sent += len(chunk)
+
+                                # Update log time
+                                if current_time - last_log_time >= log_interval:
+                                    last_log_time = current_time
 
                         if bytes_sent >= content_length:
                             break
@@ -1281,394 +1555,13 @@ async def download_file(path: str, request: Request):
             )
 
         finally:
-            if client_id:
-                StreamClientManager.decrement_load(client_id)
+            # No client_id to decrement for stream_media() approach
+            pass
 
     except HTTPException:
         raise
     except Exception as e:
         LOGGER.error(f"Error in file download: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
-
-
-@app.head("/stream/{path:path}")
-@app.get("/stream/{path:path}")
-async def stream_file(path: str, request: Request):
-    """Direct file streaming with range support"""
-    try:
-        if not Config.FILE2LINK_ENABLED:
-            raise HTTPException(status_code=503, detail="File2Link service disabled")
-
-        # Get stream utilities
-        (
-            StreamClientManager,
-            ByteStreamer,
-            ParallelByteStreamer,
-            ParallelDownloader,
-            get_hash,
-            get_fname,
-            validate_stream_request,
-            get_mime_type,
-            is_streamable_file,
-        ) = get_stream_utils()
-
-        message_id, secure_hash = parse_stream_request(path)
-
-        # Get optimal client for streaming
-        client, client_id = StreamClientManager.get_optimal_client()
-        if client is None:
-            raise HTTPException(
-                status_code=503,
-                detail="Bot not initialized yet, please try again later",
-            )
-
-        # Get storage channel first
-        storage_channel = await get_file2link_bin_channel()
-        if not storage_channel:
-            storage_channel = getattr(Config, "FILE2LINK_BIN_CHANNEL", None)
-            if storage_channel and storage_channel != 0:
-                LOGGER.warning(
-                    f"Using Config fallback for FILE2LINK_BIN_CHANNEL: {storage_channel}"
-                )
-            else:
-                raise HTTPException(
-                    status_code=503,
-                    detail="FILE2LINK_BIN_CHANNEL not configured. Please set a storage channel for File2Link streaming.",
-                )
-
-        streamer = ByteStreamer(client, client_id, chat_id=storage_channel)
-
-        # Increment client load
-        StreamClientManager.increment_load(client_id)
-
-        try:
-            # Get file info
-            file_info = await streamer.get_file_info(message_id)
-            if "error" in file_info:
-                raise HTTPException(status_code=404, detail="File not found")
-
-            # Validate hash and get stored message
-            stored_msg = await client.get_messages(storage_channel, message_id)
-            if not stored_msg or get_hash(stored_msg) != secure_hash:
-                raise HTTPException(status_code=404, detail="Invalid file hash")
-
-            file_size = file_info.get("file_size", 0)
-
-            # Get filename with comprehensive fallback handling
-            try:
-                filename_from_msg = get_fname(stored_msg)
-                filename_from_info = file_info.get("file_name")
-                filename = filename_from_msg or filename_from_info or "Unknown File"
-
-                # Additional validation to prevent None filename
-                if not filename or filename is None or filename == "":
-                    LOGGER.warning(
-                        f"All filename sources failed for message {message_id}, using fallback"
-                    )
-                    filename = "Unknown File"
-
-            except Exception as e:
-                LOGGER.error(f"Error getting filename for message {message_id}: {e}")
-                filename = "Unknown File"
-
-            mime_type = file_info.get("mime_type") or get_mime_type(filename)
-
-            # Handle range requests
-            range_header = request.headers.get("range")
-            if range_header:
-                start, end = parse_range_header(range_header, file_size)
-                content_length = end - start + 1
-                status_code = 206
-            else:
-                start, end = 0, file_size - 1
-                content_length = file_size
-                status_code = 200
-
-            # Detect seeking vs initial loading based on start position
-            is_seeking = range_header and start > 0
-
-            # Ensure filename is a string and not None
-            if filename is None:
-                LOGGER.error("Filename is None! Setting to fallback")
-                filename = "Unknown File"
-
-            # Prepare headers with optimized connection management
-            try:
-                quoted_filename = quote(filename)
-
-                headers = {
-                    "Content-Type": mime_type,
-                    "Content-Length": str(content_length),
-                    "Accept-Ranges": "bytes",
-                    "Cache-Control": "public, max-age=86400",  # 24 hours cache
-                    "Content-Disposition": f"inline; filename*=UTF-8''{quoted_filename}",
-                    "Connection": "keep-alive",
-                    "Keep-Alive": "timeout=60, max=1000",  # Increased timeout and max connections
-                    "X-Content-Type-Options": "nosniff",
-                    "X-Frame-Options": "SAMEORIGIN",
-                    "Access-Control-Allow-Origin": "*",
-                    "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
-                    "Access-Control-Allow-Headers": "Range, Content-Range, Content-Length",
-                }
-
-                # Seeking optimization: Add headers for better seeking performance
-                if is_seeking:
-                    headers["X-Seeking-Optimized"] = "true"
-                    headers["Cache-Control"] = (
-                        "no-cache"  # Don't cache seeking requests
-                    )
-                    # Optimize for seeking with immediate response
-                    headers["Keep-Alive"] = (
-                        "timeout=5, max=1"  # Very short timeout for seeking
-                    )
-                    headers["Accept-Ranges"] = (
-                        "bytes"  # Ensure range support is explicit
-                    )
-                    headers["Content-Encoding"] = (
-                        "identity"  # No compression for seeking
-                    )
-
-                # Only add Transfer-Encoding header when not using range requests
-                if not range_header:
-                    headers["Transfer-Encoding"] = "chunked"
-            except Exception as e:
-                LOGGER.error(
-                    f"Error creating headers - filename: '{filename}', type: {type(filename)}, error: {e}"
-                )
-                # Use a safe fallback
-                quoted_filename = quote("Unknown File")
-                headers = {
-                    "Content-Type": mime_type,
-                    "Content-Length": str(content_length),
-                    "Accept-Ranges": "bytes",
-                    "Cache-Control": "public, max-age=86400",  # 24 hours cache
-                    "Content-Disposition": f"inline; filename*=UTF-8''{quoted_filename}",
-                    "Connection": "keep-alive",
-                    "Keep-Alive": "timeout=60, max=1000",  # Increased timeout and max connections
-                    "X-Content-Type-Options": "nosniff",
-                    "X-Frame-Options": "SAMEORIGIN",
-                    "Access-Control-Allow-Origin": "*",
-                    "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
-                    "Access-Control-Allow-Headers": "Range, Content-Range, Content-Length",
-                }
-
-                # Only add Transfer-Encoding header when not using range requests
-                if not range_header:
-                    headers["Transfer-Encoding"] = "chunked"
-
-            if range_header:
-                headers["Content-Range"] = f"bytes {start}-{end}/{file_size}"
-
-            # Handle HEAD requests - return headers only
-            if request.method == "HEAD":
-                return Response(status_code=status_code, headers=headers)
-
-            # Optimized stream generator with better performance
-            async def stream_generator():
-                bytes_sent = 0
-                start_time = asyncio.get_event_loop().time()
-                timeout_seconds = 600  # 10 minutes timeout for large files
-                chunk_buffer = b""
-                # Ultra-optimized chunk size based on file size and request type
-                # (is_seeking and is_small_range already defined above)
-
-                if (
-                    is_seeking and content_length < 500 * 1024
-                ):  # Tiny range requests < 500KB
-                    # Ultra-fast seeking for tiny ranges - instant response
-                    optimal_chunk_size = (
-                        64 * 1024
-                    )  # 64KB for instant seeking response
-                elif (
-                    is_seeking and content_length < 2 * 1024 * 1024
-                ):  # Small range requests < 2MB
-                    # Very fast seeking for small ranges - prioritize speed
-                    optimal_chunk_size = (
-                        128 * 1024
-                    )  # 128KB for very fast seeking response
-                elif (
-                    is_seeking and content_length < 10 * 1024 * 1024
-                ):  # Medium range requests < 10MB
-                    # Fast seeking for medium ranges - prioritize speed
-                    optimal_chunk_size = (
-                        256 * 1024
-                    )  # 256KB for fast seeking response
-                elif is_seeking:
-                    # Large seeking ranges - balance speed and throughput
-                    optimal_chunk_size = 512 * 1024  # 512KB for seeking large ranges
-                elif content_length > 500 * 1024 * 1024:  # Files > 500MB
-                    optimal_chunk_size = (
-                        4 * 1024 * 1024
-                    )  # 4MB chunks for large files
-                elif content_length > 100 * 1024 * 1024:  # Files > 100MB
-                    optimal_chunk_size = 2 * 1024 * 1024  # 2MB chunks
-                elif content_length > 10 * 1024 * 1024:  # Files > 10MB
-                    optimal_chunk_size = 1024 * 1024  # 1MB chunks
-                else:
-                    optimal_chunk_size = 512 * 1024  # 512KB chunks for smaller files
-
-                try:
-                    # Use appropriate streaming method based on streamer type
-                    if hasattr(streamer, "is_parallel") and streamer.is_parallel():
-                        stream_method = streamer.stream_file_parallel(
-                            message_id, offset=start, limit=content_length
-                        )
-                    else:
-                        stream_method = streamer.stream_file(
-                            message_id, offset=start, limit=content_length
-                        )
-                    chunk_count = 0
-
-                    async for chunk in stream_method:
-                        chunk_count += 1
-
-                        # Check for timeout
-                        current_time = asyncio.get_event_loop().time()
-                        if current_time - start_time > timeout_seconds:
-                            LOGGER.warning(
-                                f"Stream timeout after {timeout_seconds}s, {bytes_sent} bytes sent"
-                            )
-                            break
-
-                        if chunk:
-                            # Validate chunk type (only log errors)
-                            if not isinstance(chunk, bytes):
-                                LOGGER.error(
-                                    f"Invalid chunk type: {type(chunk)}, value: {chunk}"
-                                )
-                                continue
-
-                            chunk_buffer += chunk
-
-                            # Seeking optimization: Send chunks immediately for seeking
-                            should_send_immediately = (
-                                is_seeking
-                                and chunk_count <= 20  # Increased from 10 to 20
-                                and len(chunk_buffer)
-                                > 0  # First 20 chunks for seeking
-                            )
-
-                            # Send chunks when buffer reaches optimal size or immediate send needed
-                            while (
-                                should_send_immediately
-                                or len(chunk_buffer) >= optimal_chunk_size
-                            ):
-                                remaining = content_length - bytes_sent
-                                if remaining <= 0:
-                                    break
-
-                                if should_send_immediately:
-                                    # For seeking: send whatever we have (don't wait for full buffer)
-                                    send_size = min(len(chunk_buffer), remaining)
-                                else:
-                                    # Normal: send optimal chunk size
-                                    send_size = min(optimal_chunk_size, remaining)
-
-                                send_chunk = chunk_buffer[:send_size]
-                                chunk_buffer = chunk_buffer[send_size:]
-
-                                yield send_chunk
-                                bytes_sent += len(send_chunk)
-
-                                # Reset immediate send flag after first chunk
-                                should_send_immediately = False
-
-                                # Ultra-optimized delay based on request type and chunk count
-                                if is_seeking:
-                                    # No delay for seeking - maximum speed for instant playback
-                                    pass
-                                elif chunk_count < 15:
-                                    # No delay for first 15 chunks (fast initial loading)
-                                    pass
-                                else:
-                                    # Micro delay only after initial burst to prevent overwhelming
-                                    await asyncio.sleep(0.00001)
-
-                        if bytes_sent >= content_length:
-                            break
-
-                    # Send any remaining data in buffer
-                    if chunk_buffer and bytes_sent < content_length:
-                        remaining = content_length - bytes_sent
-                        send_chunk = chunk_buffer[:remaining]
-                        if send_chunk:
-                            yield send_chunk
-                            bytes_sent += len(send_chunk)
-
-                except ConnectionError as e:
-                    LOGGER.error(f"Connection error in streaming: {e}")
-                    # Check if it's an authentication error
-                    if "AUTH_KEY_UNREGISTERED" in str(e) or "401" in str(e):
-                        LOGGER.error(
-                            "Telegram session expired - authentication required"
-                        )
-                        raise HTTPException(
-                            status_code=401,
-                            detail="Telegram session expired. Bot needs to re-authenticate.",
-                        )
-                    # If we haven't sent any data yet, we can still raise an exception
-                    if bytes_sent == 0:
-                        raise HTTPException(
-                            status_code=503,
-                            detail="Telegram service temporarily unavailable",
-                        )
-                    # If we've already started streaming, just stop gracefully
-                    LOGGER.warning(
-                        f"Stream interrupted due to connection error after {bytes_sent} bytes"
-                    )
-                except Exception as e:
-                    LOGGER.error(f"Stream generator error: {e}")
-                    # Check if it's an authentication error
-                    if "AUTH_KEY_UNREGISTERED" in str(e) or "401" in str(e):
-                        LOGGER.error("Telegram session expired during streaming")
-                        if bytes_sent == 0:
-                            raise HTTPException(
-                                status_code=401,
-                                detail="Telegram session expired. Bot needs to re-authenticate.",
-                            )
-                    # If we haven't sent any data yet, we can still raise an exception
-                    if bytes_sent == 0:
-                        raise
-                    # If we've already started streaming, we can't change headers
-                    # Just stop the stream gracefully
-                    LOGGER.warning(f"Stream interrupted after {bytes_sent} bytes")
-                finally:
-                    # Only decrement load for single client streaming
-                    if (
-                        not (
-                            hasattr(streamer, "is_parallel")
-                            and streamer.is_parallel()
-                        )
-                        and "client_id" in locals()
-                    ):
-                        StreamClientManager.decrement_load(client_id)
-
-            # Ensure mime_type is not None
-            if mime_type is None:
-                LOGGER.error("mime_type is None! Using fallback")
-                mime_type = "application/octet-stream"
-
-            # Debug: Check headers for None values
-            for key, value in headers.items():
-                if value is None:
-                    LOGGER.error(f"Header '{key}' has None value! Removing it.")
-                    headers[key] = ""  # Replace None with empty string
-
-            return StreamingResponse(
-                stream_generator(),
-                status_code=status_code,
-                headers=headers,
-                media_type=mime_type,
-            )
-
-        except Exception:
-            StreamClientManager.decrement_load(client_id)
-            raise
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        LOGGER.error(f"Error in file streaming: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
 

@@ -3133,11 +3133,11 @@ API Key: <code>{mediafire_api_key_display}</code> ({mediafire_api_key_source})
 
             # Only show MEGA Settings button if MEGA and MEGA upload are enabled
             if Config.MEGA_ENABLED and Config.MEGA_UPLOAD_ENABLED:
-                buttons.data_button("☁️ MEGA", f"userset {user_id} mega")
+                buttons.data_button("MEGA", f"userset {user_id} mega")
 
             # Only show DDL Settings button if DDL is enabled
             if Config.DDL_ENABLED:
-                buttons.data_button("🔗 DDL", f"userset {user_id} ddl")
+                buttons.data_button("DDL", f"userset {user_id} ddl")
         # Only show AI Settings button if AI is enabled
         if Config.AI_ENABLED:
             buttons.data_button("AI Settings", f"userset {user_id} ai")

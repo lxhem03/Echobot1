@@ -15,6 +15,13 @@ class MegaDownloadStatus:
         self.tool = "mega"
 
     def name(self):
+        # For operations where main name might be empty, use subname if available
+        if (
+            hasattr(self.listener, "subname")
+            and self.listener.subname
+            and (not self.listener.name or self.listener.name.strip() == "")
+        ):
+            return self.listener.subname
         return self.listener.name
 
     def progress_raw(self):
@@ -65,6 +72,13 @@ class MegaUploadStatus:
         self.tool = "mega"
 
     def name(self):
+        # For operations where main name might be empty, use subname if available
+        if (
+            hasattr(self.listener, "subname")
+            and self.listener.subname
+            and (not self.listener.name or self.listener.name.strip() == "")
+        ):
+            return self.listener.subname
         return self.listener.name
 
     def progress_raw(self):

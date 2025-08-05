@@ -33,7 +33,7 @@ class AutoThumbnailHelper:
 
     @classmethod
     async def get_auto_thumbnail(
-        cls, filename: str, user_id: int | None = None
+        cls, filename: str, user_id: int | None = None, enabled: bool | None = None
     ) -> str | None:
         """
         Get auto thumbnail for a file based on its metadata
@@ -41,12 +41,16 @@ class AutoThumbnailHelper:
         Args:
             filename: The filename to extract metadata from
             user_id: User ID for cache organization (optional)
+            enabled: Override for auto thumbnail enabled status (optional)
 
         Returns:
             Path to downloaded thumbnail or None if not found
         """
         try:
-            if not Config.AUTO_THUMBNAIL:
+            # Use provided enabled parameter, otherwise fall back to config
+            auto_enabled = enabled if enabled is not None else Config.AUTO_THUMBNAIL
+
+            if not auto_enabled:
                 return None
 
             # Extract metadata from filename
@@ -143,6 +147,14 @@ class AutoThumbnailHelper:
             flags=re.IGNORECASE,
         )
 
+        # Remove common Telegram bot prefixes/suffixes (like @hello, @botname, etc.)
+        # Remove prefix patterns like "@word " at the beginning (more flexible)
+        title = re.sub(r"^@[\w\-\.]+\s+", "", title)
+        # Remove suffix patterns like " @word" at the end (more flexible)
+        title = re.sub(r"\s+@[\w\-\.]+$", "", title)
+        # Remove multiple @ patterns in case there are several
+        title = re.sub(r"@[\w\-\.]+", "", title)
+
         # Replace separators with spaces
         title = re.sub(r"[._-]+", " ", title)
 
@@ -213,6 +225,14 @@ class AutoThumbnailHelper:
     @classmethod
     def _extract_title_strategy_2(cls, title: str, _original: str) -> str:
         """Aggressive cleaning - remove all technical indicators"""
+        # Remove common Telegram bot prefixes/suffixes (like @hello, @botname, etc.)
+        # Remove prefix patterns like "@word " at the beginning (more flexible)
+        title = re.sub(r"^@[\w\-\.]+\s+", "", title)
+        # Remove suffix patterns like " @word" at the end (more flexible)
+        title = re.sub(r"\s+@[\w\-\.]+$", "", title)
+        # Remove multiple @ patterns in case there are several
+        title = re.sub(r"@[\w\-\.]+", "", title)
+
         # Replace separators
         title = re.sub(r"[._-]+", " ", title)
 
@@ -270,6 +290,14 @@ class AutoThumbnailHelper:
     @classmethod
     def _extract_title_strategy_3(cls, title: str, _original: str) -> str:
         """Anime-specific extraction"""
+        # Remove common Telegram bot prefixes/suffixes (like @hello, @botname, etc.)
+        # Remove prefix patterns like "@word " at the beginning (more flexible)
+        title = re.sub(r"^@[\w\-\.]+\s+", "", title)
+        # Remove suffix patterns like " @word" at the end (more flexible)
+        title = re.sub(r"\s+@[\w\-\.]+$", "", title)
+        # Remove multiple @ patterns in case there are several
+        title = re.sub(r"@[\w\-\.]+", "", title)
+
         # Replace separators
         title = re.sub(r"[._-]+", " ", title)
 
@@ -304,6 +332,14 @@ class AutoThumbnailHelper:
     @classmethod
     def _extract_title_strategy_4(cls, title: str, _original: str) -> str:
         """Word-by-word fallback strategy"""
+        # Remove common Telegram bot prefixes/suffixes (like @hello, @botname, etc.)
+        # Remove prefix patterns like "@word " at the beginning (more flexible)
+        title = re.sub(r"^@[\w\-\.]+\s+", "", title)
+        # Remove suffix patterns like " @word" at the end (more flexible)
+        title = re.sub(r"\s+@[\w\-\.]+$", "", title)
+        # Remove multiple @ patterns in case there are several
+        title = re.sub(r"@[\w\-\.]+", "", title)
+
         # Replace separators
         title = re.sub(r"[._-]+", " ", title)
         words = title.split()
@@ -393,6 +429,15 @@ class AutoThumbnailHelper:
         """Last resort title extraction"""
         # Just take the first few words before any obvious technical terms
         title = filename.rsplit(".", 1)[0] if "." in filename else filename
+
+        # Remove common Telegram bot prefixes/suffixes (like @hello, @botname, etc.)
+        # Remove prefix patterns like "@word " at the beginning (more flexible)
+        title = re.sub(r"^@[\w\-\.]+\s+", "", title)
+        # Remove suffix patterns like " @word" at the end (more flexible)
+        title = re.sub(r"\s+@[\w\-\.]+$", "", title)
+        # Remove multiple @ patterns in case there are several
+        title = re.sub(r"@[\w\-\.]+", "", title)
+
         title = re.sub(r"[._-]+", " ", title)
         words = title.split()[:4]  # Take first 4 words max
         return " ".join(words).strip()
@@ -414,7 +459,7 @@ class AutoThumbnailHelper:
 
         # Try TMDB first (better quality images)
         if Config.TMDB_API_KEY and Config.TMDB_ENABLED:
-            for _variation_name, search_query, search_year in search_variations:
+            for variation_name, search_query, search_year in search_variations:
                 thumbnail_url = await cls._get_tmdb_thumbnail(
                     search_query, search_year, is_tv_show
                 )
@@ -432,14 +477,12 @@ class AutoThumbnailHelper:
 
         # Fallback to IMDB with same variations
         if Config.IMDB_ENABLED:
-            for _variation_name, search_query, search_year in search_variations:
+            for variation_name, search_query, search_year in search_variations:
                 # Format query for IMDB
                 imdb_query = (
                     f"{search_query} {search_year}" if search_year else search_query
                 )
-                thumbnail_url = await cls._get_imdb_thumbnail(
-                    imdb_query, search_year
-                )
+                thumbnail_url = await cls._get_imdb_thumbnail(imdb_query, search_year)
 
                 if thumbnail_url:
                     return thumbnail_url
@@ -510,9 +553,7 @@ class AutoThumbnailHelper:
             "by",
         }
         meaningful_words = [
-            word
-            for word in words
-            if word.lower() not in stop_words and len(word) > 2
+            word for word in words if word.lower() not in stop_words and len(word) > 2
         ]
 
         # 1. Individual meaningful words (most important)
@@ -653,9 +694,7 @@ class AutoThumbnailHelper:
         for pattern, replacement in transformations:
             new_variants = []
             for variant in current_variants:
-                new_variant = re.sub(
-                    pattern, replacement, variant, flags=re.IGNORECASE
-                )
+                new_variant = re.sub(pattern, replacement, variant, flags=re.IGNORECASE)
                 if new_variant != variant and new_variant not in current_variants:
                     new_variants.append(new_variant)
             current_variants.extend(new_variants)
@@ -906,9 +945,7 @@ class AutoThumbnailHelper:
         ]
 
         for pattern, replacement in transformations:
-            variant = re.sub(
-                pattern, replacement, title, flags=re.IGNORECASE
-            ).strip()
+            variant = re.sub(pattern, replacement, title, flags=re.IGNORECASE).strip()
             if variant and variant != title and variant not in variations:
                 variations.append(variant)
 
@@ -920,8 +957,7 @@ class AutoThumbnailHelper:
         # Try with different word orders (for titles with particles)
         words = title.split()
         if len(words) >= 3 and any(
-            word.lower() in ["no", "wa", "ga", "wo", "ni", "de", "to"]
-            for word in words
+            word.lower() in ["no", "wa", "ga", "wo", "ni", "de", "to"] for word in words
         ):
             # Try moving particles to different positions
             for i, word in enumerate(words):
@@ -1117,6 +1153,13 @@ class TMDBHelper:
     ) -> dict | None:
         """Enhanced movie search with better result selection"""
         try:
+            # Validate title input
+            if not title or not isinstance(title, str) or len(title.strip()) < 2:
+                LOGGER.warning(f"Invalid title for movie search: '{title}'")
+                return None
+
+            title = title.strip()
+
             # Convert year to int if it's a string
             if year is not None and isinstance(year, str):
                 try:
@@ -1137,9 +1180,7 @@ class TMDBHelper:
             if year:
                 no_year_result = await cls.search_movie(title, None)
                 if no_year_result and no_year_result != primary_result:
-                    score = cls._score_search_result(
-                        no_year_result, title, year, False
-                    )
+                    score = cls._score_search_result(no_year_result, title, year, False)
                     search_results.append((no_year_result, score, "no_year"))
 
             # Multi-search (searches across movies, TV, and people)
@@ -1149,9 +1190,7 @@ class TMDBHelper:
                     r[0].get("id") == multi_result.get("id")
                     for r, _, _ in search_results
                 ):
-                    score = cls._score_search_result(
-                        multi_result, title, year, False
-                    )
+                    score = cls._score_search_result(multi_result, title, year, False)
                     search_results.append((multi_result, score, "multi"))
 
             # Return best result with validation
@@ -1177,7 +1216,11 @@ class TMDBHelper:
             return None
 
         except Exception as e:
-            LOGGER.error(f"Error in enhanced movie search for '{title}': {e}")
+            # Better error logging to avoid showing "0" or empty errors
+            error_msg = str(e) if e else "Unknown error"
+            if not error_msg or error_msg.strip() in ["", "0"]:
+                error_msg = f"Empty or invalid error for title: '{title}'"
+            LOGGER.error(f"Error in enhanced movie search for '{title}': {error_msg}")
             return await cls.search_movie(title, year)  # Fallback to basic search
 
     @classmethod
@@ -1186,6 +1229,13 @@ class TMDBHelper:
     ) -> dict | None:
         """Enhanced TV show search with better result selection"""
         try:
+            # Validate title input
+            if not title or not isinstance(title, str) or len(title.strip()) < 2:
+                LOGGER.warning(f"Invalid title for TV search: '{title}'")
+                return None
+
+            title = title.strip()
+
             # Convert year to int if it's a string
             if year is not None and isinstance(year, str):
                 try:
@@ -1206,9 +1256,7 @@ class TMDBHelper:
             if year:
                 no_year_result = await cls.search_tv_show(title, None)
                 if no_year_result and no_year_result != primary_result:
-                    score = cls._score_search_result(
-                        no_year_result, title, year, True
-                    )
+                    score = cls._score_search_result(no_year_result, title, year, True)
                     search_results.append((no_year_result, score, "no_year"))
 
             # Multi-search
@@ -1244,7 +1292,11 @@ class TMDBHelper:
             return None
 
         except Exception as e:
-            LOGGER.error(f"Error in enhanced TV search for '{title}': {e}")
+            # Better error logging to avoid showing "0" or empty errors
+            error_msg = str(e) if e else "Unknown error"
+            if not error_msg or error_msg.strip() in ["", "0"]:
+                error_msg = f"Empty or invalid error for title: '{title}'"
+            LOGGER.error(f"Error in enhanced TV search for '{title}': {error_msg}")
             return await cls.search_tv_show(title, year)  # Fallback to basic search
 
     @classmethod
@@ -1272,9 +1324,7 @@ class TMDBHelper:
 
             async with (
                 aiohttp.ClientSession() as session,
-                session.get(
-                    f"{cls.BASE_URL}/search/multi", params=params
-                ) as response,
+                session.get(f"{cls.BASE_URL}/search/multi", params=params) as response,
             ):
                 if response.status == 200:
                     data = await response.json()
@@ -1295,10 +1345,7 @@ class TMDBHelper:
                                                 continue
                                     elif media_type == "tv":
                                         first_air_date = result.get("first_air_date")
-                                        if (
-                                            first_air_date
-                                            and len(first_air_date) >= 4
-                                        ):
+                                        if first_air_date and len(first_air_date) >= 4:
                                             try:
                                                 result_year = int(first_air_date[:4])
                                             except (ValueError, TypeError):
@@ -1652,9 +1699,7 @@ class TMDBHelper:
             return None
 
     @classmethod
-    async def search_tv_show(
-        cls, title: str, year: int | None = None
-    ) -> dict | None:
+    async def search_tv_show(cls, title: str, year: int | None = None) -> dict | None:
         """Search for a TV show by title and optional year"""
         try:
             if not Config.TMDB_API_KEY:
@@ -1737,6 +1782,14 @@ class TMDBHelper:
 
         # Remove file extensions
         title = re.sub(r"\.[a-zA-Z0-9]{2,4}$", "", title)
+
+        # Remove common Telegram bot prefixes/suffixes (like @hello, @botname, etc.)
+        # Remove prefix patterns like "@word " at the beginning (more flexible)
+        title = re.sub(r"^@[\w\-\.]+\s+", "", title)
+        # Remove suffix patterns like " @word" at the end (more flexible)
+        title = re.sub(r"\s+@[\w\-\.]+$", "", title)
+        # Remove multiple @ patterns in case there are several
+        title = re.sub(r"@[\w\-\.]+", "", title)
 
         # Replace dots, underscores, and dashes with spaces first
         title = re.sub(r"[._-]+", " ", title)
@@ -1828,15 +1881,17 @@ class TMDBHelper:
             # Strategy 1: Try with original filename (minimal cleaning)
             if original_title and original_title != title:
                 minimal_clean = re.sub(r"\.[a-zA-Z0-9]{2,4}$", "", original_title)
+                # Remove common Telegram bot prefixes/suffixes (more flexible)
+                minimal_clean = re.sub(r"^@[\w\-\.]+\s+", "", minimal_clean)
+                minimal_clean = re.sub(r"\s+@[\w\-\.]+$", "", minimal_clean)
+                minimal_clean = re.sub(r"@[\w\-\.]+", "", minimal_clean)
                 minimal_clean = re.sub(r"[._-]+", " ", minimal_clean).strip()
                 search_attempts.append(("original filename", minimal_clean))
 
             # Strategy 2: Search with just the main title (remove episode info)
             main_title = re.sub(r"\s+S\d+E\d+.*", "", title, flags=re.IGNORECASE)
             main_title = re.sub(r"\s+Episode.*", "", main_title, flags=re.IGNORECASE)
-            main_title = re.sub(
-                r"\s+\d+.*", "", main_title
-            )  # Remove trailing numbers
+            main_title = re.sub(r"\s+\d+.*", "", main_title)  # Remove trailing numbers
             search_attempts.append(("main title", main_title))
 
             # Strategy 3: Try first few words only (for long titles)
@@ -1891,15 +1946,17 @@ class TMDBHelper:
             # Strategy 1: Try with original filename (minimal cleaning)
             if original_title and original_title != title:
                 minimal_clean = re.sub(r"\.[a-zA-Z0-9]{2,4}$", "", original_title)
+                # Remove common Telegram bot prefixes/suffixes (more flexible)
+                minimal_clean = re.sub(r"^@[\w\-\.]+\s+", "", minimal_clean)
+                minimal_clean = re.sub(r"\s+@[\w\-\.]+$", "", minimal_clean)
+                minimal_clean = re.sub(r"@[\w\-\.]+", "", minimal_clean)
                 minimal_clean = re.sub(r"[._-]+", " ", minimal_clean).strip()
                 search_attempts.append(("original filename", minimal_clean))
 
             # Strategy 2: Search with just the main title (remove episode info)
             main_title = re.sub(r"\s+S\d+E\d+.*", "", title, flags=re.IGNORECASE)
             main_title = re.sub(r"\s+Episode.*", "", main_title, flags=re.IGNORECASE)
-            main_title = re.sub(
-                r"\s+\d+.*", "", main_title
-            )  # Remove trailing numbers
+            main_title = re.sub(r"\s+\d+.*", "", main_title)  # Remove trailing numbers
             search_attempts.append(("main title", main_title))
 
             # Strategy 3: Try first few words only (for long titles)

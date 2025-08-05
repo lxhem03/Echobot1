@@ -29,6 +29,13 @@ class GoogleDriveStatus:
         return MirrorStatus.STATUS_CLONE
 
     def name(self):
+        # For operations where main name might be empty, use subname if available
+        if (
+            hasattr(self.listener, "subname")
+            and self.listener.subname
+            and (not self.listener.name or self.listener.name.strip() == "")
+        ):
+            return self.listener.subname
         return self.listener.name
 
     def gid(self) -> str:

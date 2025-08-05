@@ -48,8 +48,17 @@ class GalleryDLStatus:
 
     def name(self):
         """Get download name"""
-        if hasattr(self.listener, "name"):
-            return self.listener.name
+        if hasattr(self.listener, "name") and self.listener.name:
+            listener_name = self.listener.name
+
+            # For operations where main name might be empty, use subname if available
+            if (
+                (not listener_name or listener_name.strip() == "")
+                and hasattr(self.listener, "subname")
+                and self.listener.subname
+            ):
+                return self.listener.subname
+            return listener_name
         return "Gallery-dl Download"
 
     def progress(self):

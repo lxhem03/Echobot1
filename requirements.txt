@@ -1,5 +1,6 @@
 # Choose ONE of the following Telegram libraries:
 #pyrogram
+#git+https://github.com/KurimuzonAkuma/pyrogram
 kurigram
 #pyrofork
 #pyroblack

@@ -3487,6 +3487,7 @@ special_commands = f"""
 /{BotCommands.File2LinkCommand}: Convert Telegram media files into direct streaming links with browser player support.
 /{BotCommands.WhisperCommand}: Send private whisper messages in group chats (reply to user or use -to flag for multiple targets).
 /{BotCommands.NekoCommand}: Get adorable cat images with voting system 🐱💕 (use /neko or /neko [number] for multiple cats).
+/{BotCommands.WeatherCommand[0]} or /{BotCommands.WeatherCommand[1]} [location]: Get comprehensive weather information with beautiful images, forecasts, air quality data, and interactive features.
 """
 
 # System Commands page

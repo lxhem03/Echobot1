@@ -500,18 +500,11 @@ TMDB_REGION = "US"  # Region for TMDB results (e.g., US, GB, IN)
 # Cat API Settings
 CAT_API_KEY = ""  # The Cat API key from https://thecatapi.com/ (optional, but recommended for full features)
 
-# AI Settings
-DEFAULT_AI_PROVIDER = (
-    "mistral"  # Default AI provider for /ask command: mistral, deepseek
-)
-MISTRAL_API_URL = ""  # Custom Mistral AI API URL
-DEEPSEEK_API_URL = ""  # Custom DeepSeek AI API URL
-
 # Streamrip Settings
 STREAMRIP_ENABLED = True  # Enable/disable streamrip feature
 STREAMRIP_CONCURRENT_DOWNLOADS = 4  # Concurrent downloads per platform
 STREAMRIP_MAX_SEARCH_RESULTS = 20  # Search results limit
-STREAMRIP_ENABLE_DATABASE = True  # Enable download history tracking
+STREAMRIP_ENABLE_DATABASE = False  # Enable download history tracking
 STREAMRIP_AUTO_CONVERT = True  # Enable automatic format conversion
 
 # Streamrip Quality and Format Settings
@@ -1174,7 +1167,7 @@ MISTRAL_API_URL = ""  # Mistral AI API URL
 DEEPSEEK_API_URL = ""  # DeepSeek AI API URL
 
 # AI Feature Settings
-AI_STREAMING_ENABLED = True  # Enable streaming responses (typewriter effect)
+AI_STREAMING_ENABLED = False  # Enable streaming responses (typewriter effect)
 AI_PLUGINS_ENABLED = True  # Enable plugin system (web search, URL summary, etc.)
 AI_MULTIMODAL_ENABLED = True  # Enable image/voice/document processing
 AI_CONVERSATION_HISTORY = True  # Enable conversation history per user
@@ -1220,14 +1213,6 @@ TMDB_ENABLED = True  # Enable/disable TMDB functionality
 TRUECALLER_ENABLED = True  # Enable/disable Truecaller functionality
 ENCODING_ENABLED = True  # Enable/disable encoding functionality
 DECODING_ENABLED = True  # Enable/disable decoding functionality
-
-# VirusTotal Settings
-VT_API_KEY = ""  # VirusTotal API key for file scanning
-VT_API_TIMEOUT = 500  # VirusTotal API timeout in seconds
-VT_ENABLED = False  # Enable/disable VirusTotal functionality
-VT_MAX_FILE_SIZE = (
-    33554432  # Maximum file size for VirusTotal scanning in bytes (32MB)
-)
 
 # Enhanced NSFW Detection
 # Basic NSFW Settings

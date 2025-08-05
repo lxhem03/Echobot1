@@ -41,6 +41,14 @@ class QbittorrentStatus:
     def name(self):
         if self._info.state in ["metaDL", "checkingResumeData"]:
             return f"[METADATA]{self.listener.name}"
+
+        # For operations where main name might be empty, use subname if available
+        if (
+            hasattr(self.listener, "subname")
+            and self.listener.subname
+            and (not self.listener.name or self.listener.name.strip() == "")
+        ):
+            return self.listener.subname
         return self.listener.name
 
     def size(self):

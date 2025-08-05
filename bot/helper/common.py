@@ -169,9 +169,7 @@ class TaskConfig:
         self.extract_subtitle_indices = (
             None  # List of subtitle track indices to extract
         )
-        self.extract_attachment_indices = (
-            None  # List of attachment indices to extract
-        )
+        self.extract_attachment_indices = None  # List of attachment indices to extract
 
         # Add settings
         self.add_enabled = False
@@ -416,9 +414,7 @@ class TaskConfig:
 
     def get_config_path(self, dest):
         return (
-            f"rclone/{self.user_id}.conf"
-            if dest.startswith("mrcc:")
-            else "rclone.conf"
+            f"rclone/{self.user_id}.conf" if dest.startswith("mrcc:") else "rclone.conf"
         )
 
     async def is_token_exists(self, path, status):
@@ -530,8 +526,7 @@ class TaskConfig:
         self.metadata_video_comment = self.user_dict.get(
             "METADATA_VIDEO_COMMENT", False
         ) or (
-            hasattr(Config, "METADATA_VIDEO_COMMENT")
-            and Config.METADATA_VIDEO_COMMENT
+            hasattr(Config, "METADATA_VIDEO_COMMENT") and Config.METADATA_VIDEO_COMMENT
             if "METADATA_VIDEO_COMMENT" not in self.user_dict
             else ""
         )
@@ -556,8 +551,7 @@ class TaskConfig:
         self.metadata_audio_comment = self.user_dict.get(
             "METADATA_AUDIO_COMMENT", False
         ) or (
-            hasattr(Config, "METADATA_AUDIO_COMMENT")
-            and Config.METADATA_AUDIO_COMMENT
+            hasattr(Config, "METADATA_AUDIO_COMMENT") and Config.METADATA_AUDIO_COMMENT
             if "METADATA_AUDIO_COMMENT" not in self.user_dict
             else ""
         )
@@ -702,9 +696,7 @@ class TaskConfig:
 
         # Initialize merge settings with the same priority logic
         user_merge_enabled = self.user_dict.get("MERGE_ENABLED", False)
-        owner_merge_enabled = (
-            hasattr(Config, "MERGE_ENABLED") and Config.MERGE_ENABLED
-        )
+        owner_merge_enabled = hasattr(Config, "MERGE_ENABLED") and Config.MERGE_ENABLED
 
         if "MERGE_ENABLED" in self.user_dict:
             if user_merge_enabled:
@@ -766,9 +758,7 @@ class TaskConfig:
             and self.user_dict["MERGE_OUTPUT_FORMAT_VIDEO"]
             and self.user_dict["MERGE_OUTPUT_FORMAT_VIDEO"] != "none"
         ):
-            self.merge_output_format_video = self.user_dict[
-                "MERGE_OUTPUT_FORMAT_VIDEO"
-            ]
+            self.merge_output_format_video = self.user_dict["MERGE_OUTPUT_FORMAT_VIDEO"]
         elif (
             self.merge_enabled
             and hasattr(Config, "MERGE_OUTPUT_FORMAT_VIDEO")
@@ -787,9 +777,7 @@ class TaskConfig:
             and self.user_dict["MERGE_OUTPUT_FORMAT_AUDIO"]
             and self.user_dict["MERGE_OUTPUT_FORMAT_AUDIO"] != "none"
         ):
-            self.merge_output_format_audio = self.user_dict[
-                "MERGE_OUTPUT_FORMAT_AUDIO"
-            ]
+            self.merge_output_format_audio = self.user_dict["MERGE_OUTPUT_FORMAT_AUDIO"]
         elif (
             self.merge_enabled
             and hasattr(Config, "MERGE_OUTPUT_FORMAT_AUDIO")
@@ -1052,9 +1040,7 @@ class TaskConfig:
             and "TRIM_DOCUMENT_START_PAGE" in self.user_dict
             and self.user_dict["TRIM_DOCUMENT_START_PAGE"]
         ):
-            self.trim_document_start_page = self.user_dict[
-                "TRIM_DOCUMENT_START_PAGE"
-            ]
+            self.trim_document_start_page = self.user_dict["TRIM_DOCUMENT_START_PAGE"]
         elif (
             self.trim_enabled
             and hasattr(Config, "TRIM_DOCUMENT_START_PAGE")
@@ -1341,9 +1327,7 @@ class TaskConfig:
 
         # Initialize attachment remove settings
         if user_remove_enabled and "REMOVE_ATTACHMENT_ENABLED" in self.user_dict:
-            self.remove_attachment_enabled = self.user_dict[
-                "REMOVE_ATTACHMENT_ENABLED"
-            ]
+            self.remove_attachment_enabled = self.user_dict["REMOVE_ATTACHMENT_ENABLED"]
         elif self.remove_enabled and hasattr(Config, "REMOVE_ATTACHMENT_ENABLED"):
             self.remove_attachment_enabled = Config.REMOVE_ATTACHMENT_ENABLED
         else:
@@ -1368,9 +1352,7 @@ class TaskConfig:
         # Initialize comprehensive Remove configurations
         # Video remove configurations
         self.remove_video_codec = self.user_dict.get("REMOVE_VIDEO_CODEC", "none")
-        if self.remove_video_codec == "none" and hasattr(
-            Config, "REMOVE_VIDEO_CODEC"
-        ):
+        if self.remove_video_codec == "none" and hasattr(Config, "REMOVE_VIDEO_CODEC"):
             self.remove_video_codec = Config.REMOVE_VIDEO_CODEC
 
         self.remove_video_format = self.user_dict.get("REMOVE_VIDEO_FORMAT", "none")
@@ -1379,9 +1361,7 @@ class TaskConfig:
         ):
             self.remove_video_format = Config.REMOVE_VIDEO_FORMAT
 
-        self.remove_video_quality = self.user_dict.get(
-            "REMOVE_VIDEO_QUALITY", "none"
-        )
+        self.remove_video_quality = self.user_dict.get("REMOVE_VIDEO_QUALITY", "none")
         if self.remove_video_quality == "none" and hasattr(
             Config, "REMOVE_VIDEO_QUALITY"
         ):
@@ -1393,9 +1373,7 @@ class TaskConfig:
         ):
             self.remove_video_preset = Config.REMOVE_VIDEO_PRESET
 
-        self.remove_video_bitrate = self.user_dict.get(
-            "REMOVE_VIDEO_BITRATE", "none"
-        )
+        self.remove_video_bitrate = self.user_dict.get("REMOVE_VIDEO_BITRATE", "none")
         if self.remove_video_bitrate == "none" and hasattr(
             Config, "REMOVE_VIDEO_BITRATE"
         ):
@@ -1415,9 +1393,7 @@ class TaskConfig:
 
         # Audio remove configurations
         self.remove_audio_codec = self.user_dict.get("REMOVE_AUDIO_CODEC", "none")
-        if self.remove_audio_codec == "none" and hasattr(
-            Config, "REMOVE_AUDIO_CODEC"
-        ):
+        if self.remove_audio_codec == "none" and hasattr(Config, "REMOVE_AUDIO_CODEC"):
             self.remove_audio_codec = Config.REMOVE_AUDIO_CODEC
 
         self.remove_audio_format = self.user_dict.get("REMOVE_AUDIO_FORMAT", "none")
@@ -1426,25 +1402,19 @@ class TaskConfig:
         ):
             self.remove_audio_format = Config.REMOVE_AUDIO_FORMAT
 
-        self.remove_audio_bitrate = self.user_dict.get(
-            "REMOVE_AUDIO_BITRATE", "none"
-        )
+        self.remove_audio_bitrate = self.user_dict.get("REMOVE_AUDIO_BITRATE", "none")
         if self.remove_audio_bitrate == "none" and hasattr(
             Config, "REMOVE_AUDIO_BITRATE"
         ):
             self.remove_audio_bitrate = Config.REMOVE_AUDIO_BITRATE
 
-        self.remove_audio_channels = self.user_dict.get(
-            "REMOVE_AUDIO_CHANNELS", "none"
-        )
+        self.remove_audio_channels = self.user_dict.get("REMOVE_AUDIO_CHANNELS", "none")
         if self.remove_audio_channels == "none" and hasattr(
             Config, "REMOVE_AUDIO_CHANNELS"
         ):
             self.remove_audio_channels = Config.REMOVE_AUDIO_CHANNELS
 
-        self.remove_audio_sampling = self.user_dict.get(
-            "REMOVE_AUDIO_SAMPLING", "none"
-        )
+        self.remove_audio_sampling = self.user_dict.get("REMOVE_AUDIO_SAMPLING", "none")
         if self.remove_audio_sampling == "none" and hasattr(
             Config, "REMOVE_AUDIO_SAMPLING"
         ):
@@ -1457,9 +1427,7 @@ class TaskConfig:
             self.remove_audio_volume = Config.REMOVE_AUDIO_VOLUME
 
         # Subtitle remove configurations
-        self.remove_subtitle_codec = self.user_dict.get(
-            "REMOVE_SUBTITLE_CODEC", "none"
-        )
+        self.remove_subtitle_codec = self.user_dict.get("REMOVE_SUBTITLE_CODEC", "none")
         if self.remove_subtitle_codec == "none" and hasattr(
             Config, "REMOVE_SUBTITLE_CODEC"
         ):
@@ -1489,9 +1457,7 @@ class TaskConfig:
         ):
             self.remove_subtitle_encoding = Config.REMOVE_SUBTITLE_ENCODING
 
-        self.remove_subtitle_font = self.user_dict.get(
-            "REMOVE_SUBTITLE_FONT", "none"
-        )
+        self.remove_subtitle_font = self.user_dict.get("REMOVE_SUBTITLE_FONT", "none")
         if self.remove_subtitle_font == "none" and hasattr(
             Config, "REMOVE_SUBTITLE_FONT"
         ):
@@ -2233,9 +2199,7 @@ class TaskConfig:
         if "SWAP_AUDIO_USE_LANGUAGE" in self.user_dict:
             self.swap_audio_use_language = self.user_dict["SWAP_AUDIO_USE_LANGUAGE"]
         elif "SWAP_AUDIO_USE_LANGUAGE" in db_swap_settings:
-            self.swap_audio_use_language = db_swap_settings[
-                "SWAP_AUDIO_USE_LANGUAGE"
-            ]
+            self.swap_audio_use_language = db_swap_settings["SWAP_AUDIO_USE_LANGUAGE"]
         else:
             self.swap_audio_use_language = True
 
@@ -2243,9 +2207,7 @@ class TaskConfig:
             "SWAP_AUDIO_LANGUAGE_ORDER" in self.user_dict
             and self.user_dict["SWAP_AUDIO_LANGUAGE_ORDER"] != "none"
         ):
-            self.swap_audio_language_order = self.user_dict[
-                "SWAP_AUDIO_LANGUAGE_ORDER"
-            ]
+            self.swap_audio_language_order = self.user_dict["SWAP_AUDIO_LANGUAGE_ORDER"]
         elif (
             "SWAP_AUDIO_LANGUAGE_ORDER" in db_swap_settings
             and db_swap_settings["SWAP_AUDIO_LANGUAGE_ORDER"] != "none"
@@ -2280,9 +2242,7 @@ class TaskConfig:
         if "SWAP_VIDEO_USE_LANGUAGE" in self.user_dict:
             self.swap_video_use_language = self.user_dict["SWAP_VIDEO_USE_LANGUAGE"]
         elif "SWAP_VIDEO_USE_LANGUAGE" in db_swap_settings:
-            self.swap_video_use_language = db_swap_settings[
-                "SWAP_VIDEO_USE_LANGUAGE"
-            ]
+            self.swap_video_use_language = db_swap_settings["SWAP_VIDEO_USE_LANGUAGE"]
         else:
             self.swap_video_use_language = True
 
@@ -2290,9 +2250,7 @@ class TaskConfig:
             "SWAP_VIDEO_LANGUAGE_ORDER" in self.user_dict
             and self.user_dict["SWAP_VIDEO_LANGUAGE_ORDER"] != "none"
         ):
-            self.swap_video_language_order = self.user_dict[
-                "SWAP_VIDEO_LANGUAGE_ORDER"
-            ]
+            self.swap_video_language_order = self.user_dict["SWAP_VIDEO_LANGUAGE_ORDER"]
         elif (
             "SWAP_VIDEO_LANGUAGE_ORDER" in db_swap_settings
             and db_swap_settings["SWAP_VIDEO_LANGUAGE_ORDER"] != "none"
@@ -2356,9 +2314,7 @@ class TaskConfig:
             "SWAP_SUBTITLE_INDEX_ORDER" in self.user_dict
             and self.user_dict["SWAP_SUBTITLE_INDEX_ORDER"] != "none"
         ):
-            self.swap_subtitle_index_order = self.user_dict[
-                "SWAP_SUBTITLE_INDEX_ORDER"
-            ]
+            self.swap_subtitle_index_order = self.user_dict["SWAP_SUBTITLE_INDEX_ORDER"]
         elif (
             "SWAP_SUBTITLE_INDEX_ORDER" in db_swap_settings
             and db_swap_settings["SWAP_SUBTITLE_INDEX_ORDER"] != "none"
@@ -2581,9 +2537,7 @@ class TaskConfig:
             and self.user_dict["EXTRACT_VIDEO_RESOLUTION"]
             and self.user_dict["EXTRACT_VIDEO_RESOLUTION"].lower() != "none"
         ):
-            self.extract_video_resolution = self.user_dict[
-                "EXTRACT_VIDEO_RESOLUTION"
-            ]
+            self.extract_video_resolution = self.user_dict["EXTRACT_VIDEO_RESOLUTION"]
         elif (
             self.extract_enabled
             and hasattr(Config, "EXTRACT_VIDEO_RESOLUTION")
@@ -2806,9 +2760,7 @@ class TaskConfig:
 
         # Initialize subtitle extract settings
         if user_extract_enabled and "EXTRACT_SUBTITLE_ENABLED" in self.user_dict:
-            self.extract_subtitle_enabled = self.user_dict[
-                "EXTRACT_SUBTITLE_ENABLED"
-            ]
+            self.extract_subtitle_enabled = self.user_dict["EXTRACT_SUBTITLE_ENABLED"]
         elif self.extract_enabled and hasattr(Config, "EXTRACT_SUBTITLE_ENABLED"):
             self.extract_subtitle_enabled = Config.EXTRACT_SUBTITLE_ENABLED
         else:
@@ -2943,9 +2895,7 @@ class TaskConfig:
             and self.user_dict["EXTRACT_SUBTITLE_LANGUAGE"]
             and self.user_dict["EXTRACT_SUBTITLE_LANGUAGE"].lower() != "none"
         ):
-            self.extract_subtitle_language = self.user_dict[
-                "EXTRACT_SUBTITLE_LANGUAGE"
-            ]
+            self.extract_subtitle_language = self.user_dict["EXTRACT_SUBTITLE_LANGUAGE"]
         elif (
             self.extract_enabled
             and hasattr(Config, "EXTRACT_SUBTITLE_LANGUAGE")
@@ -2963,9 +2913,7 @@ class TaskConfig:
             and self.user_dict["EXTRACT_SUBTITLE_ENCODING"]
             and self.user_dict["EXTRACT_SUBTITLE_ENCODING"].lower() != "none"
         ):
-            self.extract_subtitle_encoding = self.user_dict[
-                "EXTRACT_SUBTITLE_ENCODING"
-            ]
+            self.extract_subtitle_encoding = self.user_dict["EXTRACT_SUBTITLE_ENCODING"]
         elif (
             self.extract_enabled
             and hasattr(Config, "EXTRACT_SUBTITLE_ENCODING")
@@ -3030,9 +2978,7 @@ class TaskConfig:
             and "EXTRACT_ATTACHMENT_INDEX" in self.user_dict
             and self.user_dict["EXTRACT_ATTACHMENT_INDEX"] is not None
         ):
-            self.extract_attachment_index = self.user_dict[
-                "EXTRACT_ATTACHMENT_INDEX"
-            ]
+            self.extract_attachment_index = self.user_dict["EXTRACT_ATTACHMENT_INDEX"]
             # Convert to list format for extract_attachment_indices
             if isinstance(self.extract_attachment_index, str):
                 if self.extract_attachment_index.lower() == "all":
@@ -3119,9 +3065,7 @@ class TaskConfig:
             and self.user_dict["EXTRACT_ATTACHMENT_FORMAT"]
             and self.user_dict["EXTRACT_ATTACHMENT_FORMAT"].lower() != "none"
         ):
-            self.extract_attachment_format = self.user_dict[
-                "EXTRACT_ATTACHMENT_FORMAT"
-            ]
+            self.extract_attachment_format = self.user_dict["EXTRACT_ATTACHMENT_FORMAT"]
         elif (
             self.extract_enabled
             and hasattr(Config, "EXTRACT_ATTACHMENT_FORMAT")
@@ -3139,9 +3083,7 @@ class TaskConfig:
             and self.user_dict["EXTRACT_ATTACHMENT_FILTER"]
             and self.user_dict["EXTRACT_ATTACHMENT_FILTER"].lower() != "none"
         ):
-            self.extract_attachment_filter = self.user_dict[
-                "EXTRACT_ATTACHMENT_FILTER"
-            ]
+            self.extract_attachment_filter = self.user_dict["EXTRACT_ATTACHMENT_FILTER"]
         elif (
             self.extract_enabled
             and hasattr(Config, "EXTRACT_ATTACHMENT_FILTER")
@@ -3154,9 +3096,7 @@ class TaskConfig:
 
         # Initialize extract maintain quality setting
         if user_extract_enabled and "EXTRACT_MAINTAIN_QUALITY" in self.user_dict:
-            self.extract_maintain_quality = self.user_dict[
-                "EXTRACT_MAINTAIN_QUALITY"
-            ]
+            self.extract_maintain_quality = self.user_dict["EXTRACT_MAINTAIN_QUALITY"]
         elif self.extract_enabled and hasattr(Config, "EXTRACT_MAINTAIN_QUALITY"):
             self.extract_maintain_quality = Config.EXTRACT_MAINTAIN_QUALITY
         else:
@@ -3248,9 +3188,7 @@ class TaskConfig:
                         f"Will extract video tracks with indices: {self.extract_video_indices}"
                     )
                 elif self.extract_video_enabled:
-                    LOGGER.info(
-                        "Will extract all video tracks (no specific indices)"
-                    )
+                    LOGGER.info("Will extract all video tracks (no specific indices)")
 
             elif self.args.get("-vi") is not None:
                 # Handle multiple indices separated by commas or spaces
@@ -3312,9 +3250,7 @@ class TaskConfig:
                         f"Will extract audio tracks with indices: {self.extract_audio_indices}"
                     )
                 elif self.extract_audio_enabled:
-                    LOGGER.info(
-                        "Will extract all audio tracks (no specific indices)"
-                    )
+                    LOGGER.info("Will extract all audio tracks (no specific indices)")
             elif self.args.get("-ai") is not None:
                 # Handle multiple indices separated by commas or spaces
                 audio_indices = str(self.args.get("-ai")).split(",")
@@ -3344,9 +3280,9 @@ class TaskConfig:
             # Subtitle indices
             if self.args.get("-extract-subtitle-index") is not None:
                 # Handle multiple indices separated by commas or spaces
-                subtitle_indices = str(
-                    self.args.get("-extract-subtitle-index")
-                ).split(",")
+                subtitle_indices = str(self.args.get("-extract-subtitle-index")).split(
+                    ","
+                )
                 for idx in subtitle_indices:
                     try:
                         # Check for special value "all"
@@ -3366,9 +3302,7 @@ class TaskConfig:
                         # Auto-enable subtitle extraction when index is specified
                         self.extract_enabled = True
                         self.extract_subtitle_enabled = True
-                        LOGGER.info(
-                            f"Added subtitle index {index} to extraction list"
-                        )
+                        LOGGER.info(f"Added subtitle index {index} to extraction list")
                     except ValueError:
                         if idx.strip() and idx.strip().lower() != "all":
                             pass
@@ -3489,14 +3423,10 @@ class TaskConfig:
                 self.extract_audio_format = self.args.get("-extract-audio-format")
 
             if self.args.get("-extract-subtitle-codec"):
-                self.extract_subtitle_codec = self.args.get(
-                    "-extract-subtitle-codec"
-                )
+                self.extract_subtitle_codec = self.args.get("-extract-subtitle-codec")
 
             if self.args.get("-extract-subtitle-format"):
-                self.extract_subtitle_format = self.args.get(
-                    "-extract-subtitle-format"
-                )
+                self.extract_subtitle_format = self.args.get("-extract-subtitle-format")
 
             if self.args.get("-extract-attachment-format"):
                 self.extract_attachment_format = self.args.get(
@@ -3690,14 +3620,10 @@ class TaskConfig:
         user_video_format = self.user_dict.get("COMPRESSION_VIDEO_FORMAT")
         owner_video_format = getattr(Config, "COMPRESSION_VIDEO_FORMAT", None)
 
-        if (
-            user_video_format is not None
-            and str(user_video_format).lower() != "none"
-        ):
+        if user_video_format is not None and str(user_video_format).lower() != "none":
             self.compression_video_format = user_video_format
         elif (
-            owner_video_format is not None
-            and str(owner_video_format).lower() != "none"
+            owner_video_format is not None and str(owner_video_format).lower() != "none"
         ):
             self.compression_video_format = owner_video_format
         else:
@@ -3707,14 +3633,10 @@ class TaskConfig:
         user_audio_format = self.user_dict.get("COMPRESSION_AUDIO_FORMAT")
         owner_audio_format = getattr(Config, "COMPRESSION_AUDIO_FORMAT", None)
 
-        if (
-            user_audio_format is not None
-            and str(user_audio_format).lower() != "none"
-        ):
+        if user_audio_format is not None and str(user_audio_format).lower() != "none":
             self.compression_audio_format = user_audio_format
         elif (
-            owner_audio_format is not None
-            and str(owner_audio_format).lower() != "none"
+            owner_audio_format is not None and str(owner_audio_format).lower() != "none"
         ):
             self.compression_audio_format = owner_audio_format
         else:
@@ -3724,14 +3646,10 @@ class TaskConfig:
         user_image_format = self.user_dict.get("COMPRESSION_IMAGE_FORMAT")
         owner_image_format = getattr(Config, "COMPRESSION_IMAGE_FORMAT", None)
 
-        if (
-            user_image_format is not None
-            and str(user_image_format).lower() != "none"
-        ):
+        if user_image_format is not None and str(user_image_format).lower() != "none":
             self.compression_image_format = user_image_format
         elif (
-            owner_image_format is not None
-            and str(owner_image_format).lower() != "none"
+            owner_image_format is not None and str(owner_image_format).lower() != "none"
         ):
             self.compression_image_format = owner_image_format
         else:
@@ -3752,9 +3670,7 @@ class TaskConfig:
         ):
             self.compression_document_format = owner_document_format
         else:
-            self.compression_document_format = (
-                "none"  # Default format (keep original)
-            )
+            self.compression_document_format = "none"  # Default format (keep original)
 
         # Subtitle format
         user_subtitle_format = self.user_dict.get("COMPRESSION_SUBTITLE_FORMAT")
@@ -3771,9 +3687,7 @@ class TaskConfig:
         ):
             self.compression_subtitle_format = owner_subtitle_format
         else:
-            self.compression_subtitle_format = (
-                "none"  # Default format (keep original)
-            )
+            self.compression_subtitle_format = "none"  # Default format (keep original)
 
         # Archive format
         user_archive_format = self.user_dict.get("COMPRESSION_ARCHIVE_FORMAT")
@@ -3790,9 +3704,7 @@ class TaskConfig:
         ):
             self.compression_archive_format = owner_archive_format
         else:
-            self.compression_archive_format = (
-                "none"  # Default format (keep original)
-            )
+            self.compression_archive_format = "none"  # Default format (keep original)
 
         # Set compression presets based on command line flags or settings
         if hasattr(self, "video_preset") and self.video_preset:
@@ -3804,9 +3716,7 @@ class TaskConfig:
             and self.user_dict["COMPRESSION_VIDEO_PRESET"] != "none"
             and self.user_dict["COMPRESSION_VIDEO_PRESET"].lower() != "none"
         ):
-            self.compression_video_preset = self.user_dict[
-                "COMPRESSION_VIDEO_PRESET"
-            ]
+            self.compression_video_preset = self.user_dict["COMPRESSION_VIDEO_PRESET"]
         elif (
             self.compression_enabled
             and hasattr(Config, "COMPRESSION_VIDEO_PRESET")
@@ -3827,9 +3737,7 @@ class TaskConfig:
             and self.user_dict["COMPRESSION_AUDIO_PRESET"] != "none"
             and self.user_dict["COMPRESSION_AUDIO_PRESET"].lower() != "none"
         ):
-            self.compression_audio_preset = self.user_dict[
-                "COMPRESSION_AUDIO_PRESET"
-            ]
+            self.compression_audio_preset = self.user_dict["COMPRESSION_AUDIO_PRESET"]
         elif (
             self.compression_enabled
             and hasattr(Config, "COMPRESSION_AUDIO_PRESET")
@@ -3850,9 +3758,7 @@ class TaskConfig:
             and self.user_dict["COMPRESSION_IMAGE_PRESET"] != "none"
             and self.user_dict["COMPRESSION_IMAGE_PRESET"].lower() != "none"
         ):
-            self.compression_image_preset = self.user_dict[
-                "COMPRESSION_IMAGE_PRESET"
-            ]
+            self.compression_image_preset = self.user_dict["COMPRESSION_IMAGE_PRESET"]
         elif (
             self.compression_enabled
             and hasattr(Config, "COMPRESSION_IMAGE_PRESET")
@@ -3957,8 +3863,7 @@ class TaskConfig:
             # Check for video convert settings
             user_video_format = self.user_dict.get("CONVERT_VIDEO_FORMAT", "")
             owner_video_format = (
-                hasattr(Config, "CONVERT_VIDEO_FORMAT")
-                and Config.CONVERT_VIDEO_FORMAT
+                hasattr(Config, "CONVERT_VIDEO_FORMAT") and Config.CONVERT_VIDEO_FORMAT
             )
 
             # Check if user has video convert enabled
@@ -3987,8 +3892,7 @@ class TaskConfig:
             # Check for audio convert settings
             user_audio_format = self.user_dict.get("CONVERT_AUDIO_FORMAT", "")
             owner_audio_format = (
-                hasattr(Config, "CONVERT_AUDIO_FORMAT")
-                and Config.CONVERT_AUDIO_FORMAT
+                hasattr(Config, "CONVERT_AUDIO_FORMAT") and Config.CONVERT_AUDIO_FORMAT
             )
 
             # Check if user has audio convert enabled
@@ -4059,9 +3963,7 @@ class TaskConfig:
 
         # USER_TRANSMISSION is owner setting only, not user-specific
         # It determines if owner's premium session should be used for uploads
-        self.user_transmission = (
-            Config.USER_TRANSMISSION and TgClient.IS_PREMIUM_USER
-        )
+        self.user_transmission = Config.USER_TRANSMISSION and TgClient.IS_PREMIUM_USER
 
         if self.user_dict.get("UPLOAD_PATHS", False):
             if self.up_dest in self.user_dict["UPLOAD_PATHS"]:
@@ -4129,18 +4031,12 @@ class TaskConfig:
                 LOGGER.info(
                     "Rclone is disabled. Using GDrive as upload destination instead."
                 )
-            elif (
-                not self.up_dest and default_upload == "gd"
-            ) or self.up_dest == "gd":
+            elif (not self.up_dest and default_upload == "gd") or self.up_dest == "gd":
                 self.up_dest = self.user_dict.get("GDRIVE_ID") or Config.GDRIVE_ID
-            elif (
-                not self.up_dest and default_upload == "mg"
-            ) or self.up_dest == "mg":
+            elif (not self.up_dest and default_upload == "mg") or self.up_dest == "mg":
                 # MEGA upload destination
                 self.up_dest = "mg"
-            elif (
-                not self.up_dest and default_upload == "yt"
-            ) or self.up_dest == "yt":
+            elif (not self.up_dest and default_upload == "yt") or self.up_dest == "yt":
                 # YouTube upload destination
                 self.up_dest = "yt"
             elif (
@@ -4161,9 +4057,9 @@ class TaskConfig:
                     # When USER_TOKENS is enabled, only use user's personal token
                     if await aiopath.exists(youtube_token_path):
                         self.up_dest = "yt"
-                elif await aiopath.exists(
-                    youtube_token_path
-                ) or await aiopath.exists("youtube_token.pickle"):
+                elif await aiopath.exists(youtube_token_path) or await aiopath.exists(
+                    "youtube_token.pickle"
+                ):
                     # When USER_TOKENS is disabled, check user token first, then fallback to owner token
                     self.up_dest = "yt"
 
@@ -4205,9 +4101,7 @@ class TaskConfig:
                 # Check if Rclone operations are enabled
                 if not Config.RCLONE_ENABLED:
                     # Fall back to GDrive if Rclone is disabled
-                    self.up_dest = (
-                        self.user_dict.get("GDRIVE_ID") or Config.GDRIVE_ID
-                    )
+                    self.up_dest = self.user_dict.get("GDRIVE_ID") or Config.GDRIVE_ID
                     LOGGER.info(
                         "Rclone is disabled. Using GDrive as upload destination instead."
                     )
@@ -4253,8 +4147,7 @@ class TaskConfig:
         else:
             self.up_dest = self.up_dest or (
                 Config.LEECH_DUMP_CHAT[0]
-                if isinstance(Config.LEECH_DUMP_CHAT, list)
-                and Config.LEECH_DUMP_CHAT
+                if isinstance(Config.LEECH_DUMP_CHAT, list) and Config.LEECH_DUMP_CHAT
                 else ""
             )
             # HYBRID_LEECH is owner setting only, not user-specific
@@ -4417,10 +4310,7 @@ class TaskConfig:
                     if self.as_med
                     else (
                         self.user_dict.get("AS_DOCUMENT", False)
-                        or (
-                            Config.AS_DOCUMENT
-                            and "AS_DOCUMENT" not in self.user_dict
-                        )
+                        or (Config.AS_DOCUMENT and "AS_DOCUMENT" not in self.user_dict)
                     )
                 )
 
@@ -4816,9 +4706,7 @@ class TaskConfig:
                     for value in ffmpeg_dict[key]
                 ]
             else:
-                LOGGER.error(
-                    f"No FFmpeg commands found for keys: {self.ffmpeg_cmds}"
-                )
+                LOGGER.error(f"No FFmpeg commands found for keys: {self.ffmpeg_cmds}")
                 self.ffmpeg_cmds = None
                 return dl_path
         # If ffmpeg_cmds is a list with a single string, make sure it's treated as a direct command
@@ -4847,9 +4735,7 @@ class TaskConfig:
                     # Try to split the command using shlex.split
                     try:
                         parts = [
-                            part.strip()
-                            for part in shlex.split(item)
-                            if part.strip()
+                            part.strip() for part in shlex.split(item) if part.strip()
                         ]
                         cmds.append(parts)
                     except ValueError as e:
@@ -4857,9 +4743,7 @@ class TaskConfig:
                         if "No closing quotation" in str(e):
                             # Fix the command by adding the missing quotation mark
                             fixed_item = item
-                            if (
-                                item.count('"') % 2 != 0
-                            ):  # Odd number of double quotes
+                            if item.count('"') % 2 != 0:  # Odd number of double quotes
                                 fixed_item = item + '"'
                             elif (
                                 item.count("'") % 2 != 0
@@ -4900,9 +4784,7 @@ class TaskConfig:
                     )
                     str_item = str(item)
                     parts = [
-                        part.strip()
-                        for part in shlex.split(str_item)
-                        if part.strip()
+                        part.strip() for part in shlex.split(str_item) if part.strip()
                     ]
                     cmds.append(parts)
             except Exception as e:
@@ -4997,9 +4879,7 @@ class TaskConfig:
                         for i, part in enumerate(parts):
                             if part == "-i" and i + 1 < len(parts):
                                 input_file = parts[i + 1]
-                                index = (
-                                    -1
-                                )  # Special marker for bash wrapped commands
+                                index = -1  # Special marker for bash wrapped commands
                                 break
                         else:
                             # Couldn't find -i parameter, use default
@@ -5033,9 +4913,7 @@ class TaskConfig:
                     ext = ospath.splitext(input_file)[-1].lower()
                 if await aiopath.isfile(dl_path):
                     is_video, is_audio, _ = await get_document_type(dl_path)
-                    if (not is_video and not is_audio) or (
-                        is_video and ext == "audio"
-                    ):
+                    if (not is_video and not is_audio) or (is_video and ext == "audio"):
                         break
                     if (is_audio and not is_video and ext == "video") or (
                         ext
@@ -5140,9 +5018,7 @@ class TaskConfig:
                                     user_provided_files.append(f)
 
                     # Execute the command with user-provided files
-                    res = await ffmpeg.ffmpeg_cmds(
-                        cmd, file_path, user_provided_files
-                    )
+                    res = await ffmpeg.ffmpeg_cmds(cmd, file_path, user_provided_files)
 
                     # Resource manager removed
 
@@ -5152,9 +5028,9 @@ class TaskConfig:
                             if len(await listdir(new_folder)) == 1:
                                 folder = new_folder.rsplit("/", 1)[0]
                                 self.name = ospath.basename(res[0])
-                                if self.name.startswith(
+                                if self.name.startswith("xtra") or self.name.startswith(
                                     "xtra"
-                                ) or self.name.startswith("xtra"):  # Check for xtra
+                                ):  # Check for xtra
                                     self.name = self.name.split(".", 1)[-1]
                                 dl_path = ospath.join(folder, self.name)
                                 await move(res[0], dl_path)
@@ -5306,9 +5182,7 @@ class TaskConfig:
                                 user_provided_files.append(f_path)
                                 # Get the directory of the current file
                                 dir_path = os.path.dirname(f_path)
-                                if os.path.exists(dir_path) and os.path.isdir(
-                                    dir_path
-                                ):
+                                if os.path.exists(dir_path) and os.path.isdir(dir_path):
                                     # Get all files in the directory
                                     dir_files = [
                                         os.path.join(dir_path, f)
@@ -5317,10 +5191,7 @@ class TaskConfig:
                                     ]
                                     # Add other files to the list
                                     for f in dir_files:
-                                        if (
-                                            f != f_path
-                                            and f not in user_provided_files
-                                        ):
+                                        if f != f_path and f not in user_provided_files:
                                             user_provided_files.append(f)
 
                             # Execute the command with user-provided files
@@ -5556,9 +5427,7 @@ class TaskConfig:
                             # Strip HTML tags from the processed filename for file system compatibility
                             import re
 
-                            clean_filename = re.sub(
-                                r"<[^>]+>", "", processed_filename
-                            )
+                            clean_filename = re.sub(r"<[^>]+>", "", processed_filename)
 
                             # Keep the original extension if not included in the template
                             if ext and not clean_filename.endswith(f".{ext}"):
@@ -5749,9 +5618,7 @@ class TaskConfig:
                         self.convert_video_crf = None
 
                     # Get video preset from settings
-                    user_video_preset = self.user_dict.get(
-                        "CONVERT_VIDEO_PRESET", ""
-                    )
+                    user_video_preset = self.user_dict.get("CONVERT_VIDEO_PRESET", "")
                     owner_video_preset = (
                         Config.CONVERT_VIDEO_PRESET
                         if hasattr(Config, "CONVERT_VIDEO_PRESET")
@@ -5876,9 +5743,7 @@ class TaskConfig:
                         self.convert_audio_codec = None
 
                     # Get audio bitrate from settings
-                    user_audio_bitrate = self.user_dict.get(
-                        "CONVERT_AUDIO_BITRATE", ""
-                    )
+                    user_audio_bitrate = self.user_dict.get("CONVERT_AUDIO_BITRATE", "")
                     owner_audio_bitrate = (
                         Config.CONVERT_AUDIO_BITRATE
                         if hasattr(Config, "CONVERT_AUDIO_BITRATE")
@@ -5888,9 +5753,7 @@ class TaskConfig:
                     # Determine which bitrate to use based on priority
                     if user_audio_bitrate and user_audio_bitrate.lower() != "none":
                         self.convert_audio_bitrate = user_audio_bitrate
-                    elif (
-                        owner_audio_bitrate and owner_audio_bitrate.lower() != "none"
-                    ):
+                    elif owner_audio_bitrate and owner_audio_bitrate.lower() != "none":
                         self.convert_audio_bitrate = owner_audio_bitrate
                     else:
                         self.convert_audio_bitrate = None
@@ -5932,9 +5795,7 @@ class TaskConfig:
                         self.convert_audio_sampling = None
 
                     # Get audio volume from settings
-                    user_audio_volume = self.user_dict.get(
-                        "CONVERT_AUDIO_VOLUME", 0.0
-                    )
+                    user_audio_volume = self.user_dict.get("CONVERT_AUDIO_VOLUME", 0.0)
                     owner_audio_volume = (
                         Config.CONVERT_AUDIO_VOLUME
                         if hasattr(Config, "CONVERT_AUDIO_VOLUME")
@@ -5985,9 +5846,7 @@ class TaskConfig:
         # Handle subtitle convert command
         if hasattr(self, "convert_subtitle") and self.convert_subtitle:
             # Clean up the convert_subtitle parameter by removing the -del flag if present
-            clean_convert_subtitle = self.convert_subtitle.replace(
-                "-del", ""
-            ).strip()
+            clean_convert_subtitle = self.convert_subtitle.replace("-del", "").strip()
             sdata = clean_convert_subtitle.split()
             sext = sdata[0].lower()
             if len(sdata) > 2:
@@ -6009,9 +5868,7 @@ class TaskConfig:
             subtitle_enabled = False
             if "CONVERT_SUBTITLE_ENABLED" in self.user_dict:
                 # User has explicitly set subtitle convert enabled/disabled
-                subtitle_enabled = self.user_dict.get(
-                    "CONVERT_SUBTITLE_ENABLED", False
-                )
+                subtitle_enabled = self.user_dict.get("CONVERT_SUBTITLE_ENABLED", False)
             else:
                 # User hasn't set subtitle convert enabled/disabled - use owner settings
                 subtitle_enabled = (
@@ -6022,9 +5879,7 @@ class TaskConfig:
 
             if subtitle_enabled:
                 # Get subtitle format from settings
-                user_subtitle_format = self.user_dict.get(
-                    "CONVERT_SUBTITLE_FORMAT", ""
-                )
+                user_subtitle_format = self.user_dict.get("CONVERT_SUBTITLE_FORMAT", "")
                 owner_subtitle_format = (
                     Config.CONVERT_SUBTITLE_FORMAT
                     if hasattr(Config, "CONVERT_SUBTITLE_FORMAT")
@@ -6070,9 +5925,7 @@ class TaskConfig:
         # Handle document convert command
         if hasattr(self, "convert_document") and self.convert_document:
             # Clean up the convert_document parameter by removing the -del flag if present
-            clean_convert_document = self.convert_document.replace(
-                "-del", ""
-            ).strip()
+            clean_convert_document = self.convert_document.replace("-del", "").strip()
             ddata = clean_convert_document.split()
             dext = ddata[0].lower()
             if len(ddata) > 2:
@@ -6094,9 +5947,7 @@ class TaskConfig:
             document_enabled = False
             if "CONVERT_DOCUMENT_ENABLED" in self.user_dict:
                 # User has explicitly set document convert enabled/disabled
-                document_enabled = self.user_dict.get(
-                    "CONVERT_DOCUMENT_ENABLED", False
-                )
+                document_enabled = self.user_dict.get("CONVERT_DOCUMENT_ENABLED", False)
             else:
                 # User hasn't set document convert enabled/disabled - use owner settings
                 document_enabled = (
@@ -6107,9 +5958,7 @@ class TaskConfig:
 
             if document_enabled:
                 # Get document format from settings
-                user_document_format = self.user_dict.get(
-                    "CONVERT_DOCUMENT_FORMAT", ""
-                )
+                user_document_format = self.user_dict.get("CONVERT_DOCUMENT_FORMAT", "")
                 owner_document_format = (
                     Config.CONVERT_DOCUMENT_FORMAT
                     if hasattr(Config, "CONVERT_DOCUMENT_FORMAT")
@@ -6177,9 +6026,7 @@ class TaskConfig:
             archive_enabled = False
             if "CONVERT_ARCHIVE_ENABLED" in self.user_dict:
                 # User has explicitly set archive convert enabled/disabled
-                archive_enabled = self.user_dict.get(
-                    "CONVERT_ARCHIVE_ENABLED", False
-                )
+                archive_enabled = self.user_dict.get("CONVERT_ARCHIVE_ENABLED", False)
             else:
                 # User hasn't set archive convert enabled/disabled - use owner settings
                 archive_enabled = (
@@ -6190,9 +6037,7 @@ class TaskConfig:
 
             if archive_enabled:
                 # Get archive format from settings
-                user_archive_format = self.user_dict.get(
-                    "CONVERT_ARCHIVE_FORMAT", ""
-                )
+                user_archive_format = self.user_dict.get("CONVERT_ARCHIVE_FORMAT", "")
                 owner_archive_format = (
                     Config.CONVERT_ARCHIVE_FORMAT
                     if hasattr(Config, "CONVERT_ARCHIVE_FORMAT")
@@ -6293,10 +6138,7 @@ class TaskConfig:
                 and vext.lower() != "none"
                 and not f_path.strip().lower().endswith(f".{vext}")
                 and (
-                    (
-                        vstatus == "+"
-                        and f_path.strip().lower().endswith(tuple(fvext))
-                    )
+                    (vstatus == "+" and f_path.strip().lower().endswith(tuple(fvext)))
                     or (
                         vstatus == "-"
                         and not f_path.strip().lower().endswith(tuple(fvext))
@@ -6314,10 +6156,7 @@ class TaskConfig:
                 and not is_video
                 and not f_path.strip().lower().endswith(f".{aext}")
                 and (
-                    (
-                        astatus == "+"
-                        and f_path.strip().lower().endswith(tuple(faext))
-                    )
+                    (astatus == "+" and f_path.strip().lower().endswith(tuple(faext)))
                     or (
                         astatus == "-"
                         and not f_path.strip().lower().endswith(tuple(faext))
@@ -6334,10 +6173,7 @@ class TaskConfig:
                 and sext.lower() != "none"
                 and not f_path.strip().lower().endswith(f".{sext}")
                 and (
-                    (
-                        sstatus == "+"
-                        and f_path.strip().lower().endswith(tuple(fsext))
-                    )
+                    (sstatus == "+" and f_path.strip().lower().endswith(tuple(fsext)))
                     or (
                         sstatus == "-"
                         and not f_path.strip().lower().endswith(tuple(fsext))
@@ -6354,10 +6190,7 @@ class TaskConfig:
                 and dext.lower() != "none"
                 and not f_path.strip().lower().endswith(f".{dext}")
                 and (
-                    (
-                        dstatus == "+"
-                        and f_path.strip().lower().endswith(tuple(fdext))
-                    )
+                    (dstatus == "+" and f_path.strip().lower().endswith(tuple(fdext)))
                     or (
                         dstatus == "-"
                         and not f_path.strip().lower().endswith(tuple(fdext))
@@ -6374,10 +6207,7 @@ class TaskConfig:
                 and rext.lower() != "none"
                 and not f_path.strip().lower().endswith(f".{rext}")
                 and (
-                    (
-                        rstatus == "+"
-                        and f_path.strip().lower().endswith(tuple(frext))
-                    )
+                    (rstatus == "+" and f_path.strip().lower().endswith(tuple(frext)))
                     or (
                         rstatus == "-"
                         and not f_path.strip().lower().endswith(tuple(frext))
@@ -6494,9 +6324,7 @@ class TaskConfig:
 
     async def generate_sample_video(self, dl_path, gid):
         data = (
-            self.sample_video.split(":")
-            if isinstance(self.sample_video, str)
-            else ""
+            self.sample_video.split(":") if isinstance(self.sample_video, str) else ""
         )
         if data:
             sample_duration = int(data[0]) if data[0] else 60
@@ -6550,9 +6378,7 @@ class TaskConfig:
                             return new_folder
                         except FileExistsError:
                             # Try with a different folder name
-                            new_folder = (
-                                f"{ospath.splitext(f_path)[0]}_{int(time())}"
-                            )
+                            new_folder = f"{ospath.splitext(f_path)[0]}_{int(time())}"
                             await makedirs(new_folder, exist_ok=True)
                             await gather(
                                 move(f_path, f"{new_folder}/{file_}"),
@@ -6578,9 +6404,7 @@ class TaskConfig:
 
             # Process all files in the directory recursively
             processed_files = 0
-            for dirpath, _, files in await sync_to_async(
-                walk, dl_path, topdown=False
-            ):
+            for dirpath, _, files in await sync_to_async(walk, dl_path, topdown=False):
                 for file_ in files:
                     if self.is_cancelled:
                         return dl_path
@@ -6857,9 +6681,7 @@ class TaskConfig:
                     ffprobe_path = None
 
             if not ffprobe_path:
-                LOGGER.warning(
-                    "ffprobe not found, skipping detailed video validation"
-                )
+                LOGGER.warning("ffprobe not found, skipping detailed video validation")
             else:
                 # Use JSON output for better parsing
                 ffprobe_cmd = [
@@ -6907,13 +6729,9 @@ class TaskConfig:
                                 break
 
                         if not has_video:
-                            LOGGER.error(
-                                f"No video streams found in file: {dl_path}"
-                            )
+                            LOGGER.error(f"No video streams found in file: {dl_path}")
                             # Try to repair the video file
-                            repaired_path = await self._repair_video_file(
-                                dl_path, gid
-                            )
+                            repaired_path = await self._repair_video_file(dl_path, gid)
                             if repaired_path != dl_path:
                                 LOGGER.info(
                                     f"Successfully repaired video file: {repaired_path}"
@@ -7010,14 +6828,10 @@ class TaskConfig:
         user_pixel_format = self.user_dict.get("COMPRESSION_VIDEO_PIXEL_FORMAT")
         owner_pixel_format = getattr(Config, "COMPRESSION_VIDEO_PIXEL_FORMAT", None)
 
-        if (
-            user_pixel_format is not None
-            and str(user_pixel_format).lower() != "none"
-        ):
+        if user_pixel_format is not None and str(user_pixel_format).lower() != "none":
             pixel_format = user_pixel_format
         elif (
-            owner_pixel_format is not None
-            and str(owner_pixel_format).lower() != "none"
+            owner_pixel_format is not None and str(owner_pixel_format).lower() != "none"
         ):
             pixel_format = owner_pixel_format
         else:
@@ -7051,9 +6865,7 @@ class TaskConfig:
 
         if user_resolution is not None and str(user_resolution).lower() != "none":
             resolution = user_resolution
-        elif (
-            owner_resolution is not None and str(owner_resolution).lower() != "none"
-        ):
+        elif owner_resolution is not None and str(owner_resolution).lower() != "none":
             resolution = owner_resolution
         else:
             resolution = None  # Default resolution (no specific resolution)
@@ -7198,9 +7010,7 @@ class TaskConfig:
             comp_size = await get_path_size(out_path)
 
             if comp_size < orig_size:
-                LOGGER.info(
-                    f"Compression successful: {orig_size} -> {comp_size} bytes"
-                )
+                LOGGER.info(f"Compression successful: {orig_size} -> {comp_size} bytes")
                 # Remove original file if compression was successful or delete_original is set
                 if self.compression_delete_original:
                     await remove(dl_path)
@@ -7588,9 +7398,7 @@ class TaskConfig:
                 else:
                     bitrate = "96k"  # Default for fast preset
             except (ValueError, TypeError):
-                bitrate = (
-                    "96k"  # Default for fast preset if bitrate is None or invalid
-                )
+                bitrate = "96k"  # Default for fast preset if bitrate is None or invalid
         elif preset == "medium":
             # Use default bitrate
             if not isinstance(bitrate, str) or "k" not in bitrate:
@@ -7944,9 +7752,7 @@ class TaskConfig:
                 # First, check if convert (ImageMagick) is available
                 convert_path = shutil.which("convert")
                 if convert_path:
-                    LOGGER.info(
-                        f"Using ImageMagick to convert SVG to PNG: {dl_path}"
-                    )
+                    LOGGER.info(f"Using ImageMagick to convert SVG to PNG: {dl_path}")
                     # Use ImageMagick to convert SVG to PNG
                     png_out_path = f"{ospath.splitext(out_path)[0]}.png"
                     # Get quality setting from class or use default
@@ -8056,9 +7862,7 @@ class TaskConfig:
             # Check if the image has valid dimensions
             try:
                 dimensions = process.stdout.strip().split(",")
-                if len(dimensions) != 2 or not all(
-                    dim.isdigit() for dim in dimensions
-                ):
+                if len(dimensions) != 2 or not all(dim.isdigit() for dim in dimensions):
                     LOGGER.error(f"Image has invalid dimensions: {process.stdout}")
                     return dl_path
 
@@ -8113,9 +7917,7 @@ class TaskConfig:
                 # Use default quality
                 pass
             elif preset == "slow":
-                quality = min(
-                    quality + 10, 100
-                )  # Higher quality for slower encoding
+                quality = min(quality + 10, 100)  # Higher quality for slower encoding
 
             # Ensure quality is within valid range
             quality = max(1, min(quality, 100))
@@ -8522,9 +8324,7 @@ class TaskConfig:
                         )
                         await remove(dl_path)
                         return out_path
-                    LOGGER.info(
-                        "Removing original file as compression was successful"
-                    )
+                    LOGGER.info("Removing original file as compression was successful")
                     await remove(dl_path)
                     return out_path
                 LOGGER.info("Compressed file is not smaller than original")
@@ -8542,9 +8342,7 @@ class TaskConfig:
             except Exception as e:
                 LOGGER.error(f"Error during PDF compression: {e!s}")
                 LOGGER.info("Falling back to FFmpeg for PDF compression")
-                return await self._compress_document_with_ffmpeg(
-                    dl_path, out_path, gid
-                )
+                return await self._compress_document_with_ffmpeg(dl_path, out_path, gid)
         elif file_ext in [
             ".doc",
             ".docx",
@@ -8557,9 +8355,7 @@ class TaskConfig:
             ".odp",
         ]:
             # For office documents, try to convert to PDF first, then compress
-            LOGGER.info(
-                f"Converting office document {file_ext} to PDF for compression"
-            )
+            LOGGER.info(f"Converting office document {file_ext} to PDF for compression")
 
             # Use specified format if available
             if (
@@ -8610,9 +8406,7 @@ class TaskConfig:
                     )
 
                     if process.returncode != 0:
-                        LOGGER.error(
-                            f"LibreOffice conversion failed: {process.stderr}"
-                        )
+                        LOGGER.error(f"LibreOffice conversion failed: {process.stderr}")
                         # Fall back to 7z compression
                         return await self._compress_document_with_7z(dl_path, gid)
 
@@ -8641,9 +8435,7 @@ class TaskConfig:
                             await remove(dl_path)
 
                         return compressed_path
-                    LOGGER.error(
-                        "LibreOffice conversion failed: output file not found"
-                    )
+                    LOGGER.error("LibreOffice conversion failed: output file not found")
                     # Fall back to 7z compression
                     return await self._compress_document_with_7z(dl_path, gid)
 
@@ -9020,9 +8812,7 @@ class TaskConfig:
                     return dl_path
             else:
                 # For simple encoding change without format conversion
-                return await self._compress_subtitle_text(
-                    dl_path, out_path, encoding
-                )
+                return await self._compress_subtitle_text(dl_path, out_path, encoding)
 
             # Check if compressed file is smaller
             orig_size = await get_path_size(dl_path)
@@ -9399,13 +9189,9 @@ class TaskConfig:
             LOGGER.error(f"Error during archive extraction: {e!s}")
             return False
 
-    async def _compress_directory(
-        self, directory_path, out_path, level, method, gid
-    ):
+    async def _compress_directory(self, directory_path, out_path, level, method, gid):
         """Helper method to compress a directory to an archive"""
-        LOGGER.info(
-            f"Compressing directory to archive: {directory_path} to {out_path}"
-        )
+        LOGGER.info(f"Compressing directory to archive: {directory_path} to {out_path}")
 
         # Check if 7z binary exists
         import shutil
@@ -9453,11 +9239,7 @@ class TaskConfig:
         ]
 
         # Add compression method if not tar (tar doesn't support compression method)
-        if (
-            archive_algorithm.lower() != "tar"
-            and method
-            and method.lower() != "none"
-        ):
+        if archive_algorithm.lower() != "tar" and method and method.lower() != "none":
             sevenz_cmd.append(f"-m0={method}")
 
         # Add password if provided and format supports it
@@ -9514,9 +9296,7 @@ class TaskConfig:
             LOGGER.error(f"Error during directory compression: {e!s}")
             return False
 
-    async def _compress_archive_directly(
-        self, dl_path, out_path, level, method, gid
-    ):
+    async def _compress_archive_directly(self, dl_path, out_path, level, method, gid):
         """Helper method to compress an archive directly without extraction"""
         # Build 7z command
         sevenz_binary = "7z"
@@ -9559,11 +9339,7 @@ class TaskConfig:
         ]
 
         # Add compression method if not tar (tar doesn't support compression method)
-        if (
-            archive_algorithm.lower() != "tar"
-            and method
-            and method.lower() != "none"
-        ):
+        if archive_algorithm.lower() != "tar" and method and method.lower() != "none":
             sevenz_cmd.append(f"-m0={method}")
 
         # Add password if provided and format supports it
@@ -9708,7 +9484,17 @@ class TaskConfig:
             ffmpeg = FFMpeg(self)
             async with task_dict_lock:
                 task_dict[self.mid] = FFmpegStatus(self, ffmpeg, gid, "Split")
-            LOGGER.info(f"Splitting: {self.name}")
+            # Use the actual file name being split if self.name is empty
+            split_name = (
+                self.name
+                if self.name and self.name.strip()
+                else (
+                    ospath.basename(next(iter(self.files_to_proceed.keys())))
+                    if self.files_to_proceed
+                    else "Unknown"
+                )
+            )
+            LOGGER.info(f"Splitting: {split_name}")
             for f_path, (f_size, file_) in self.files_to_proceed.items():
                 self.proceed_count += 1
                 if self.is_file:
@@ -9740,12 +9526,10 @@ class TaskConfig:
                         f"Regular Split: File will be split into {parts} parts of {split_size / (1024 * 1024):.1f} MiB each"
                     )
 
-                # For leech operations, always use simple file splitting regardless of file type
-                # FFmpeg split is complex and should only be used for specific video processing tasks
-                if self.is_leech:
-                    self.progress = False
-                    res = await split_file(f_path, split_size, self)
-                elif not self.as_doc and (await get_document_type(f_path))[0]:
+                # Use the old Aeon-MLTB splitting logic:
+                # - FFmpeg splitting for media files (maintains duration and streaming)
+                # - Simple file splitting for documents and non-media files
+                if not self.as_doc and (await get_document_type(f_path))[0]:
                     self.progress = True
                     res = await ffmpeg.split(f_path, file_, parts, split_size)
                 else:
@@ -10074,9 +9858,7 @@ class TaskConfig:
                         continue
 
                     self.proceed_count += 1
-                    LOGGER.info(
-                        f"Applying metadata to {media_type} file: {file_path}"
-                    )
+                    LOGGER.info(f"Applying metadata to {media_type} file: {file_path}")
 
                     cmd, temp_file = await get_metadata_cmd(
                         file_path,
@@ -10216,9 +9998,7 @@ class TaskConfig:
         else:
             # Use directory name as fallback
             merge_folder_name = ospath.basename(dl_path)
-            LOGGER.info(
-                f"Using directory name for merge output: {merge_folder_name}"
-            )
+            LOGGER.info(f"Using directory name for merge output: {merge_folder_name}")
 
         LOGGER.info(
             f"Merge analysis recommended approach: {analysis['recommended_approach']}"
@@ -10266,9 +10046,7 @@ class TaskConfig:
 
         # Filter files based on merge flags
         if merge_video_only:
-            LOGGER.info(
-                "Merge flag: -merge-video detected, only merging video files"
-            )
+            LOGGER.info("Merge flag: -merge-video detected, only merging video files")
             if not analysis["video_files"]:
                 LOGGER.info("Merge not applied: no video files found")
                 return dl_path
@@ -10299,9 +10077,7 @@ class TaskConfig:
                     "Single video codec group detected. Using concat_demuxer approach."
                 )
         elif merge_audio_only:
-            LOGGER.info(
-                "Merge flag: -merge-audio detected, only merging audio files"
-            )
+            LOGGER.info("Merge flag: -merge-audio detected, only merging audio files")
             if not analysis["audio_files"]:
                 LOGGER.info("Merge not applied: no audio files found")
                 return dl_path
@@ -10365,9 +10141,7 @@ class TaskConfig:
                     "Single subtitle format group detected. Using concat_demuxer approach."
                 )
         elif merge_image_only:
-            LOGGER.info(
-                "Merge flag: -merge-image detected, only merging image files"
-            )
+            LOGGER.info("Merge flag: -merge-image detected, only merging image files")
             if not analysis["image_files"]:
                 LOGGER.info("Merge not applied: no image files found")
                 return dl_path
@@ -10426,9 +10200,7 @@ class TaskConfig:
                 return dl_path
             # Set approach to mixed to preserve all video and audio tracks
             analysis["recommended_approach"] = "mixed"
-            LOGGER.info(
-                "Using mixed approach to preserve all video and audio tracks"
-            )
+            LOGGER.info("Using mixed approach to preserve all video and audio tracks")
 
         # Determine which approach to use based on settings and analysis
         approach = analysis["recommended_approach"]
@@ -10495,10 +10267,7 @@ class TaskConfig:
                             if self.merge_remove_original:
                                 for f in all_files:
                                     try:
-                                        if (
-                                            await aiopath.exists(f)
-                                            and f != output_file
-                                        ):
+                                        if await aiopath.exists(f) and f != output_file:
                                             await remove(f)
                                     except Exception as e:
                                         LOGGER.error(
@@ -10531,10 +10300,7 @@ class TaskConfig:
                             if self.merge_remove_original:
                                 for f in all_files:
                                     try:
-                                        if (
-                                            await aiopath.exists(f)
-                                            and f != output_file
-                                        ):
+                                        if await aiopath.exists(f) and f != output_file:
                                             await remove(f)
                                     except Exception as e:
                                         LOGGER.error(
@@ -10565,9 +10331,9 @@ class TaskConfig:
                         columns = 3
 
                     # Get output format from first image or default to jpg
-                    first_ext = os.path.splitext(analysis["image_files"][0])[
-                        1
-                    ].lower()[1:]
+                    first_ext = os.path.splitext(analysis["image_files"][0])[1].lower()[
+                        1:
+                    ]
                     output_format = (
                         first_ext if first_ext in ["jpg", "jpeg", "png"] else "jpg"
                     )
@@ -10602,9 +10368,7 @@ class TaskConfig:
                                 if await aiopath.exists(f) and f != output_file:
                                     await remove(f)
                             except Exception as e:
-                                LOGGER.error(
-                                    f"Error removing original file {f}: {e!s}"
-                                )
+                                LOGGER.error(f"Error removing original file {f}: {e!s}")
                         return output_file
                     return dl_path
                 LOGGER.info("No image files found for merging")
@@ -10619,9 +10383,7 @@ class TaskConfig:
 
                 # Check if we have PDF files
                 pdf_files = [
-                    f
-                    for f in analysis["document_files"]
-                    if f.lower().endswith(".pdf")
+                    f for f in analysis["document_files"] if f.lower().endswith(".pdf")
                 ]
 
                 if pdf_files:
@@ -10636,9 +10398,7 @@ class TaskConfig:
                                 if await aiopath.exists(f) and f != output_file:
                                     await remove(f)
                             except Exception as e:
-                                LOGGER.error(
-                                    f"Error removing original file {f}: {e!s}"
-                                )
+                                LOGGER.error(f"Error removing original file {f}: {e!s}")
                         return output_file
                     return dl_path
                 LOGGER.info("No PDF files found for merging")
@@ -10824,9 +10584,7 @@ class TaskConfig:
                             1
                         ].lower()[1:]
                         output_format = (
-                            first_ext
-                            if first_ext in ["jpg", "jpeg", "png"]
-                            else "jpg"
+                            first_ext if first_ext in ["jpg", "jpeg", "png"] else "jpg"
                         )
 
                         # Get image DPI from user settings or global settings
@@ -10835,13 +10593,9 @@ class TaskConfig:
                             image_dpi = getattr(Config, "MERGE_IMAGE_DPI", "none")
 
                         # Get image quality from user settings or global settings
-                        image_quality = self.user_dict.get(
-                            "MERGE_IMAGE_QUALITY", None
-                        )
+                        image_quality = self.user_dict.get("MERGE_IMAGE_QUALITY", None)
                         if image_quality is None or image_quality == "none":
-                            image_quality = getattr(
-                                Config, "MERGE_IMAGE_QUALITY", 90
-                            )
+                            image_quality = getattr(Config, "MERGE_IMAGE_QUALITY", 90)
 
                         output_file = await merge_images(
                             analysis["image_files"],
@@ -10873,9 +10627,7 @@ class TaskConfig:
                             output_file = await merge_documents(pdf_files)
 
                             if output_file and await aiopath.exists(output_file):
-                                LOGGER.info(
-                                    f"Document merge successful: {output_file}"
-                                )
+                                LOGGER.info(f"Document merge successful: {output_file}")
                                 return output_file
                             return dl_path
                         LOGGER.info("No PDF files found for merging")
@@ -11044,29 +10796,43 @@ class TaskConfig:
 
         # Determine the source of the settings for detailed logging
         {
-            "text": "user"
-            if self.user_dict.get("WATERMARK_KEY")
-            else ("owner" if Config.WATERMARK_KEY else "default"),
-            "position": "user"
-            if self.user_dict.get("WATERMARK_POSITION")
-            else ("owner" if Config.WATERMARK_POSITION else "default"),
-            "size": "user"
-            if self.user_dict.get("WATERMARK_SIZE")
-            else ("owner" if Config.WATERMARK_SIZE else "default"),
-            "color": "user"
-            if self.user_dict.get("WATERMARK_COLOR")
-            else ("owner" if Config.WATERMARK_COLOR else "default"),
-            "font": "user"
-            if self.user_dict.get("WATERMARK_FONT")
-            else ("owner" if Config.WATERMARK_FONT else "default"),
-            "speed": "user"
-            if "WATERMARK_SPEED" in self.user_dict
-            else ("owner" if hasattr(Config, "WATERMARK_SPEED") else "default"),
+            "text": (
+                "user"
+                if self.user_dict.get("WATERMARK_KEY")
+                else ("owner" if Config.WATERMARK_KEY else "default")
+            ),
+            "position": (
+                "user"
+                if self.user_dict.get("WATERMARK_POSITION")
+                else ("owner" if Config.WATERMARK_POSITION else "default")
+            ),
+            "size": (
+                "user"
+                if self.user_dict.get("WATERMARK_SIZE")
+                else ("owner" if Config.WATERMARK_SIZE else "default")
+            ),
+            "color": (
+                "user"
+                if self.user_dict.get("WATERMARK_COLOR")
+                else ("owner" if Config.WATERMARK_COLOR else "default")
+            ),
+            "font": (
+                "user"
+                if self.user_dict.get("WATERMARK_FONT")
+                else ("owner" if Config.WATERMARK_FONT else "default")
+            ),
+            "speed": (
+                "user"
+                if "WATERMARK_SPEED" in self.user_dict
+                else ("owner" if hasattr(Config, "WATERMARK_SPEED") else "default")
+            ),
             # Quality is now controlled by WATERMARK_QUALITY parameter
             "maintain_quality": "default",
-            "opacity": "user"
-            if "WATERMARK_OPACITY" in self.user_dict
-            else ("owner" if hasattr(Config, "WATERMARK_OPACITY") else "default"),
+            "opacity": (
+                "user"
+                if "WATERMARK_OPACITY" in self.user_dict
+                else ("owner" if hasattr(Config, "WATERMARK_OPACITY") else "default")
+            ),
         }
 
         # Log detailed information about the sources of each setting at debug level
@@ -11108,9 +10874,7 @@ class TaskConfig:
                     # Get the image watermark path from the database
                     from bot.modules.media_tools import get_image_watermark_path
 
-                    watermark_image_path = await get_image_watermark_path(
-                        self.user_id
-                    )
+                    watermark_image_path = await get_image_watermark_path(self.user_id)
 
                     if watermark_image_path and watermark_image_path != "none":
                         watermark_type = "image"
@@ -11232,10 +10996,7 @@ class TaskConfig:
                                 self.user_id
                             )
 
-                            if (
-                                watermark_image_path
-                                and watermark_image_path != "none"
-                            ):
+                            if watermark_image_path and watermark_image_path != "none":
                                 watermark_type = "image"
                                 watermark_scale = self.image_watermark_scale
                                 # Use image watermark position
@@ -11323,9 +11084,7 @@ class TaskConfig:
             return dl_path
 
         # Log extract settings
-        LOGGER.info(
-            f"Extract settings: delete_original={self.extract_delete_original}"
-        )
+        LOGGER.info(f"Extract settings: delete_original={self.extract_delete_original}")
 
         # Log video extract settings
         if self.extract_video_enabled:
@@ -11417,34 +11176,24 @@ class TaskConfig:
 
         # Get additional video settings
         video_quality = (
-            self.extract_video_quality
-            if self.extract_video_quality != "none"
-            else None
+            self.extract_video_quality if self.extract_video_quality != "none" else None
         )
         video_preset = (
-            self.extract_video_preset
-            if self.extract_video_preset != "none"
-            else None
+            self.extract_video_preset if self.extract_video_preset != "none" else None
         )
         video_bitrate = (
-            self.extract_video_bitrate
-            if self.extract_video_bitrate != "none"
-            else None
+            self.extract_video_bitrate if self.extract_video_bitrate != "none" else None
         )
         video_resolution = (
             self.extract_video_resolution
             if self.extract_video_resolution != "none"
             else None
         )
-        video_fps = (
-            self.extract_video_fps if self.extract_video_fps != "none" else None
-        )
+        video_fps = self.extract_video_fps if self.extract_video_fps != "none" else None
 
         # Get additional audio settings
         audio_bitrate = (
-            self.extract_audio_bitrate
-            if self.extract_audio_bitrate != "none"
-            else None
+            self.extract_audio_bitrate if self.extract_audio_bitrate != "none" else None
         )
         audio_channels = (
             self.extract_audio_channels
@@ -11457,9 +11206,7 @@ class TaskConfig:
             else None
         )
         audio_volume = (
-            self.extract_audio_volume
-            if self.extract_audio_volume != "none"
-            else None
+            self.extract_audio_volume if self.extract_audio_volume != "none" else None
         )
 
         # Get additional subtitle settings
@@ -11474,9 +11221,7 @@ class TaskConfig:
             else None
         )
         subtitle_font = (
-            self.extract_subtitle_font
-            if self.extract_subtitle_font != "none"
-            else None
+            self.extract_subtitle_font if self.extract_subtitle_font != "none" else None
         )
         subtitle_font_size = (
             self.extract_subtitle_font_size
@@ -11609,9 +11354,7 @@ class TaskConfig:
                     pass
 
                 # If original file was deleted, return the directory instead
-                if self.extract_delete_original and not await aiopath.exists(
-                    dl_path
-                ):
+                if self.extract_delete_original and not await aiopath.exists(dl_path):
                     LOGGER.info(
                         f"Original file was deleted, returning directory: {output_dir}"
                     )
@@ -11821,9 +11564,7 @@ class TaskConfig:
                     f"Attachment removal enabled: removing specific attachments with indices: {self.remove_attachment_indices}"
                 )
             else:
-                LOGGER.info(
-                    "Attachment removal enabled: removing all attachment files"
-                )
+                LOGGER.info("Attachment removal enabled: removing all attachment files")
 
         # Check if file exists
         if not await aiopath.exists(dl_path):
@@ -11990,9 +11731,7 @@ class TaskConfig:
                     video_quality = getattr(self, "remove_video_quality", "none")
                     video_preset = getattr(self, "remove_video_preset", "none")
                     video_bitrate = getattr(self, "remove_video_bitrate", "none")
-                    video_resolution = getattr(
-                        self, "remove_video_resolution", "none"
-                    )
+                    video_resolution = getattr(self, "remove_video_resolution", "none")
                     video_fps = getattr(self, "remove_video_fps", "none")
                     audio_bitrate = getattr(self, "remove_audio_bitrate", "none")
                     audio_channels = getattr(self, "remove_audio_channels", "none")
@@ -12066,13 +11805,9 @@ class TaskConfig:
                                 f"Successfully removed tracks from: {file_path}"
                             )
                         else:
-                            LOGGER.warning(
-                                f"Failed to remove tracks from: {file_path}"
-                            )
+                            LOGGER.warning(f"Failed to remove tracks from: {file_path}")
                     else:
-                        LOGGER.warning(
-                            f"No remove command generated for: {file_path}"
-                        )
+                        LOGGER.warning(f"No remove command generated for: {file_path}")
 
         if checked:
             cpu_eater_lock.release()
@@ -12158,9 +11893,7 @@ class TaskConfig:
         # Skip add processing if there's only one supported file in the directory
         if not self.is_file:
             supported_files = []
-            for dirpath, _, files in await sync_to_async(
-                walk, dl_path, topdown=False
-            ):
+            for dirpath, _, files in await sync_to_async(walk, dl_path, topdown=False):
                 for file_ in files:
                     file_path = ospath.join(dirpath, file_)
                     file_ext = ospath.splitext(file_path)[1].lower()
@@ -12376,9 +12109,7 @@ class TaskConfig:
                                     f"Add processing completed for: {file_path}"
                                 )
                             else:
-                                LOGGER.error(
-                                    f"Add processing failed for: {file_path}"
-                                )
+                                LOGGER.error(f"Add processing failed for: {file_path}")
                         else:
                             LOGGER.warning(
                                 f"Failed to generate add command for: {file_path}"
@@ -12495,9 +12226,7 @@ class TaskConfig:
                     LOGGER.info("No media files found in directory for swap")
                     return dl_path
 
-                LOGGER.info(
-                    f"Found {len(media_files)} media files for swap processing"
-                )
+                LOGGER.info(f"Found {len(media_files)} media files for swap processing")
 
                 # Process each media file
                 for file_path in media_files:
@@ -12542,9 +12271,7 @@ class TaskConfig:
                         else:
                             LOGGER.error(f"Swap failed for file: {file_path}")
                     else:
-                        LOGGER.info(
-                            f"No swap command generated for file: {file_path}"
-                        )
+                        LOGGER.info(f"No swap command generated for file: {file_path}")
 
         except Exception as e:
             LOGGER.error(f"Error during swap processing: {e}")
@@ -12938,9 +12665,7 @@ class TaskConfig:
                                 user_provided_files.append(file_path)
                                 # Get the directory of the current file
                                 dir_path = os.path.dirname(file_path)
-                                if os.path.exists(dir_path) and os.path.isdir(
-                                    dir_path
-                                ):
+                                if os.path.exists(dir_path) and os.path.isdir(dir_path):
                                     # Get all files in the directory
                                     dir_files = [
                                         os.path.join(dir_path, f)
@@ -13203,9 +12928,7 @@ class TaskConfig:
                 LOGGER.info(
                     f"Successfully trimmed PDF file: {input_file} -> {output_file}"
                 )
-                LOGGER.info(
-                    f"Extracted {end_page - start_page + 1} pages from the PDF"
-                )
+                LOGGER.info(f"Extracted {end_page - start_page + 1} pages from the PDF")
                 return True
             LOGGER.error(f"Failed to create output PDF file: {output_file}")
             return False
@@ -13273,7 +12996,9 @@ class TaskConfig:
                 seconds = seconds % 60
                 whole_seconds = int(seconds)
                 milliseconds = int((seconds - whole_seconds) * 1000)
-                return f"{hours:02d}:{minutes:02d}:{whole_seconds:02d},{milliseconds:03d}"
+                return (
+                    f"{hours:02d}:{minutes:02d}:{whole_seconds:02d},{milliseconds:03d}"
+                )
 
             start_seconds = time_to_seconds(start_time_str)
             end_seconds = (
@@ -13534,24 +13259,18 @@ def validate_ddl_config(user_id=None):
 
     # Check Streamtape
     streamtape_login = get_ddl_setting("STREAMTAPE_LOGIN", "STREAMTAPE_LOGIN", "")
-    streamtape_api_key = get_ddl_setting(
-        "STREAMTAPE_API_KEY", "STREAMTAPE_API_KEY", ""
-    )
+    streamtape_api_key = get_ddl_setting("STREAMTAPE_API_KEY", "STREAMTAPE_API_KEY", "")
     if streamtape_login and streamtape_api_key:
         has_configured_server = True
 
     # Check DevUploads
-    devuploads_api_key = get_ddl_setting(
-        "DEVUPLOADS_API_KEY", "DEVUPLOADS_API_KEY", ""
-    )
+    devuploads_api_key = get_ddl_setting("DEVUPLOADS_API_KEY", "DEVUPLOADS_API_KEY", "")
     if devuploads_api_key:
         has_configured_server = True
 
     # Check MediaFire
     mediafire_email = get_ddl_setting("MEDIAFIRE_EMAIL", "MEDIAFIRE_EMAIL", "")
-    mediafire_password = get_ddl_setting(
-        "MEDIAFIRE_PASSWORD", "MEDIAFIRE_PASSWORD", ""
-    )
+    mediafire_password = get_ddl_setting("MEDIAFIRE_PASSWORD", "MEDIAFIRE_PASSWORD", "")
     mediafire_app_id = get_ddl_setting("MEDIAFIRE_APP_ID", "MEDIAFIRE_APP_ID", "")
     if mediafire_email and mediafire_password and mediafire_app_id:
         has_configured_server = True

@@ -1795,7 +1795,7 @@ async def gen_mediainfo(
 
         # If not a direct archive extension, check for split archive patterns
         if not is_archive:
-            # Check for split archive patterns
+            # Check for split archive patterns - be more specific to avoid false positives
             if (
                 re_search(
                     r"\.part0*[0-9]+\.rar$", filename
@@ -1806,49 +1806,93 @@ async def gen_mediainfo(
                 or re_search(
                     r"\.part0*[0-9]+\.7z$", filename
                 )  # Match .part1.7z, .part01.7z, etc.
-                or re_search(r"\.[0-9]{3}$", filename)  # Match .001, .002, etc.
-                or re_search(r"\.[0-9]{2}$", filename)  # Match .01, .02, etc.
-                or re_search(r"\.[0-9]$", filename)  # Match .1, .2, etc.
                 or re_search(r"\.r[0-9]+$", filename)  # Match .r00, .r01, etc.
                 or re_search(r"\.z[0-9]+$", filename)  # Match .z01, .z02, etc.
                 or re_search(r"\.zip\.[0-9]+$", filename)  # Match .zip.001, etc.
-                or re_search(r"\.rar\.[0-9]+$", filename)
-            ):  # Match .rar.001, etc.
-                # For numeric extensions (.001, .01, .1), verify it's actually an archive
-                if re_search(r"\.[0-9]+$", filename):
-                    try:
-                        # Use file command to verify it's an archive
-                        abs_path = ospath.abspath(des_path)
-                        cmd = ["file", "-b", abs_path]
-                        stdout, stderr, return_code = await cmd_exec(cmd)
-                        if return_code == 0 and stdout:
-                            if any(
-                                archive_type in stdout.lower()
-                                for archive_type in [
-                                    "zip",
-                                    "rar",
-                                    "7-zip",
-                                    "tar",
-                                    "gzip",
-                                    "bzip2",
-                                    "xz",
-                                    "iso",
-                                    "archive",
-                                    "data",
-                                ]
-                            ):
-                                is_split_archive = True
-                                is_archive = True
-                            else:
-                                pass
-                    except Exception:
-                        # Assume it's an archive if verification fails
-                        is_split_archive = True
-                        is_archive = True
-                else:
-                    # For non-numeric patterns, we're more confident it's an archive
-                    is_split_archive = True
-                    is_archive = True  # Always use file command to verify archive type, even for known extensions
+                or re_search(r"\.rar\.[0-9]+$", filename)  # Match .rar.001, etc.
+            ):
+                # For these specific patterns, we're confident it's an archive
+                is_split_archive = True
+                is_archive = True
+            elif (
+                re_search(r"\.[0-9]{3}$", filename)  # Match .001, .002, etc.
+                or re_search(r"\.[0-9]{2}$", filename)  # Match .01, .02, etc.
+                or re_search(r"\.[0-9]$", filename)  # Match .1, .2, etc.
+            ):
+                # For generic numeric extensions, we need to verify it's actually an archive
+                # This prevents false positives with split video files like .mkv.001
+                try:
+                    # Use file command to verify it's an archive
+                    abs_path = ospath.abspath(des_path)
+                    cmd = ["file", "-b", abs_path]
+                    # Add timeout to prevent hanging
+                    import asyncio
+
+                    stdout, stderr, return_code = await asyncio.wait_for(
+                        cmd_exec(cmd),
+                        timeout=10.0,  # 10 second timeout for file command
+                    )
+                    if return_code == 0 and stdout:
+                        stdout_lower = stdout.lower()
+                        # Check for archive types
+                        if any(
+                            archive_type in stdout_lower
+                            for archive_type in [
+                                "zip",
+                                "rar",
+                                "7-zip",
+                                "tar",
+                                "gzip",
+                                "bzip2",
+                                "xz",
+                                "iso",
+                                "archive",
+                            ]
+                        ):
+                            is_split_archive = True
+                            is_archive = True
+                        # Check for video/media types to explicitly exclude them
+                        elif any(
+                            media_type in stdout_lower
+                            for media_type in [
+                                "video",
+                                "audio",
+                                "media",
+                                "matroska",
+                                "mp4",
+                                "avi",
+                                "mkv",
+                                "webm",
+                                "mov",
+                                "flv",
+                                "wmv",
+                                "mpeg",
+                                "h.264",
+                                "h.265",
+                                "hevc",
+                            ]
+                        ):
+                            # This is definitely a media file, not an archive
+                            is_split_archive = False
+                            is_archive = False
+                        else:
+                            # If file command returns "data" or unknown, be conservative
+                            # and don't assume it's an archive
+                            is_split_archive = False
+                            is_archive = False
+                    else:
+                        # If file command fails, don't assume it's an archive
+                        # Let it be processed as a regular media file
+                        LOGGER.warning(
+                            f"file command failed for {filename}, treating as media file"
+                        )
+                        is_split_archive = False
+                        is_archive = False
+                except (Exception, TimeoutError) as e:
+                    # If verification fails or times out, don't assume it's an archive
+                    # This prevents false positives with split video files
+                    is_split_archive = False
+                    is_archive = False  # Always use file command to verify archive type, even for known extensions
         # This provides more accurate information and handles cases where extensions don't match content
         try:
             # Verify file exists before running file command
@@ -2752,7 +2796,21 @@ async def gen_mediainfo(
             des_path,
         ]
 
-        stdout, stderr, return_code = await cmd_exec(cmd)
+        # Add timeout to prevent ffprobe from hanging on problematic files
+        try:
+            import asyncio
+
+            stdout, stderr, return_code = await asyncio.wait_for(
+                cmd_exec(cmd),
+                timeout=60.0,  # 60 second timeout
+            )
+        except TimeoutError:
+            LOGGER.warning(
+                f"ffprobe timed out for {des_path}, trying mediainfo fallback"
+            )
+            return_code = 1  # Set to failure to trigger fallback
+            stderr = "ffprobe timed out after 60 seconds"
+            stdout = ""
 
         if return_code != 0:
             LOGGER.warning(
@@ -2842,13 +2900,22 @@ async def gen_mediainfo(
                         temp_send, "ffprobe failed, trying mediainfo binary..."
                     )
 
-                # Try mediainfo binary
+                # Try mediainfo binary with timeout
                 mediainfo_cmd = ["mediainfo", des_path]
-                (
-                    mediainfo_stdout,
-                    mediainfo_stderr,
-                    mediainfo_return_code,
-                ) = await cmd_exec(mediainfo_cmd)
+                try:
+                    (
+                        mediainfo_stdout,
+                        mediainfo_stderr,
+                        mediainfo_return_code,
+                    ) = await asyncio.wait_for(
+                        cmd_exec(mediainfo_cmd),
+                        timeout=30.0,  # 30 second timeout for mediainfo
+                    )
+                except TimeoutError:
+                    LOGGER.warning(f"mediainfo binary timed out for {des_path}")
+                    mediainfo_return_code = 1
+                    mediainfo_stderr = "mediainfo timed out after 30 seconds"
+                    mediainfo_stdout = ""
 
                 if mediainfo_return_code == 0 and mediainfo_stdout:
                     LOGGER.info(f"mediainfo binary succeeded for {des_path}")
