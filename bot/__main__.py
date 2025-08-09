@@ -25,7 +25,9 @@ warnings.filterwarnings(
 
 
 # Method 2: Aggressive suppression using custom warning handler
-def custom_warning_handler(message, category, filename, lineno, file=None, line=None):
+def custom_warning_handler(
+    message, category, filename, lineno, file=None, line=None
+):
     """Custom warning handler that suppresses md2tgmd and latex2unicode warnings."""
     # Convert message to string for checking
     msg_str = str(message)
@@ -388,9 +390,9 @@ def handle_loop_exception(loop, context):
     exception = context.get("exception")
     if exception:
         # Filter out common handler removal errors that are harmless
-        if isinstance(exception, ValueError) and "list.remove(x): x not in list" in str(
-            exception
-        ):
+        if isinstance(
+            exception, ValueError
+        ) and "list.remove(x): x not in list" in str(exception):
             LOGGER.debug(f"Handler removal error (harmless): {exception}")
         # Filter out aria2 RPC exceptions for missing GIDs (these are expected during rapid downloads)
         elif "Aria2rpcException" in str(type(exception)) and "is not found" in str(

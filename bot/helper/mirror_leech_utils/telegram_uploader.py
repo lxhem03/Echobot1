@@ -136,7 +136,9 @@ class TelegramUploader:
         self._error = ""
 
         # Streamrip-specific attributes
-        self._is_streamrip = hasattr(listener, "url") and hasattr(listener, "quality")
+        self._is_streamrip = hasattr(listener, "url") and hasattr(
+            listener, "quality"
+        )
         self._streamrip_platform = getattr(listener, "platform", None)
         self._streamrip_media_type = getattr(listener, "media_type", None)
 
@@ -242,7 +244,9 @@ class TelegramUploader:
         # Add HTML suffix if available (preserve HTML tags for caption)
         if self._lsuffix:
             # Add space before suffix if it doesn't start with one and doesn't start with HTML tag
-            if not self._lsuffix.startswith(" ") and not self._lsuffix.startswith("<"):
+            if not self._lsuffix.startswith(" ") and not self._lsuffix.startswith(
+                "<"
+            ):
                 caption = f"{caption} {self._lsuffix}"
             else:
                 caption = f"{caption}{self._lsuffix}"
@@ -264,7 +268,9 @@ class TelegramUploader:
                     TgClient.user.stop_transmission()
                 elif self._listener.client:
                     self._listener.client.stop_transmission()
-                self._transmission_stopped = True  # Set flag to prevent further calls
+                self._transmission_stopped = (
+                    True  # Set flag to prevent further calls
+                )
             except Exception:
                 self._transmission_stopped = (
                     True  # Set flag even on error to prevent spam
@@ -455,7 +461,9 @@ class TelegramUploader:
                 # Rename the file first so caption generation uses the correct filename
                 if working_filename != file_:
                     new_path = ospath.join(dirpath, working_filename)
-                    LOGGER.info(f"Renaming for caption: {self._up_path} -> {new_path}")
+                    LOGGER.info(
+                        f"Renaming for caption: {self._up_path} -> {new_path}"
+                    )
                     await rename(self._up_path, new_path)
                     self._up_path = new_path
 
@@ -480,10 +488,14 @@ class TelegramUploader:
                 if self._lfont:
                     # Apply the font style to the core filename only
                     try:
-                        styled_core = await apply_font_style(core_filename, self._lfont)
+                        styled_core = await apply_font_style(
+                            core_filename, self._lfont
+                        )
                         # Set caption to styled core (prefix/suffix will be added later)
                         cap_mono = styled_core
-                        LOGGER.info(f"Applied font style '{self._lfont}' to filename")
+                        LOGGER.info(
+                            f"Applied font style '{self._lfont}' to filename"
+                        )
                     except Exception as e:
                         LOGGER.error(f"Error applying font style: {e}")
                         # If font styling fails, use the core filename with HTML formatting
@@ -690,7 +702,10 @@ class TelegramUploader:
                 LOGGER.error("Cannot send screenshots: reply_to_message is None")
                 return
 
-            if not hasattr(reply_to_message, "chat") or reply_to_message.chat is None:
+            if (
+                not hasattr(reply_to_message, "chat")
+                or reply_to_message.chat is None
+            ):
                 LOGGER.error(
                     "Cannot send screenshots: reply_to_message has no chat attribute or chat is None"
                 )
@@ -749,7 +764,10 @@ class TelegramUploader:
         # Determine the target chat and reply message ID
         if reply_to_message:
             # If there's a reply_to_message, use its chat and reply to it
-            if not hasattr(reply_to_message, "chat") or reply_to_message.chat is None:
+            if (
+                not hasattr(reply_to_message, "chat")
+                or reply_to_message.chat is None
+            ):
                 LOGGER.error(
                     "Cannot send media group: reply_to_message has no chat attribute or chat is None"
                 )
@@ -995,12 +1013,16 @@ class TelegramUploader:
                     # Use the current file path (after renaming) for media group pattern matching
                     original_file_path = self._up_path
                     if self._last_msg_in_group:
-                        group_lists = [x for v in self._media_dict.values() for x in v]
+                        group_lists = [
+                            x for v in self._media_dict.values() for x in v
+                        ]
                         match = re_match(
                             r".+(?=\.0*\d+$)|.+(?=\.part\d+\..+$)",
                             original_file_path,
                         )
-                        if not match or (match and match.group(0) not in group_lists):
+                        if not match or (
+                            match and match.group(0) not in group_lists
+                        ):
                             for key, value in list(self._media_dict.items()):
                                 for subkey, msgs in list(value.items()):
                                     if len(msgs) > 1:
@@ -1090,7 +1112,6 @@ class TelegramUploader:
                                 or not hasattr(self._sent_msg.chat, "id")
                                 or not hasattr(self._sent_msg, "id")
                             ):
-
                                 # Try to re-establish a valid _sent_msg
                                 try:
                                     res = await self._msg_to_reply()
@@ -1172,11 +1193,18 @@ class TelegramUploader:
                                 hasattr(self._listener, "mediainfo_link")
                                 and self._listener.mediainfo_link
                             ):
-                                if not hasattr(self._listener, "mediainfo_links") or self._listener.mediainfo_links is None:
+                                if (
+                                    not hasattr(self._listener, "mediainfo_links")
+                                    or self._listener.mediainfo_links is None
+                                ):
                                     self._listener.mediainfo_links = {}
-                                self._listener.mediainfo_links[self._sent_msg.link] = self._listener.mediainfo_link
+                                self._listener.mediainfo_links[
+                                    self._sent_msg.link
+                                ] = self._listener.mediainfo_link
                         except Exception as e:
-                            LOGGER.warning(f"Failed to map MediaInfo link to message: {e}")
+                            LOGGER.warning(
+                                f"Failed to map MediaInfo link to message: {e}"
+                            )
                     await sleep(1)
                 except Exception as err:
                     if isinstance(err, RetryError):
@@ -1461,10 +1489,12 @@ class TelegramUploader:
                                 self._get_original_filename_for_thumbnail(file)
                             )
                             # Pass the enabled status to override config check
-                            auto_thumb = await AutoThumbnailHelper.get_auto_thumbnail(
-                                original_filename,
-                                self._listener.user_id,
-                                enabled=True,
+                            auto_thumb = (
+                                await AutoThumbnailHelper.get_auto_thumbnail(
+                                    original_filename,
+                                    self._listener.user_id,
+                                    enabled=True,
+                                )
                             )
                             if auto_thumb:
                                 thumb = auto_thumb
@@ -1472,13 +1502,17 @@ class TelegramUploader:
                                     f"✅ Using auto thumbnail for: {file} (original: {original_filename})"
                                 )
                             else:
-                                LOGGER.info(f"❌ No auto thumbnail found for: {file}")
+                                LOGGER.info(
+                                    f"❌ No auto thumbnail found for: {file}"
+                                )
                         except Exception as e:
                             LOGGER.error(f"Error getting auto thumbnail: {e}")
                     elif not auto_thumb_enabled:
                         LOGGER.info(f"Auto thumbnail disabled for: {file}")
                     else:
-                        LOGGER.info(f"Auto thumbnail skipped - not video/audio: {file}")
+                        LOGGER.info(
+                            f"Auto thumbnail skipped - not video/audio: {file}"
+                        )
 
                 if thumb is None and is_audio and not is_video:
                     # Enhanced thumbnail handling for streamrip audio files with memory safety
@@ -1514,7 +1548,9 @@ class TelegramUploader:
                                     ]
 
                                     for cover_file in cover_files:
-                                        cover_path = ospath.join(audio_dir, cover_file)
+                                        cover_path = ospath.join(
+                                            audio_dir, cover_file
+                                        )
                                         if await aiopath.isfile(cover_path):
                                             # Check cover file size before using
                                             cover_size_mb = (
@@ -1666,7 +1702,9 @@ class TelegramUploader:
 
                 # Log when user-provided thumbnail is being used
                 if thumb and thumb != "none" and thumb == self._thumb:
-                    LOGGER.info(f"Leech user thumbnail successfully applied to: {file}")
+                    LOGGER.info(
+                        f"Leech user thumbnail successfully applied to: {file}"
+                    )
 
                 if thumb is not None and thumb != "none":
                     with Image.open(thumb) as img:
@@ -1703,7 +1741,9 @@ class TelegramUploader:
 
                 # Validate that reply_video returned a valid message
                 if self._sent_msg is None:
-                    LOGGER.error(f"reply_video returned None for file: {self._up_path}")
+                    LOGGER.error(
+                        f"reply_video returned None for file: {self._up_path}"
+                    )
                     return None
 
                 LOGGER.info(f"Leech video successfully uploaded: {file}")
@@ -1813,7 +1853,9 @@ class TelegramUploader:
 
                 # For streamrip uploads, proactively wait for memory to be available before starting upload
                 if self._is_streamrip:
-                    await wait_for_memory_availability(max_memory_percent=80, max_wait_time=30)
+                    await wait_for_memory_availability(
+                        max_memory_percent=80, max_wait_time=30
+                    )
 
                 self._sent_msg = await self._sent_msg.reply_audio(
                     audio=self._up_path,
@@ -1830,7 +1872,9 @@ class TelegramUploader:
 
                 # Validate that reply_audio returned a valid message
                 if self._sent_msg is None:
-                    LOGGER.error(f"reply_audio returned None for file: {self._up_path}")
+                    LOGGER.error(
+                        f"reply_audio returned None for file: {self._up_path}"
+                    )
                     return None
 
                 LOGGER.info(f"Leech audio successfully uploaded: {file}")
@@ -1949,7 +1993,10 @@ class TelegramUploader:
                 and hasattr(self._sent_msg, "id")
                 and (
                     (hasattr(self._sent_msg, "video") and self._sent_msg.video)
-                    or (hasattr(self._sent_msg, "document") and self._sent_msg.document)
+                    or (
+                        hasattr(self._sent_msg, "document")
+                        and self._sent_msg.document
+                    )
                 )
             ):
                 key = "documents" if self._sent_msg.document else "videos"
@@ -2062,7 +2109,9 @@ class TelegramUploader:
                     original_thumb = self._thumb
                     self._thumb = "none"
                     try:
-                        result = await self._upload_file(cap_mono, file, o_path, False)
+                        result = await self._upload_file(
+                            cap_mono, file, o_path, False
+                        )
                         if result is not None:
                             return result
                     except Exception as retry_err:
@@ -2148,7 +2197,11 @@ class TelegramUploader:
             user_dump = self._user_dump
 
             # Case 1: If user set their own dump and owner has set leech dump chat
-            if user_dump and Config.LEECH_DUMP_CHAT and len(Config.LEECH_DUMP_CHAT) > 0:
+            if (
+                user_dump
+                and Config.LEECH_DUMP_CHAT
+                and len(Config.LEECH_DUMP_CHAT) > 0
+            ):
                 # Send to user dump, leech dump chat, and bot PM
                 if source_chat_id != int(user_dump):
                     destinations.append(int(user_dump))
@@ -2242,7 +2295,9 @@ class TelegramUploader:
         async def _send_media_group_to_dest(dest):
             # Check if task is cancelled before sending media group
             if self._listener.is_cancelled:
-                LOGGER.info(f"Task is cancelled, skipping media group copy to {dest}")
+                LOGGER.info(
+                    f"Task is cancelled, skipping media group copy to {dest}"
+                )
                 return
 
             try:
@@ -2296,15 +2351,15 @@ class TelegramUploader:
                             if isinstance(processed_chat_id, str):
                                 # Remove any prefixes like "b:", "u:", "h:" if present
                                 if ":" in processed_chat_id:
-                                    processed_chat_id = processed_chat_id.split(":", 1)[
-                                        1
-                                    ]
+                                    processed_chat_id = processed_chat_id.split(
+                                        ":", 1
+                                    )[1]
 
                                 # Remove any suffixes after | if present (for hybrid format)
                                 if "|" in processed_chat_id:
-                                    processed_chat_id = processed_chat_id.split("|", 1)[
-                                        0
-                                    ]
+                                    processed_chat_id = processed_chat_id.split(
+                                        "|", 1
+                                    )[0]
 
                             # Check if the processed chat ID matches the destination
                             if str(processed_chat_id) == dest_str:
@@ -2376,7 +2431,9 @@ class TelegramUploader:
 
         # Check if task is cancelled or _sent_msg is None (due to cancellation)
         if self._listener.is_cancelled or self._sent_msg is None:
-            LOGGER.info("Task is cancelled or _sent_msg is None, skipping message copy")
+            LOGGER.info(
+                "Task is cancelled or _sent_msg is None, skipping message copy"
+            )
             return
 
         # Additional safety check for _sent_msg.chat
@@ -2486,7 +2543,11 @@ class TelegramUploader:
             user_dump = self._user_dump
 
             # Case 1: If user set their own dump and owner has set leech dump chat
-            if user_dump and Config.LEECH_DUMP_CHAT and len(Config.LEECH_DUMP_CHAT) > 0:
+            if (
+                user_dump
+                and Config.LEECH_DUMP_CHAT
+                and len(Config.LEECH_DUMP_CHAT) > 0
+            ):
                 # Send to user dump, leech dump chat, and bot PM
                 if source_chat_id != int(user_dump):
                     destinations.append(int(user_dump))

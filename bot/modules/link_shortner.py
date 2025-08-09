@@ -207,7 +207,9 @@ class BitlyAPI:
             LOGGER.error(f"Error shortening link: {e}")
             return {"success": False, "error": f"Failed to shorten link: {e!s}"}
 
-    async def _create_custom_bitlink(self, bitlink_id: str, custom_alias: str) -> dict:
+    async def _create_custom_bitlink(
+        self, bitlink_id: str, custom_alias: str
+    ) -> dict:
         """
         Create a custom bitlink with the specified alias
 
@@ -223,7 +225,10 @@ class BitlyAPI:
             domain = bitlink_id.split("/")[0]
             custom_bitlink = f"{domain}/{custom_alias}"
 
-            custom_data = {"custom_bitlink": custom_bitlink, "bitlink_id": bitlink_id}
+            custom_data = {
+                "custom_bitlink": custom_bitlink,
+                "bitlink_id": bitlink_id,
+            }
 
             async with httpx.AsyncClient() as client:
                 response = await client.post(
@@ -234,7 +239,10 @@ class BitlyAPI:
                 )
 
                 if response.status_code == 200:
-                    return {"success": True, "custom_link": f"https://{custom_bitlink}"}
+                    return {
+                        "success": True,
+                        "custom_link": f"https://{custom_bitlink}",
+                    }
 
                 error_data = response.json() if response.content else {}
                 error_msg = error_data.get("message", "Custom alias not available")
@@ -481,9 +489,7 @@ async def shortner_command(_client, message: Message):
             usage_text += "• <b>TinyURL:</b> Fast shortening + analytics\n"
 
         if has_bitly and has_tinyurl:
-            usage_text += (
-                "• <b>Dual Service:</b> Get links from both services simultaneously\n"
-            )
+            usage_text += "• <b>Dual Service:</b> Get links from both services simultaneously\n"
 
         usage_text += "• Custom alias support\n• Click tracking and analytics"
 
@@ -560,7 +566,9 @@ async def shortner_command(_client, message: Message):
             bitlink_id = results["bitly"].get("bitlink_id")
             if bitlink_id:
                 await processing_msg.edit("<b>🎨 Creating QR code...</b>")
-                qr_result = await bitly.create_qr_code(bitlink_id, f"QR Code for {url}")
+                qr_result = await bitly.create_qr_code(
+                    bitlink_id, f"QR Code for {url}"
+                )
             else:
                 LOGGER.warning(
                     "No bitlink_id found in Bitly response, skipping QR code"

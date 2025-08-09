@@ -1373,7 +1373,9 @@ class TaskListener(TaskConfig):
                     # Prefer per-file MediaInfo link mapped to this message URL
                     mediainfo_link = None
                     try:
-                        if hasattr(self, "mediainfo_links") and isinstance(self.mediainfo_links, dict):
+                        if hasattr(self, "mediainfo_links") and isinstance(
+                            self.mediainfo_links, dict
+                        ):
                             mediainfo_link = self.mediainfo_links.get(url)
                     except Exception:
                         mediainfo_link = None
@@ -1440,12 +1442,19 @@ class TaskListener(TaskConfig):
                             # Prefer per-file MediaInfo link mapped to this file's URL
                             per_file_link = None
                             try:
-                                if hasattr(self, "mediainfo_links") and isinstance(self.mediainfo_links, dict):
+                                if hasattr(self, "mediainfo_links") and isinstance(
+                                    self.mediainfo_links, dict
+                                ):
                                     per_file_link = self.mediainfo_links.get(url)
                             except Exception:
                                 per_file_link = None
                             # Fallback to legacy single link
-                            if not per_file_link and hasattr(self, "mediainfo_link") and self.mediainfo_link and self.mediainfo_link.strip():
+                            if (
+                                not per_file_link
+                                and hasattr(self, "mediainfo_link")
+                                and self.mediainfo_link
+                                and self.mediainfo_link.strip()
+                            ):
                                 per_file_link = self.mediainfo_link
                             if per_file_link:
                                 # Support all media types including archives, documents, images, etc.
@@ -1523,14 +1532,23 @@ class TaskListener(TaskConfig):
                     if user_mediainfo_enabled:
                         mediainfo_link = None
                         try:
-                            if hasattr(self, "mediainfo_links") and isinstance(self.mediainfo_links, dict):
+                            if hasattr(self, "mediainfo_links") and isinstance(
+                                self.mediainfo_links, dict
+                            ):
                                 # Use the first file's URL if files dict exists
                                 if isinstance(files, dict) and files:
                                     first_url = next(iter(files.keys()))
-                                    mediainfo_link = self.mediainfo_links.get(first_url)
+                                    mediainfo_link = self.mediainfo_links.get(
+                                        first_url
+                                    )
                         except Exception:
                             mediainfo_link = None
-                        if not mediainfo_link and hasattr(self, "mediainfo_link") and self.mediainfo_link and self.mediainfo_link.strip():
+                        if (
+                            not mediainfo_link
+                            and hasattr(self, "mediainfo_link")
+                            and self.mediainfo_link
+                            and self.mediainfo_link.strip()
+                        ):
                             mediainfo_link = self.mediainfo_link
                         if mediainfo_link:
                             msg += f"\n<b>MediaInfo</b> → <a href='https://graph.org/{mediainfo_link}'>View</a>"
@@ -1560,14 +1578,23 @@ class TaskListener(TaskConfig):
                     if user_mediainfo_enabled:
                         mediainfo_link = None
                         try:
-                            if hasattr(self, "mediainfo_links") and isinstance(self.mediainfo_links, dict):
+                            if hasattr(self, "mediainfo_links") and isinstance(
+                                self.mediainfo_links, dict
+                            ):
                                 # For single video, use the uploaded message URL
                                 if isinstance(files, dict) and files:
                                     first_url = next(iter(files.keys()))
-                                    mediainfo_link = self.mediainfo_links.get(first_url)
+                                    mediainfo_link = self.mediainfo_links.get(
+                                        first_url
+                                    )
                         except Exception:
                             mediainfo_link = None
-                        if not mediainfo_link and hasattr(self, "mediainfo_link") and self.mediainfo_link and self.mediainfo_link.strip():
+                        if (
+                            not mediainfo_link
+                            and hasattr(self, "mediainfo_link")
+                            and self.mediainfo_link
+                            and self.mediainfo_link.strip()
+                        ):
                             mediainfo_link = self.mediainfo_link
                         if mediainfo_link:
                             msg += f"\n<b>MediaInfo</b> → <a href='https://graph.org/{mediainfo_link}'>View</a>"
@@ -1596,13 +1623,20 @@ class TaskListener(TaskConfig):
                 if user_mediainfo_enabled:
                     mediainfo_link = None
                     try:
-                        if hasattr(self, "mediainfo_links") and isinstance(self.mediainfo_links, dict):
+                        if hasattr(self, "mediainfo_links") and isinstance(
+                            self.mediainfo_links, dict
+                        ):
                             if isinstance(files, dict) and files:
                                 first_url = next(iter(files.keys()))
                                 mediainfo_link = self.mediainfo_links.get(first_url)
                     except Exception:
                         mediainfo_link = None
-                    if not mediainfo_link and hasattr(self, "mediainfo_link") and self.mediainfo_link and self.mediainfo_link.strip():
+                    if (
+                        not mediainfo_link
+                        and hasattr(self, "mediainfo_link")
+                        and self.mediainfo_link
+                        and self.mediainfo_link.strip()
+                    ):
                         mediainfo_link = self.mediainfo_link
                     if mediainfo_link:
                         msg += f"\n<b>MediaInfo</b> → <a href='https://graph.org/{mediainfo_link}'>View</a>"
@@ -1643,19 +1677,24 @@ class TaskListener(TaskConfig):
                     "MEDIAINFO_ENABLED", None
                 )
                 if user_mediainfo_enabled is None:
-                    user_mediainfo_enabled = (
-                        Config.MEDIAINFO_ENABLED
-                    )
+                    user_mediainfo_enabled = Config.MEDIAINFO_ENABLED
                 if user_mediainfo_enabled:
                     mediainfo_link = None
                     try:
-                        if hasattr(self, "mediainfo_links") and isinstance(self.mediainfo_links, dict):
+                        if hasattr(self, "mediainfo_links") and isinstance(
+                            self.mediainfo_links, dict
+                        ):
                             if isinstance(files, dict) and files:
                                 first_url = next(iter(files.keys()))
                                 mediainfo_link = self.mediainfo_links.get(first_url)
                     except Exception:
                         mediainfo_link = None
-                    if not mediainfo_link and hasattr(self, "mediainfo_link") and self.mediainfo_link and self.mediainfo_link.strip():
+                    if (
+                        not mediainfo_link
+                        and hasattr(self, "mediainfo_link")
+                        and self.mediainfo_link
+                        and self.mediainfo_link.strip()
+                    ):
                         mediainfo_link = self.mediainfo_link
                     if mediainfo_link:
                         # Support all media types including archives, documents, images, etc.

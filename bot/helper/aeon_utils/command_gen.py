@@ -261,7 +261,9 @@ async def get_image_watermark_cmd(
                             # Calculate the scale factor based on the width
                             scale_factor = max(1, int(width * scale / 100))
                             # Use lanczos scaling for better quality
-                            scale_filter = f"[1:v]scale={scale_factor}:-1:flags=lanczos"
+                            scale_filter = (
+                                f"[1:v]scale={scale_factor}:-1:flags=lanczos"
+                            )
                             break
                 else:
                     # No video stream found, use default
@@ -489,7 +491,9 @@ async def get_image_watermark_cmd(
 
                     # Add opacity if specified
                     if opacity < 1.0:
-                        complex_filter += f",format=rgba,colorchannelmixer=aa={opacity}"
+                        complex_filter += (
+                            f",format=rgba,colorchannelmixer=aa={opacity}"
+                        )
 
                     complex_filter += "[watermark];"
                     complex_filter += (
@@ -549,7 +553,9 @@ async def get_image_watermark_cmd(
                 cmd.extend(["-compression_level", "1"])  # Good quality default
     else:
         # For audio and subtitle files, we can't add image watermarks
-        LOGGER.error(f"Image watermarking not supported for media type: {media_type}")
+        LOGGER.error(
+            f"Image watermarking not supported for media type: {media_type}"
+        )
         return None, None
 
     # Add threads parameter if not already added
@@ -699,7 +705,9 @@ async def get_watermark_cmd(
                     LOGGER.error(f"Failed to parse ffprobe JSON output: {e}")
                     # Continue with default padding
             else:
-                LOGGER.warning(f"Failed to get video dimensions for {file}: {stderr}")
+                LOGGER.warning(
+                    f"Failed to get video dimensions for {file}: {stderr}"
+                )
 
         except Exception as e:
             LOGGER.warning(f"Error getting video dimensions for {file}: {e}")
@@ -1185,11 +1193,17 @@ async def get_watermark_cmd(
                 beep_volume = (
                     beep_volume * 1.2
                 )  # Louder for bottom positions (but cap at 1.0)
-                beep_volume = min(beep_volume, 1.0)  # Ensure volume doesn't exceed 1.0
+                beep_volume = min(
+                    beep_volume, 1.0
+                )  # Ensure volume doesn't exceed 1.0
             elif position == "center":
                 beep_frequency = 1200  # Medium pitch for center position
-                beep_volume = beep_volume * 1.1  # Slightly louder for center position
-                beep_volume = min(beep_volume, 1.0)  # Ensure volume doesn't exceed 1.0
+                beep_volume = (
+                    beep_volume * 1.1
+                )  # Slightly louder for center position
+                beep_volume = min(
+                    beep_volume, 1.0
+                )  # Ensure volume doesn't exceed 1.0
 
             # Adjust parameters based on color
             if color.lower() == "red":
@@ -1277,7 +1291,9 @@ async def get_watermark_cmd(
                     )
 
                 # Combine all beeps
-                beep_inputs = "".join(f"[beep{i + 1}]" for i in range(len(beep_points)))
+                beep_inputs = "".join(
+                    f"[beep{i + 1}]" for i in range(len(beep_points))
+                )
                 weights = " ".join(["1"] * len(beep_points))
                 beep_volumes = " ".join([str(beep_volume)] * len(beep_points))
 
@@ -1342,7 +1358,9 @@ async def get_watermark_cmd(
                 output_ext = os.path.splitext(temp_file)[1].lower()
             except Exception as e:
                 # Downgrade to warning since we can proceed with defaults and watermarking succeeded later
-                LOGGER.warning(f"Non-fatal: could not get file info for {file}: {e}. Proceeding with defaults.")
+                LOGGER.warning(
+                    f"Non-fatal: could not get file info for {file}: {e}. Proceeding with defaults."
+                )
                 input_format = ""
                 audio_codec = None
                 output_ext = os.path.splitext(temp_file)[1].lower()
@@ -1580,7 +1598,9 @@ async def get_watermark_cmd(
             import aiofiles
 
             try:
-                async with aiofiles.open(file, encoding="utf-8", errors="ignore") as f:
+                async with aiofiles.open(
+                    file, encoding="utf-8", errors="ignore"
+                ) as f:
                     content = await f.read()
             except ImportError:
                 # Fallback to regular open if aiofiles is not available
@@ -1597,7 +1617,10 @@ async def get_watermark_cmd(
 
             # Determine watermark style based on parameters
             # First check if we have a specific subtitle style provided as parameter
-            if subtitle_watermark_style and subtitle_watermark_style.lower() != "none":
+            if (
+                subtitle_watermark_style
+                and subtitle_watermark_style.lower() != "none"
+            ):
                 subtitle_style = subtitle_watermark_style
             else:
                 # Otherwise, check if we have a specific subtitle style set in config
@@ -2091,7 +2114,9 @@ async def get_metadata_cmd(
                 "NumVideos": "00",
                 "NumAudios": "00",
                 "NumSubtitles": "00",
-                "formate": file_metadata["ext"].upper() if file_metadata["ext"] else "",
+                "formate": file_metadata["ext"].upper()
+                if file_metadata["ext"]
+                else "",
                 "format": "Unknown",
             }
         )
@@ -2110,7 +2135,9 @@ async def get_metadata_cmd(
                 "NumVideos": "00",
                 "NumAudios": "00",
                 "NumSubtitles": "00",
-                "formate": file_metadata["ext"].upper() if file_metadata["ext"] else "",
+                "formate": file_metadata["ext"].upper()
+                if file_metadata["ext"]
+                else "",
                 "format": "Unknown",
                 "id": "Unknown",
             }
@@ -2642,7 +2669,9 @@ async def get_metadata_cmd(
     # metadata_all takes priority over all other settings
     if metadata_all:
         # Use metadata_all for all fields
-        global_title_value = global_author_value = global_comment_value = metadata_all
+        global_title_value = global_author_value = global_comment_value = (
+            metadata_all
+        )
         video_title_value = video_author_value = video_comment_value = metadata_all
         audio_title_value = audio_author_value = audio_comment_value = metadata_all
         subtitle_title_value = subtitle_author_value = subtitle_comment_value = (
@@ -2657,15 +2686,21 @@ async def get_metadata_cmd(
         # Video track metadata (fallback to global values if not provided)
         video_title_value = video_title if video_title else global_title_value
         video_author_value = video_author if video_author else global_author_value
-        video_comment_value = video_comment if video_comment else global_comment_value
+        video_comment_value = (
+            video_comment if video_comment else global_comment_value
+        )
 
         # Audio track metadata (fallback to global values if not provided)
         audio_title_value = audio_title if audio_title else global_title_value
         audio_author_value = audio_author if audio_author else global_author_value
-        audio_comment_value = audio_comment if audio_comment else global_comment_value
+        audio_comment_value = (
+            audio_comment if audio_comment else global_comment_value
+        )
 
         # Subtitle track metadata (fallback to global values if not provided)
-        subtitle_title_value = subtitle_title if subtitle_title else global_title_value
+        subtitle_title_value = (
+            subtitle_title if subtitle_title else global_title_value
+        )
         subtitle_author_value = (
             subtitle_author if subtitle_author else global_author_value
         )
@@ -2743,7 +2778,9 @@ async def get_metadata_cmd(
                 continue
 
             # Add video metadata
-            cmd.extend([f"-metadata:s:v:{video_index}", f"title={video_title_value}"])
+            cmd.extend(
+                [f"-metadata:s:v:{video_index}", f"title={video_title_value}"]
+            )
 
             if video_author_value:
                 cmd.extend(
@@ -2771,7 +2808,9 @@ async def get_metadata_cmd(
 
         elif stream_type == "audio":
             # Add audio metadata
-            cmd.extend([f"-metadata:s:a:{audio_index}", f"title={audio_title_value}"])
+            cmd.extend(
+                [f"-metadata:s:a:{audio_index}", f"title={audio_title_value}"]
+            )
 
             if audio_author_value:
                 cmd.extend(
@@ -3609,7 +3648,9 @@ async def get_merge_filter_complex_cmd(
                                 info["width"] = int(stream.get("width", 0))
                                 info["height"] = int(stream.get("height", 0))
                             else:  # audio
-                                info["sample_rate"] = int(stream.get("sample_rate", 0))
+                                info["sample_rate"] = int(
+                                    stream.get("sample_rate", 0)
+                                )
                                 info["channels"] = int(stream.get("channels", 0))
                     except json.JSONDecodeError as e:
                         LOGGER.error(
@@ -3868,7 +3909,9 @@ async def get_merge_filter_complex_cmd(
                             if filter_complex and not filter_complex.endswith(";"):
                                 filter_complex += ";"
                             audio_filter = (
-                                "".join([f"[{i}:a:{idx}]" for i, idx in track_inputs])
+                                "".join(
+                                    [f"[{i}:a:{idx}]" for i, idx in track_inputs]
+                                )
                                 + f"concat=n={len(track_inputs)}:v=0:a=1[outa{track_pos}]"
                             )
                             filter_complex += audio_filter
@@ -3920,7 +3963,9 @@ async def get_merge_filter_complex_cmd(
             LOGGER.info("Mapping single audio track from filter_complex: [outa]")
         # Check if we have videos without audio
         elif video_inputs and not all_have_audio:
-            LOGGER.info("Some videos don't have audio, mapping available audio streams")
+            LOGGER.info(
+                "Some videos don't have audio, mapping available audio streams"
+            )
             # Map available audio streams with optional flag
             audio_track_count = 0
             for i, file_path in enumerate(files):
@@ -4355,7 +4400,9 @@ async def get_merge_mixed_cmd(
 
         if files_to_check:
             # Extract extension from the first file
-            first_file_ext = os.path.splitext(files_to_check[0])[1].lower().lstrip(".")
+            first_file_ext = (
+                os.path.splitext(files_to_check[0])[1].lower().lstrip(".")
+            )
             if first_file_ext:
                 # Use the extension if it's valid
                 if (
@@ -4432,7 +4479,9 @@ async def get_merge_mixed_cmd(
                 f.write(f"file '{escaped_path}'\n")
 
         # Create a temporary merged video file
-        temp_video_output = os.path.join(base_dir, f"temp_merged_video.{output_format}")
+        temp_video_output = os.path.join(
+            base_dir, f"temp_merged_video.{output_format}"
+        )
         video_cmd = [
             "xtra",
             "-hide_banner",
@@ -5036,9 +5085,7 @@ async def get_merge_mixed_cmd(
                                 new_s = int(total_seconds % 60)
                                 new_ms = int((total_seconds * 1000) % 1000)
 
-                                return (
-                                    f"{new_h:02d}:{new_m:02d}:{new_s:02d},{new_ms:03d}"
-                                )
+                                return f"{new_h:02d}:{new_m:02d}:{new_s:02d},{new_ms:03d}"
 
                             # Adjust all timestamps in the subtitle file
                             adjusted_content = re.sub(
@@ -5611,7 +5658,9 @@ async def get_convert_cmd(
             if maintain_quality:
                 if output_format.lower() == "mp3":
                     audio_bitrate = "320k"
-                elif output_format.lower() == "aac" or output_format.lower() == "ogg":
+                elif (
+                    output_format.lower() == "aac" or output_format.lower() == "ogg"
+                ):
                     audio_bitrate = "256k"
                 elif output_format.lower() == "opus":
                     audio_bitrate = "192k"
@@ -5622,7 +5671,9 @@ async def get_convert_cmd(
                     "-c:a",
                     audio_codec,
                     "-b:a",
-                    audio_bitrate if audio_codec not in ["flac", "pcm_s16le"] else "",
+                    audio_bitrate
+                    if audio_codec not in ["flac", "pcm_s16le"]
+                    else "",
                     "-map",
                     "0:a",
                     "-threads",
@@ -5919,7 +5970,9 @@ async def get_trim_cmd(
 
             # For HEVC/10-bit MKV files, always use copy codec for better compatibility
             if is_hevc_10bit:
-                LOGGER.info(f"Detected HEVC/10-bit MKV file, using copy codec: {file}")
+                LOGGER.info(
+                    f"Detected HEVC/10-bit MKV file, using copy codec: {file}"
+                )
                 cmd.extend(["-c:v", "copy"])
             # Check if video_codec is "none" (case-insensitive) or None
             elif not video_codec or video_codec.lower() == "none":
@@ -6005,7 +6058,9 @@ async def get_trim_cmd(
             if video_codec == "copy":
                 cmd.extend(["-c:v", "copy"])
             else:
-                cmd.extend(["-c:v", "libx265", "-crf", "28", "-preset", video_preset])
+                cmd.extend(
+                    ["-c:v", "libx265", "-crf", "28", "-preset", video_preset]
+                )
 
             # Add MP4 container flags with optimizations
             cmd.extend(
@@ -6180,7 +6235,9 @@ async def get_trim_cmd(
                         ]
                     )
                 except (ValueError, TypeError):
-                    cmd.extend(["-compression_level", "0"])  # Default to best quality
+                    cmd.extend(
+                        ["-compression_level", "0"]
+                    )  # Default to best quality
         # For SVG files
         elif file_ext == ".svg":
             # SVG files need special handling - convert to PNG first
@@ -6582,7 +6639,9 @@ async def get_compression_cmd(
     ):
         output_ext = f".{subtitle_format.lower()}"
     elif (
-        media_type == "archive" and archive_format and archive_format.lower() != "none"
+        media_type == "archive"
+        and archive_format
+        and archive_format.lower() != "none"
     ):
         output_ext = f".{archive_format.lower()}"
     else:
@@ -6697,7 +6756,9 @@ async def get_compression_cmd(
                                 cmd.extend(["-pix_fmt", "yuv420p10le"])
                         elif depth_val == 12:
                             # For 12-bit, use appropriate pixel format
-                            if video_codec == "libx265":  # x264 doesn't support 12-bit
+                            if (
+                                video_codec == "libx265"
+                            ):  # x264 doesn't support 12-bit
                                 cmd.extend(["-pix_fmt", "yuv420p12le"])
                     except (ValueError, TypeError):
                         # If conversion fails, don't add bitdepth parameter
@@ -6803,7 +6864,9 @@ async def get_compression_cmd(
                         (
                             "10"
                             if audio_preset == "slow"
-                            else "5" if audio_preset == "medium" else "0"
+                            else "5"
+                            if audio_preset == "medium"
+                            else "0"
                         ),
                     ]
                 )
@@ -7440,8 +7503,12 @@ async def get_add_cmd(
                 continue
 
             # Determine the primary stream type for this file
-            has_video = any(stream.get("codec_type") == "video" for stream in streams)
-            has_audio = any(stream.get("codec_type") == "audio" for stream in streams)
+            has_video = any(
+                stream.get("codec_type") == "video" for stream in streams
+            )
+            has_audio = any(
+                stream.get("codec_type") == "audio" for stream in streams
+            )
             has_subtitle = any(
                 stream.get("codec_type") == "subtitle" for stream in streams
             )
@@ -7555,7 +7622,10 @@ async def get_add_cmd(
                 LOGGER.warning(f"No video streams found in input file {video_file}")
                 # Use audio stream instead if available
                 if (
-                    any(stream.get("codec_type") == "audio" for stream in video_streams)
+                    any(
+                        stream.get("codec_type") == "audio"
+                        for stream in video_streams
+                    )
                     if video_streams
                     else False
                 ):
@@ -7597,7 +7667,8 @@ async def get_add_cmd(
                                 # Check if the specified index is already occupied by an existing video track
                                 target_idx = int(idx.strip())
                                 existing_video_indices = [
-                                    track["index"] for track in existing_tracks["video"]
+                                    track["index"]
+                                    for track in existing_tracks["video"]
                                 ]
 
                                 # Use the new helper function to resolve the index
@@ -7659,11 +7730,15 @@ async def get_add_cmd(
                     else:
                         actual_idx = target_idx
 
-                    map_args.extend(["-map", f"{video_input_idx}:{video_stream_type}"])
+                    map_args.extend(
+                        ["-map", f"{video_input_idx}:{video_stream_type}"]
+                    )
                 else:
                     # Append to the end
 
-                    map_args.extend(["-map", f"{video_input_idx}:{video_stream_type}"])
+                    map_args.extend(
+                        ["-map", f"{video_input_idx}:{video_stream_type}"]
+                    )
             else:
                 # Append to the end
 
@@ -7689,7 +7764,10 @@ async def get_add_cmd(
                 LOGGER.warning(f"No audio streams found in input file {audio_file}")
                 # Use video stream instead if available
                 if (
-                    any(stream.get("codec_type") == "video" for stream in audio_streams)
+                    any(
+                        stream.get("codec_type") == "video"
+                        for stream in audio_streams
+                    )
                     if audio_streams
                     else False
                 ):
@@ -7734,7 +7812,8 @@ async def get_add_cmd(
                                 # Check if the specified index is already occupied by an existing audio track
                                 target_idx = int(idx.strip())
                                 existing_audio_indices = [
-                                    track["index"] for track in existing_tracks["audio"]
+                                    track["index"]
+                                    for track in existing_tracks["audio"]
                                 ]
 
                                 # Check if the target index is beyond the current count of tracks
@@ -7807,11 +7886,15 @@ async def get_add_cmd(
                     else:
                         actual_idx = target_idx
 
-                    map_args.extend(["-map", f"{audio_input_idx}:{audio_stream_type}"])
+                    map_args.extend(
+                        ["-map", f"{audio_input_idx}:{audio_stream_type}"]
+                    )
                 else:
                     # Append to the end
 
-                    map_args.extend(["-map", f"{audio_input_idx}:{audio_stream_type}"])
+                    map_args.extend(
+                        ["-map", f"{audio_input_idx}:{audio_stream_type}"]
+                    )
             else:
                 # Append to the end
 
@@ -8078,7 +8161,11 @@ async def get_add_cmd(
                                 - subtitle_count
                             ):
                                 current_input_idx = (
-                                    video_count + audio_count + subtitle_count + i + 1
+                                    video_count
+                                    + audio_count
+                                    + subtitle_count
+                                    + i
+                                    + 1
                                 )  # +1 because the main file is input 0
 
                                 # Check if the specified index is already occupied by an existing attachment
@@ -8090,7 +8177,10 @@ async def get_add_cmd(
 
                                 # Check if the target index is beyond the current count of tracks
                                 # If so, use the first available index
-                                if target_idx >= len(existing_attachment_indices) + i:
+                                if (
+                                    target_idx
+                                    >= len(existing_attachment_indices) + i
+                                ):
                                     actual_idx = find_first_available_index(
                                         existing_attachment_indices, target_idx
                                     )
@@ -8193,7 +8283,10 @@ async def get_add_cmd(
                 LOGGER.warning(f"No video streams found in input file {video_file}")
                 # Use audio stream instead if available
                 if (
-                    any(stream.get("codec_type") == "audio" for stream in video_streams)
+                    any(
+                        stream.get("codec_type") == "audio"
+                        for stream in video_streams
+                    )
                     if video_streams
                     else False
                 ):
@@ -8228,10 +8321,14 @@ async def get_add_cmd(
                             )
                 elif str(video_index).isdigit():
                     # Insert at specific index
-                    map_args.extend(["-map", f"{video_input_idx}:{video_stream_type}"])
+                    map_args.extend(
+                        ["-map", f"{video_input_idx}:{video_stream_type}"]
+                    )
                 else:
                     # Append to the end
-                    map_args.extend(["-map", f"{video_input_idx}:{video_stream_type}"])
+                    map_args.extend(
+                        ["-map", f"{video_input_idx}:{video_stream_type}"]
+                    )
             else:
                 # Append to the end
                 map_args.extend(["-map", f"{video_input_idx}:{video_stream_type}"])
@@ -8255,7 +8352,10 @@ async def get_add_cmd(
                 LOGGER.warning(f"No audio streams found in input file {audio_file}")
                 # Use video stream instead if available
                 if (
-                    any(stream.get("codec_type") == "video" for stream in audio_streams)
+                    any(
+                        stream.get("codec_type") == "video"
+                        for stream in audio_streams
+                    )
                     if audio_streams
                     else False
                 ):
@@ -8290,10 +8390,14 @@ async def get_add_cmd(
                             )
                 elif str(audio_index).isdigit():
                     # Insert at specific index
-                    map_args.extend(["-map", f"{audio_input_idx}:{audio_stream_type}"])
+                    map_args.extend(
+                        ["-map", f"{audio_input_idx}:{audio_stream_type}"]
+                    )
                 else:
                     # Append to the end
-                    map_args.extend(["-map", f"{audio_input_idx}:{audio_stream_type}"])
+                    map_args.extend(
+                        ["-map", f"{audio_input_idx}:{audio_stream_type}"]
+                    )
             else:
                 # Append to the end
                 map_args.extend(["-map", f"{audio_input_idx}:{audio_stream_type}"])
@@ -8513,7 +8617,10 @@ async def get_add_cmd(
                 LOGGER.warning(f"No video streams found in input file {video_file}")
                 # Use audio stream instead if available
                 if (
-                    any(stream.get("codec_type") == "audio" for stream in video_streams)
+                    any(
+                        stream.get("codec_type") == "audio"
+                        for stream in video_streams
+                    )
                     if video_streams
                     else False
                 ):
@@ -8572,7 +8679,9 @@ async def get_add_cmd(
                     ]
 
                     if target_idx >= len(existing_video_indices):
-                        actual_idx = find_first_available_index(existing_video_indices)
+                        actual_idx = find_first_available_index(
+                            existing_video_indices
+                        )
 
                     else:
                         actual_idx = target_idx
@@ -8607,7 +8716,10 @@ async def get_add_cmd(
                 LOGGER.warning(f"No audio streams found in input file {audio_file}")
                 # Use video stream instead if available
                 if (
-                    any(stream.get("codec_type") == "video" for stream in audio_streams)
+                    any(
+                        stream.get("codec_type") == "video"
+                        for stream in audio_streams
+                    )
                     if audio_streams
                     else False
                 ):
@@ -8667,7 +8779,9 @@ async def get_add_cmd(
                     ]
 
                     if target_idx >= len(existing_audio_indices):
-                        actual_idx = find_first_available_index(existing_audio_indices)
+                        actual_idx = find_first_available_index(
+                            existing_audio_indices
+                        )
 
                     else:
                         actual_idx = target_idx
@@ -8744,7 +8858,8 @@ async def get_add_cmd(
                             # We need to recalculate it here
                             target_idx = int(idx.strip())
                             existing_subtitle_indices = [
-                                track["index"] for track in existing_tracks["subtitle"]
+                                track["index"]
+                                for track in existing_tracks["subtitle"]
                             ]
 
                             if target_idx >= len(existing_subtitle_indices) + i:
@@ -8928,7 +9043,10 @@ async def get_add_cmd(
                 LOGGER.warning(f"No video streams found in input file {video_file}")
                 # Use audio stream instead if available
                 if (
-                    any(stream.get("codec_type") == "audio" for stream in video_streams)
+                    any(
+                        stream.get("codec_type") == "audio"
+                        for stream in video_streams
+                    )
                     if video_streams
                     else False
                 ):
@@ -8987,7 +9105,9 @@ async def get_add_cmd(
                     ]
 
                     if target_idx >= len(existing_video_indices):
-                        actual_idx = find_first_available_index(existing_video_indices)
+                        actual_idx = find_first_available_index(
+                            existing_video_indices
+                        )
 
                     else:
                         actual_idx = target_idx
@@ -9022,7 +9142,10 @@ async def get_add_cmd(
                 LOGGER.warning(f"No audio streams found in input file {audio_file}")
                 # Use video stream instead if available
                 if (
-                    any(stream.get("codec_type") == "video" for stream in audio_streams)
+                    any(
+                        stream.get("codec_type") == "video"
+                        for stream in audio_streams
+                    )
                     if audio_streams
                     else False
                 ):
@@ -9081,7 +9204,9 @@ async def get_add_cmd(
                     ]
 
                     if target_idx >= len(existing_audio_indices):
-                        actual_idx = find_first_available_index(existing_audio_indices)
+                        actual_idx = find_first_available_index(
+                            existing_audio_indices
+                        )
 
                     else:
                         actual_idx = target_idx
@@ -9157,7 +9282,8 @@ async def get_add_cmd(
                             # Use the actual index that was determined during mapping
                             target_idx = int(idx.strip())
                             existing_subtitle_indices = [
-                                track["index"] for track in existing_tracks["subtitle"]
+                                track["index"]
+                                for track in existing_tracks["subtitle"]
                             ]
 
                             if target_idx >= len(existing_subtitle_indices):
@@ -9511,11 +9637,17 @@ async def get_add_cmd(
                         # ASS/SSA can be copied in MP4 if supported
                         codec_args.extend(["-c:s", "copy"])
                     else:
-                        codec_args.extend(["-c:s", "mov_text"])  # Fallback to mov_text
-                        LOGGER.info("Using mov_text fallback for MP4/MOV compatibility")
+                        codec_args.extend(
+                            ["-c:s", "mov_text"]
+                        )  # Fallback to mov_text
+                        LOGGER.info(
+                            "Using mov_text fallback for MP4/MOV compatibility"
+                        )
                 elif output_ext == "avi":
                     # AVI container: very limited subtitle support
-                    LOGGER.warning("AVI container has very limited subtitle support.")
+                    LOGGER.warning(
+                        "AVI container has very limited subtitle support."
+                    )
                     LOGGER.info(
                         "Recommendation: Use MKV container or enable hardsub for better subtitle support."
                     )
@@ -9812,7 +9944,9 @@ async def get_remove_cmd(
     elif subtitle_index is not None and isinstance(subtitle_index, str):
         try:
             subtitle_indices = [
-                int(x.strip()) for x in subtitle_index.split(",") if x.strip().isdigit()
+                int(x.strip())
+                for x in subtitle_index.split(",")
+                if x.strip().isdigit()
             ]
             remaining_streams += len(subtitle_streams) - len(subtitle_indices)
         except ValueError:
@@ -9967,7 +10101,9 @@ async def get_remove_cmd(
         # Parse subtitle indices
         if isinstance(subtitle_index, str):
             subtitle_indices = [
-                int(x.strip()) for x in subtitle_index.split(",") if x.strip().isdigit()
+                int(x.strip())
+                for x in subtitle_index.split(",")
+                if x.strip().isdigit()
             ]
         else:
             subtitle_indices = [int(subtitle_index)]
@@ -10074,7 +10210,9 @@ async def get_remove_cmd(
                 codec_args.extend(["-sub_charenc", subtitle_encoding])
 
             if subtitle_language != "none":
-                codec_args.extend(["-metadata:s:s:0", f"language={subtitle_language}"])
+                codec_args.extend(
+                    ["-metadata:s:s:0", f"language={subtitle_language}"]
+                )
 
     # Remove metadata if requested
     if remove_metadata:
@@ -10146,7 +10284,9 @@ async def get_extract_cmd(
     temp_file = os.path.join(file_dir, f"{file_base}.extract.temp{file_ext}")
 
     # Check if any extraction option is enabled
-    if not (extract_video or extract_audio or extract_subtitle or extract_attachment):
+    if not (
+        extract_video or extract_audio or extract_subtitle or extract_attachment
+    ):
         return [], temp_file
 
     # Get track information
@@ -10227,7 +10367,9 @@ async def get_extract_cmd(
                     # but we could use them for logging or future enhancements
 
                     # Determine output extension based on codec
-                    output_ext = "mp4" if video_codec in ["h264", "libx264"] else "mkv"
+                    output_ext = (
+                        "mp4" if video_codec in ["h264", "libx264"] else "mkv"
+                    )
                     output_file = os.path.join(
                         file_dir,
                         f"{file_base}.video.{stream.get('tags', {}).get('language', 'und')}.{stream_index}.{output_ext}",
@@ -10477,7 +10619,10 @@ async def get_extract_cmd(
 
                     # Add quality settings if not using copy codec
                     if audio_codec != "copy" and maintain_quality:
-                        if audio_codec in ["aac", "libfdk_aac"] or audio_codec == "mp3":
+                        if (
+                            audio_codec in ["aac", "libfdk_aac"]
+                            or audio_codec == "mp3"
+                        ):
                             cmd.extend(["-b:a", "320k"])
                         elif audio_codec in ["opus", "libopus"]:
                             cmd.extend(["-b:a", "192k"])
@@ -10742,7 +10887,9 @@ async def get_swap_cmd(
             )
         else:
             # Index-based swapping
-            video_map_order = _get_index_based_order(video_streams, video_index_order)
+            video_map_order = _get_index_based_order(
+                video_streams, video_index_order
+            )
 
         for _new_idx, original_idx in enumerate(video_map_order):
             if original_idx is not None:
@@ -10762,7 +10909,9 @@ async def get_swap_cmd(
             )
         else:
             # Index-based swapping
-            audio_map_order = _get_index_based_order(audio_streams, audio_index_order)
+            audio_map_order = _get_index_based_order(
+                audio_streams, audio_index_order
+            )
 
         for _new_idx, original_idx in enumerate(audio_map_order):
             if original_idx is not None:

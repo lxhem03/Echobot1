@@ -12,10 +12,10 @@ This module provides comprehensive QR code generation functionality with support
 - Batch processing capabilities
 """
 
+import contextlib
 import io
 import os
 import tempfile
-from typing import Union
 
 import qrcode
 from PIL import Image
@@ -74,7 +74,7 @@ class QRCodeGenerator:
         fill_color: str = "black",
         back_color: str = "white",
         image_format: str = "PNG",
-    ) -> tuple[bool, Union[io.BytesIO, str]]:
+    ) -> tuple[bool, io.BytesIO | str]:
         """Generate basic QR code with customization options"""
         try:
             # Validate inputs
@@ -109,33 +109,32 @@ class QRCodeGenerator:
                 svg_buffer = io.StringIO()
                 img.save(svg_buffer)
                 return True, svg_buffer.getvalue()
-            else:
-                img = qr.make_image(fill_color=fill_color, back_color=back_color)
+            img = qr.make_image(fill_color=fill_color, back_color=back_color)
 
-                # Convert to specified format
-                if image_format.upper() == "JPEG":
-                    # Convert RGBA to RGB for JPEG
-                    if img.mode in ("RGBA", "LA", "P"):
-                        background = Image.new("RGB", img.size, back_color)
-                        if img.mode == "P":
-                            img = img.convert("RGBA")
-                        background.paste(
-                            img, mask=img.split()[-1] if img.mode == "RGBA" else None
-                        )
-                        img = background
+            # Convert to specified format
+            if image_format.upper() == "JPEG":
+                # Convert RGBA to RGB for JPEG
+                if img.mode in ("RGBA", "LA", "P"):
+                    background = Image.new("RGB", img.size, back_color)
+                    if img.mode == "P":
+                        img = img.convert("RGBA")
+                    background.paste(
+                        img, mask=img.split()[-1] if img.mode == "RGBA" else None
+                    )
+                    img = background
 
-                buffer = io.BytesIO()
-                img.save(
-                    buffer,
-                    format=image_format.upper(),
-                    quality=95 if image_format.upper() == "JPEG" else None,
-                )
-                buffer.seek(0)
-                return True, buffer
+            buffer = io.BytesIO()
+            img.save(
+                buffer,
+                format=image_format.upper(),
+                quality=95 if image_format.upper() == "JPEG" else None,
+            )
+            buffer.seek(0)
+            return True, buffer
 
         except Exception as e:
             LOGGER.error(f"Error generating QR code: {e}")
-            return False, f"❌ <b>QR Generation Error</b>\n\n<code>{str(e)}</code>"
+            return False, f"❌ <b>QR Generation Error</b>\n\n<code>{e!s}</code>"
 
     def generate_styled_qr(
         self,
@@ -146,7 +145,7 @@ class QRCodeGenerator:
         border: int = QR_DEFAULT_BORDER,
         fill_color: str = "black",
         back_color: str = "white",
-    ) -> tuple[bool, Union[io.BytesIO, str]]:
+    ) -> tuple[bool, io.BytesIO | str]:
         """Generate styled QR code with different module shapes"""
         try:
             from qrcode.image.styledpil import StyledPilImage
@@ -211,12 +210,12 @@ class QRCodeGenerator:
             LOGGER.error(f"Error generating styled QR code: {e}")
             return (
                 False,
-                f"❌ <b>Styled QR Generation Error</b>\n\n<code>{str(e)}</code>",
+                f"❌ <b>Styled QR Generation Error</b>\n\n<code>{e!s}</code>",
             )
 
     def add_logo_to_qr(
-        self, qr_buffer: io.BytesIO, logo_path: str = None
-    ) -> tuple[bool, Union[io.BytesIO, str]]:
+        self, qr_buffer: io.BytesIO, logo_path: str | None = None
+    ) -> tuple[bool, io.BytesIO | str]:
         """Add logo to center of QR code (if logo provided)"""
         try:
             if not logo_path or not os.path.exists(logo_path):
@@ -280,16 +279,12 @@ def parse_qr_arguments(args: list) -> dict:
             config["error_correction"] = args[i + 1].upper()
             i += 2
         elif arg in ["-s", "--size"] and i + 1 < len(args):
-            try:
+            with contextlib.suppress(ValueError):
                 config["box_size"] = int(args[i + 1])
-            except ValueError:
-                pass
             i += 2
         elif arg in ["-b", "--border"] and i + 1 < len(args):
-            try:
+            with contextlib.suppress(ValueError):
                 config["border"] = int(args[i + 1])
-            except ValueError:
-                pass
             i += 2
         elif arg in ["-f", "--fill"] and i + 1 < len(args):
             config["fill_color"] = args[i + 1]
@@ -539,6 +534,6 @@ Maximum 4,296 characters per QR code"""
         await send_message(
             message,
             f"❌ <b>QR Code Generation Failed</b>\n\n"
-            f"<b>Error:</b> <code>{str(e)}</code>\n\n"
+            f"<b>Error:</b> <code>{e!s}</code>\n\n"
             f"💡 <b>Tip:</b> Try using <code>/qrcode help</code> for usage instructions.",
         )

@@ -1,5 +1,8 @@
 from bot.core.config_manager import Config
-from bot.helper.telegram_helper.message_utils import auto_delete_message, send_message
+from bot.helper.telegram_helper.message_utils import (
+    auto_delete_message,
+    send_message,
+)
 
 
 async def handle_qb_commands(_, message):

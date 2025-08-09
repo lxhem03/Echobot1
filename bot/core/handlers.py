@@ -3,7 +3,11 @@ import os
 
 from pyrogram import filters
 from pyrogram.filters import command, regex
-from pyrogram.handlers import CallbackQueryHandler, EditedMessageHandler, MessageHandler
+from pyrogram.handlers import (
+    CallbackQueryHandler,
+    EditedMessageHandler,
+    MessageHandler,
+)
 
 from bot import LOGGER
 from bot.core.config_manager import Config
@@ -1021,8 +1025,7 @@ def add_handlers():
             filters=command("cancelbc", case_sensitive=False)
             & filters.private
             & filters.create(
-                lambda _, __, m: m.from_user
-                and m.from_user.id == Config.OWNER_ID
+                lambda _, __, m: m.from_user and m.from_user.id == Config.OWNER_ID
                 # We don't check broadcast_awaiting_message here to allow cancellation
                 # even if the state tracking has issues
             ),
@@ -1043,7 +1046,9 @@ def add_handlers():
                     m.from_user
                     and m.from_user.id == Config.OWNER_ID
                     # Exclude commands
-                    and not (hasattr(m, "text") and m.text and m.text.startswith("/"))
+                    and not (
+                        hasattr(m, "text") and m.text and m.text.startswith("/")
+                    )
                 )
                 # We'll check broadcast_awaiting_message inside the handler
             ),
@@ -1069,8 +1074,7 @@ def add_handlers():
             & filters.create(
                 lambda _, __, m: (
                     # Must be from owner
-                    m.from_user
-                    and m.from_user.id == Config.OWNER_ID
+                    m.from_user and m.from_user.id == Config.OWNER_ID
                 )
                 # We'll check broadcast_awaiting_message inside the handler
             ),

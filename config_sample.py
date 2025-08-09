@@ -31,13 +31,15 @@ CREDIT = "Powered by @aimmirror"  # Credit text shown in status messages and RSS
 OWNER_THUMB = "https://graph.org/file/80b7fb095063a18f9e232.jpg"  # Default thumbnail URL for owner (accepts Telegram file links)
 
 # Telegram
-USER_SESSION_STRING = ""  # Pyrogram user session string for mirror/leech authentication
-TG_PROXY = (
-    {}
-)  # Proxy for Telegram connection, format: {'addr': 'ip:port', 'username': 'username', 'password': 'password'}
+USER_SESSION_STRING = (
+    ""  # Pyrogram user session string for mirror/leech authentication
+)
+TG_PROXY = {}  # Proxy for Telegram connection, format: {'addr': 'ip:port', 'username': 'username', 'password': 'password'}
 
 # Authorization
-SUDO_USERS = ""  # List of sudo user IDs who can use admin commands, separated by space
+SUDO_USERS = (
+    ""  # List of sudo user IDs who can use admin commands, separated by space
+)
 AUTHORIZED_CHATS = (
     ""  # List of authorized chat IDs where the bot can be used, separated by space
 )
@@ -47,14 +49,14 @@ DEFAULT_UPLOAD = "gd"  # Default upload destination: 'gd' for Google Drive, 'rc'
 UPLOAD_PATHS = {}  # Custom upload paths for different file types
 
 # Hyper Download
-HELPER_TOKENS = (
-    ""  # Bot tokens for helper bots, separated by space. Format: "token1 token2 token3"
-)
+HELPER_TOKENS = ""  # Bot tokens for helper bots, separated by space. Format: "token1 token2 token3"
 HYPER_THREADS = 0  # Number of threads for hyper download (0 = auto-detect based on number of helper bots)
 
 # Command Management
 CMD_SUFFIX = ""  # Command suffix to distinguish commands, e.g. "1" would make commands like /mirror1
-WRONG_CMD_WARNINGS_ENABLED = False  # Enable/disable warnings for wrong command suffixes
+WRONG_CMD_WARNINGS_ENABLED = (
+    False  # Enable/disable warnings for wrong command suffixes
+)
 CORRECT_CMD_SUFFIX = ""  # Comma-separated list of command suffixes that won't trigger warnings, e.g. "1,2,3"
 
 # Feature Toggles
@@ -71,7 +73,9 @@ MEGA_SEARCH_ENABLED = True  # Enable/disable MEGA search functionality
 DDL_ENABLED = True  # Enable/disable DDL upload feature
 RCLONE_ENABLED = True  # Enable/disable Rclone feature
 HYPERDL_ENABLED = True  # Enable/disable hyper download feature
-ARCHIVE_FLAGS_ENABLED = True  # Enable/disable archive operation flags (-z and -e flags)
+ARCHIVE_FLAGS_ENABLED = (
+    True  # Enable/disable archive operation flags (-z and -e flags)
+)
 MULTI_LINK_ENABLED = True  # Enable/disable multi-link feature (-i flag)
 SAME_DIR_ENABLED = True  # Enable/disable same directory feature (-m flag)
 BULK_ENABLED = True  # Enable/disable bulk operations (-b flag)
@@ -98,10 +102,14 @@ STREAMWISH_API = ""  # StreamWish API key for direct links
 DEBRID_LINK_API = (
     ""  # Legacy API key or OAuth2 access_token for premium link generation
 )
-DEBRID_LINK_ACCESS_TOKEN = ""  # OAuth2 access_token (recommended, expires periodically)
+DEBRID_LINK_ACCESS_TOKEN = (
+    ""  # OAuth2 access_token (recommended, expires periodically)
+)
 DEBRID_LINK_REFRESH_TOKEN = ""  # OAuth2 refresh_token for automatic token renewal
 DEBRID_LINK_CLIENT_ID = ""  # OAuth2 client_id from your Debrid-Link app
-DEBRID_LINK_CLIENT_SECRET = ""  # OAuth2 client_secret (keep secure, server-side only)
+DEBRID_LINK_CLIENT_SECRET = (
+    ""  # OAuth2 client_secret (keep secure, server-side only)
+)
 DEBRID_LINK_TOKEN_EXPIRES = 0  # Token expiration timestamp (auto-managed)
 # TorBox API Settings - Get from https://torbox.app/settings
 TORBOX_API_KEY = (
@@ -208,9 +216,7 @@ STREAMTAPE_ALLOWED_EXTENSIONS = [
 ]  # Allowed video extensions for Streamtape
 DEVUPLOADS_API_KEY = ""  # Default DevUploads API key (can be overridden per user)
 DEVUPLOADS_FOLDER_NAME = ""  # Default folder name for uploads (empty = root folder)
-DEVUPLOADS_PUBLIC_FILES = (
-    True  # Default public/private setting for uploads (True = public, False = private)
-)
+DEVUPLOADS_PUBLIC_FILES = True  # Default public/private setting for uploads (True = public, False = private)
 MEDIAFIRE_EMAIL = ""  # MediaFire account email for authentication
 MEDIAFIRE_PASSWORD = ""  # MediaFire account password for authentication
 MEDIAFIRE_APP_ID = ""  # MediaFire application ID (required for API access)
@@ -252,11 +258,11 @@ LEECH_FILENAME_PREFIX = ""  # Prefix to add to leeched filenames
 LEECH_SUFFIX = ""  # Suffix to add to leeched files
 LEECH_FONT = ""  # Font to use for leech captions
 LEECH_FILENAME = ""  # Custom filename template for leeched files
-LEECH_FILENAME_CAPTION = ""  # Caption template for leeched files (max 1024 characters)
+LEECH_FILENAME_CAPTION = (
+    ""  # Caption template for leeched files (max 1024 characters)
+)
 UNIVERSAL_FILENAME = ""  # Universal filename template for both mirror and leech files (supports all template variables)
-LEECH_DUMP_CHAT = (
-    []
-)  # Chat IDs ["-100123456789", "b:@mychannel", "u:-100987654321", "h:@mygroup|123456"] where leeched files will be sent
+LEECH_DUMP_CHAT = []  # Chat IDs ["-100123456789", "b:@mychannel", "u:-100987654321", "h:@mygroup|123456"] where leeched files will be sent
 THUMBNAIL_LAYOUT = ""  # Layout for thumbnails: empty, top, bottom, or custom
 EQUAL_SPLITS = False  # Create equal-sized parts when splitting files
 
@@ -274,12 +280,8 @@ FILE2LINK_BIN_CHANNEL = 0  # REQUIRED: Private channel ID to store files for str
 FILE2LINK_ALLOWED_TYPES = "video,audio,document,photo,animation,voice,video_note"  # Allowed media types for streaming
 
 # Forwarding Settings
-FORWARD_SOURCE = (
-    []
-)  # Source chat IDs/usernames for automatic forwarding (e.g., ["-1001234567890", "@channel1"])
-FORWARD_DESTINATION = (
-    []
-)  # Destination chat IDs/usernames for automatic forwarding (e.g., ["-1001234567890", "@channel2"])
+FORWARD_SOURCE = []  # Source chat IDs/usernames for automatic forwarding (e.g., ["-1001234567890", "@channel1"])
+FORWARD_DESTINATION = []  # Destination chat IDs/usernames for automatic forwarding (e.g., ["-1001234567890", "@channel2"])
 
 # Queueing system
 QUEUE_ALL = 0  # Maximum number of concurrent tasks (0 = unlimited)
@@ -290,9 +292,7 @@ QUEUE_UPLOAD = 0  # Maximum number of concurrent uploads (0 = unlimited)
 RSS_DELAY = 900  # Increased delay to 15 minutes for better resource efficiency
 RSS_CHAT = ""  # Chat ID where RSS feed updates will be sent
 RSS_SIZE_LIMIT = 0  # Maximum size for RSS downloads in bytes (0 = unlimited)
-RSS_ENABLED = (
-    True  # Enable/disable RSS functionality completely (True=enabled, False=disabled)
-)
+RSS_ENABLED = True  # Enable/disable RSS functionality completely (True=enabled, False=disabled)
 RSS_JOB_INTERVAL = 600  # RSS job periodic runtime interval in seconds (default: 600)
 
 # Resource Management Settings
@@ -345,16 +345,16 @@ TASK_MONITOR_SPEED_THRESHOLD = 50  # Speed threshold in KB/s
 TASK_MONITOR_ELAPSED_THRESHOLD = 3600  # Elapsed time threshold in seconds (1 hour)
 TASK_MONITOR_ETA_THRESHOLD = 86400  # ETA threshold in seconds (24 hours)
 TASK_MONITOR_WAIT_TIME = 900  # Increased wait time to 15 minutes to reduce overhead
-TASK_MONITOR_COMPLETION_THRESHOLD = 86400  # Completion threshold in seconds (24 hours)
+TASK_MONITOR_COMPLETION_THRESHOLD = (
+    86400  # Completion threshold in seconds (24 hours)
+)
 TASK_MONITOR_CPU_HIGH = 85  # Reduced threshold for better responsiveness
 TASK_MONITOR_CPU_LOW = 50  # Reduced threshold
 TASK_MONITOR_MEMORY_HIGH = 70  # Reduced threshold for better memory management
 TASK_MONITOR_MEMORY_LOW = 50  # Reduced threshold
 
 # Garbage Collection Settings - Control memory management behavior
-GC_ENABLED = (
-    False  # Enable/disable garbage collection completely (True=enabled, False=disabled)
-)
+GC_ENABLED = False  # Enable/disable garbage collection completely (True=enabled, False=disabled)
 GC_INTERVAL = 60  # Minimum interval between GC operations in seconds (default: 60)
 GC_THRESHOLD_MB = 150  # Memory threshold in MB to trigger GC (default: 150)
 GC_AGGRESSIVE_MODE = (
@@ -371,9 +371,13 @@ DECODING_ENABLED = True  # Enable/disable decoding functionality
 VT_API_KEY = ""  # VirusTotal API key for malware scanning
 VT_API_TIMEOUT = 500  # VirusTotal API timeout in seconds
 VT_ENABLED = False  # Enable/disable VirusTotal functionality
-VT_MAX_FILE_SIZE = 33554432  # Maximum file size for VirusTotal scanning in bytes (32MB)
+VT_MAX_FILE_SIZE = (
+    33554432  # Maximum file size for VirusTotal scanning in bytes (32MB)
+)
 # Phish Directory API Settings
-PHISH_DIRECTORY_API_URL = "https://api.phish.directory"  # Phish Directory API base URL
+PHISH_DIRECTORY_API_URL = (
+    "https://api.phish.directory"  # Phish Directory API base URL
+)
 PHISH_DIRECTORY_ENABLED = True  # Enable/disable Phish Directory functionality
 PHISH_DIRECTORY_TIMEOUT = 30  # Phish Directory API timeout in seconds
 PHISH_DIRECTORY_API_KEY = (
@@ -397,7 +401,9 @@ WEATHER_ENABLED = True  # Enable/disable weather functionality
 OPENWEATHER_API_KEY = ""  # OpenWeatherMap API key
 WEATHER_PLACE = "London,UK"  # Default weather location
 AUTO_WEATHER = True  # Enable/disable automatic daily weather updates
-WEATHER_RISK_NOTIFICATIONS = True  # Enable/disable weather risk notifications to owner
+WEATHER_RISK_NOTIFICATIONS = (
+    True  # Enable/disable weather risk notifications to owner
+)
 WEATHER_UNITS = "metric"  # Units: standard, metric, imperial
 WEATHER_LANGUAGE = "en"  # Language code for weather descriptions
 WEATHER_UPDATE_TIME = "08:00"  # Time for daily weather updates (HH:MM format)
@@ -453,7 +459,9 @@ WEATHER_SHOW_POLLUTANTS = [
 
 # Premium Features Settings
 WEATHER_HOURLY_FORECAST_HOURS = 96  # Hours of hourly forecast (max 96 for 4 days)
-WEATHER_STATISTICAL_DATA = False  # Enable statistical weather data (requires paid plan)
+WEATHER_STATISTICAL_DATA = (
+    False  # Enable statistical weather data (requires paid plan)
+)
 WEATHER_ROAD_RISK_API = False  # Enable road risk API (requires paid plan)
 WEATHER_SOLAR_IRRADIANCE = False  # Enable solar irradiance data (requires paid plan)
 
@@ -462,7 +470,9 @@ NSFW_DETECTION_ENABLED = True  # Master toggle for NSFW detection
 NSFW_DETECTION_SENSITIVITY = (
     "moderate"  # Detection sensitivity: strict, moderate, permissive
 )
-NSFW_KEYWORD_DETECTION = True  # Enable enhanced keyword detection with fuzzy matching
+NSFW_KEYWORD_DETECTION = (
+    True  # Enable enhanced keyword detection with fuzzy matching
+)
 NSFW_VISUAL_DETECTION = (
     False  # Enable AI-powered visual content analysis (requires API keys)
 )
@@ -498,7 +508,9 @@ NSFW_STORE_METADATA = True  # Store detection metadata in database for tracking
 NSFW_AUTO_DELETE = (
     False  # Automatically delete detected NSFW content (use with caution)
 )
-NSFW_NOTIFY_ADMINS = True  # Send notifications to admins when NSFW content is detected
+NSFW_NOTIFY_ADMINS = (
+    True  # Send notifications to admins when NSFW content is detected
+)
 TRUECALLER_API_URL = ""  # Truecaller API URL for phone number lookup
 
 # Direct Link Generator Settings
@@ -511,9 +523,7 @@ PASTEBIN_API_KEY = (
 PASTEBIN_ENABLED = False  # Enable/disable Pastebin functionality
 
 # Bitly API Settings
-BITLY_ACCESS_TOKEN = (
-    ""  # Bitly API access token for link shortening (get from https://dev.bitly.com/)
-)
+BITLY_ACCESS_TOKEN = ""  # Bitly API access token for link shortening (get from https://dev.bitly.com/)
 BITLY_GROUP_GUID = ""  # Optional Bitly group GUID for organization
 
 # TinyURL API Settings
@@ -576,9 +586,7 @@ STREAMRIP_QUALITY_FALLBACK_ENABLED = True  # Auto-fallback to lower quality
 
 # Streamrip Platform Settings
 STREAMRIP_QOBUZ_ENABLED = True  # Enable Qobuz downloads
-STREAMRIP_QOBUZ_QUALITY = (
-    3  # Qobuz quality level (0-4: 0=320kbps, 1=16/44.1, 2=24/≤96, 3=24/≥96, 4=24/≥96)
-)
+STREAMRIP_QOBUZ_QUALITY = 3  # Qobuz quality level (0-4: 0=320kbps, 1=16/44.1, 2=24/≤96, 3=24/≥96, 4=24/≥96)
 STREAMRIP_TIDAL_ENABLED = True  # Enable Tidal downloads
 STREAMRIP_TIDAL_QUALITY = 3  # Tidal quality level (0-3)
 STREAMRIP_DEEZER_ENABLED = True  # Enable Deezer downloads
@@ -593,9 +601,7 @@ STREAMRIP_YOUTUBE_QUALITY = 0  # YouTube quality level
 STREAMRIP_QOBUZ_EMAIL = ""  # Qobuz account email
 STREAMRIP_QOBUZ_PASSWORD = ""  # Qobuz account password
 STREAMRIP_QOBUZ_APP_ID = ""  # Qobuz app ID (get via 'python dev/get_qobuz_keys.py')
-STREAMRIP_QOBUZ_SECRETS = (
-    []
-)  # Qobuz secrets array (get via 'python dev/get_qobuz_keys.py')
+STREAMRIP_QOBUZ_SECRETS = []  # Qobuz secrets array (get via 'python dev/get_qobuz_keys.py')
 
 # Tidal - Hi-Res/MQA platform (OAuth tokens preferred)
 STREAMRIP_TIDAL_ACCESS_TOKEN = (
@@ -619,9 +625,7 @@ STREAMRIP_SOUNDCLOUD_CLIENT_ID = ""  # SoundCloud client ID (optional)
 STREAMRIP_SOUNDCLOUD_APP_VERSION = ""  # SoundCloud app version (optional)
 
 # Streamrip Advanced Features
-STREAMRIP_METADATA_EXCLUDE = (
-    []
-)  # Metadata tags to exclude (e.g., ["genre", "albumartist"])
+STREAMRIP_METADATA_EXCLUDE = []  # Metadata tags to exclude (e.g., ["genre", "albumartist"])
 STREAMRIP_FILENAME_TEMPLATE = ""  # Custom filename template
 STREAMRIP_FOLDER_TEMPLATE = ""  # Custom folder structure template
 STREAMRIP_EMBED_COVER_ART = True  # Embed album artwork in files
@@ -649,7 +653,9 @@ STREAMRIP_YOUTUBE_VIDEO_DOWNLOADS_FOLDER = ""  # YouTube video downloads folder
 # Streamrip Database Configuration
 STREAMRIP_DATABASE_DOWNLOADS_ENABLED = True  # Enable downloads database
 STREAMRIP_DATABASE_DOWNLOADS_PATH = "./downloads.db"  # Downloads database path
-STREAMRIP_DATABASE_FAILED_DOWNLOADS_ENABLED = True  # Enable failed downloads database
+STREAMRIP_DATABASE_FAILED_DOWNLOADS_ENABLED = (
+    True  # Enable failed downloads database
+)
 STREAMRIP_DATABASE_FAILED_DOWNLOADS_PATH = (
     "./failed_downloads.db"  # Failed downloads database path
 )
@@ -668,7 +674,9 @@ STREAMRIP_QOBUZ_FILTERS_NON_ALBUMS = False  # Filter non-album content
 STREAMRIP_QOBUZ_FILTERS_FEATURES = False  # Filter featured content
 STREAMRIP_QOBUZ_FILTERS_NON_STUDIO_ALBUMS = False  # Filter non-studio albums
 STREAMRIP_QOBUZ_FILTERS_NON_REMASTER = False  # Filter non-remaster content
-STREAMRIP_ARTWORK_EMBED_MAX_WIDTH = -1  # Max width for embedded artwork (-1 = no limit)
+STREAMRIP_ARTWORK_EMBED_MAX_WIDTH = (
+    -1
+)  # Max width for embedded artwork (-1 = no limit)
 STREAMRIP_ARTWORK_SAVED_MAX_WIDTH = -1  # Max width for saved artwork (-1 = no limit)
 STREAMRIP_METADATA_SET_PLAYLIST_TO_ALBUM = True  # Set playlist as album in metadata
 STREAMRIP_METADATA_RENUMBER_PLAYLIST_TRACKS = True  # Renumber playlist tracks
@@ -706,7 +714,9 @@ ZOTIFY_CREDENTIALS_PATH = (
 # Zotify Library Paths - Where downloaded content is organized
 ZOTIFY_ALBUM_LIBRARY = "Music/Zotify Albums"  # Directory for album downloads
 ZOTIFY_PODCAST_LIBRARY = "Music/Zotify Podcasts"  # Directory for podcast downloads
-ZOTIFY_PLAYLIST_LIBRARY = "Music/Zotify Playlists"  # Directory for playlist downloads
+ZOTIFY_PLAYLIST_LIBRARY = (
+    "Music/Zotify Playlists"  # Directory for playlist downloads
+)
 
 # Zotify Output Templates - How files and folders are named
 ZOTIFY_OUTPUT_ALBUM = "{album_artist}/{album}/{track_number}. {artists} - {title}"  # Album track naming template
@@ -725,11 +735,11 @@ ZOTIFY_OUTPUT_SINGLE = (
 
 # Zotify Quality and Format Settings
 ZOTIFY_DOWNLOAD_QUALITY = "auto"  # Download quality: auto, normal, high, very_high
-ZOTIFY_AUDIO_FORMAT = (
-    "vorbis"  # Output audio format: vorbis, mp3, flac, aac, fdk_aac, opus, wav, wavpack
-)
+ZOTIFY_AUDIO_FORMAT = "vorbis"  # Output audio format: vorbis, mp3, flac, aac, fdk_aac, opus, wav, wavpack
 ZOTIFY_ARTWORK_SIZE = "large"  # Album artwork size: small, medium, large
-ZOTIFY_TRANSCODE_BITRATE = -1  # Transcoding bitrate in kbps (-1 to use download rate)
+ZOTIFY_TRANSCODE_BITRATE = (
+    -1
+)  # Transcoding bitrate in kbps (-1 to use download rate)
 
 # Zotify Download Settings
 ZOTIFY_DOWNLOAD_REAL_TIME = (
@@ -793,7 +803,9 @@ GALLERY_DL_ENABLED = True  # Enable/disable gallery-dl feature for 200+ platform
 GALLERY_DL_OPTIONS = {}  # Gallery-dl configuration options as dictionary
 GALLERY_DL_QUALITY_SELECTION = True  # Enable interactive quality selection
 GALLERY_DL_MAX_DOWNLOADS = 50  # Maximum files per download (0 = unlimited)
-GALLERY_DL_RATE_LIMIT = "1/s"  # Rate limit (requests per second, e.g., "2/s", "1/2s")
+GALLERY_DL_RATE_LIMIT = (
+    "1/s"  # Rate limit (requests per second, e.g., "2/s", "1/2s")
+)
 GALLERY_DL_ARCHIVE_ENABLED = True  # Enable archive to avoid re-downloading
 GALLERY_DL_METADATA_ENABLED = True  # Save metadata files (JSON, YAML, TXT)
 
@@ -853,7 +865,9 @@ YOUTUBE_UPLOAD_DEFAULT_PRIVACY = (
     "unlisted"  # Default privacy setting: public, unlisted, private
 )
 YOUTUBE_UPLOAD_DEFAULT_CATEGORY = "22"  # Default category ID (22 = People & Blogs)
-YOUTUBE_UPLOAD_DEFAULT_TAGS = ""  # Default tags for uploaded videos, separated by comma
+YOUTUBE_UPLOAD_DEFAULT_TAGS = (
+    ""  # Default tags for uploaded videos, separated by comma
+)
 YOUTUBE_UPLOAD_DEFAULT_DESCRIPTION = (
     "Uploaded by Aeon"  # Default description for uploaded videos
 )
@@ -873,7 +887,9 @@ YOUTUBE_UPLOAD_DEFAULT_LICENSE = (
 )
 YOUTUBE_UPLOAD_EMBEDDABLE = True  # Allow video to be embedded on other websites
 YOUTUBE_UPLOAD_PUBLIC_STATS_VIEWABLE = True  # Allow public to see video statistics
-YOUTUBE_UPLOAD_MADE_FOR_KIDS = False  # Mark videos as made for kids (COPPA compliance)
+YOUTUBE_UPLOAD_MADE_FOR_KIDS = (
+    False  # Mark videos as made for kids (COPPA compliance)
+)
 YOUTUBE_UPLOAD_NOTIFY_SUBSCRIBERS = True  # Notify subscribers when video is uploaded
 YOUTUBE_UPLOAD_LOCATION_DESCRIPTION = ""  # Location description for videos
 YOUTUBE_UPLOAD_RECORDING_DATE = (
@@ -1119,7 +1135,9 @@ SWAP_VIDEO_INDEX_ORDER = "0,1"  # Index order for video track selection
 # Subtitle Swap Settings
 SWAP_SUBTITLE_ENABLED = False  # Enable subtitle track swapping
 SWAP_SUBTITLE_USE_LANGUAGE = True  # Use language for subtitle track selection
-SWAP_SUBTITLE_LANGUAGE_ORDER = "eng,hin"  # Language order for subtitle track selection
+SWAP_SUBTITLE_LANGUAGE_ORDER = (
+    "eng,hin"  # Language order for subtitle track selection
+)
 SWAP_SUBTITLE_INDEX_ORDER = "0,1"  # Index order for subtitle track selection
 
 # Convert Settings
@@ -1170,12 +1188,18 @@ DEFAULT_AI_MODEL = "gpt-4o-mini"  # Use most reliable model as default - All sup
 
 # GPT/OpenAI Settings
 OPENAI_API_KEY = ""  # OpenAI API key from https://platform.openai.com/api-keys
-OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"  # Custom OpenAI API URL
-OPENAI_MODELS = "gpt-3.5-turbo,gpt-4,gpt-4-turbo,gpt-4o,gpt-4o-mini,o1-preview,o1-mini"
+OPENAI_API_URL = (
+    "https://api.openai.com/v1/chat/completions"  # Custom OpenAI API URL
+)
+OPENAI_MODELS = (
+    "gpt-3.5-turbo,gpt-4,gpt-4-turbo,gpt-4o,gpt-4o-mini,o1-preview,o1-mini"
+)
 
 # Claude/Anthropic Settings
 ANTHROPIC_API_KEY = ""  # Anthropic API key from https://console.anthropic.com/
-ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"  # Custom Anthropic API URL
+ANTHROPIC_API_URL = (
+    "https://api.anthropic.com/v1/messages"  # Custom Anthropic API URL
+)
 CLAUDE_MODELS = (
     "claude-2.1,claude-3-haiku,claude-3-sonnet,claude-3.5-sonnet,claude-3-opus"
 )
@@ -1226,9 +1250,13 @@ AI_VOICE_TRANSCRIPTION_ENABLED = True  # Enable Whisper voice transcription
 
 # New ChatGPT-Telegram-Bot Features
 AI_DOCUMENT_PROCESSING_ENABLED = True  # Enable document processing (PDF, text files)
-AI_FOLLOW_UP_QUESTIONS_ENABLED = True  # Enable automatic follow-up question generation
+AI_FOLLOW_UP_QUESTIONS_ENABLED = (
+    True  # Enable automatic follow-up question generation
+)
 AI_CONVERSATION_EXPORT_ENABLED = True  # Enable conversation export functionality
-AI_TYPEWRITER_EFFECT_ENABLED = True  # Enable typewriter effect for streaming responses
+AI_TYPEWRITER_EFFECT_ENABLED = (
+    True  # Enable typewriter effect for streaming responses
+)
 AI_CONTEXT_PRUNING_ENABLED = True  # Enable intelligent context pruning
 
 # AI Performance Settings
@@ -1300,7 +1328,9 @@ UNIVERSAL_FILENAME = ""  # Universal filename template for both mirror and leech
 EQUAL_SPLITS = False  # Create equal-sized parts when splitting files
 
 # Media Tools Settings
-MEDIA_TOOLS_ENABLED = True  # Master switch to enable/disable all media tools features
+MEDIA_TOOLS_ENABLED = (
+    True  # Master switch to enable/disable all media tools features
+)
 
 # Watermark Settings
 WATERMARK_ENABLED = False  # Master switch to enable/disable watermark feature
@@ -1309,9 +1339,7 @@ WATERMARK_POSITION = "none"  # Position of watermark: none, top_left, top_right,
 WATERMARK_SIZE = (
     0  # Font size for watermark text (0 = auto-size based on video dimensions)
 )
-WATERMARK_COLOR = (
-    "none"  # Watermark text color: none, white, black, red, green, blue, yellow, etc.
-)
+WATERMARK_COLOR = "none"  # Watermark text color: none, white, black, red, green, blue, yellow, etc.
 WATERMARK_FONT = "none"  # Font for watermark text: none, Arial.ttf, Roboto, etc. (supports Google Fonts)
 WATERMARK_OPACITY = 0.0  # Watermark opacity: 0.0 (transparent) to 1.0 (opaque)
 WATERMARK_PRIORITY = 2  # Processing priority in pipeline (lower numbers run earlier)
@@ -1323,7 +1351,9 @@ WATERMARK_QUALITY = (
 WATERMARK_SPEED = (
     "none"  # Speed setting for watermark (none = default, or specify a value)
 )
-WATERMARK_REMOVE_ORIGINAL = True  # Delete original files after successful watermarking
+WATERMARK_REMOVE_ORIGINAL = (
+    True  # Delete original files after successful watermarking
+)
 
 # Audio Watermark Settings
 AUDIO_WATERMARK_VOLUME = (
@@ -1410,10 +1440,14 @@ MERGE_IMAGE_BACKGROUND = (
 
 # Merge Subtitle Settings
 MERGE_SUBTITLE_ENCODING = "none"  # Character encoding: none, utf-8, utf-16, etc.
-MERGE_SUBTITLE_FONT = "none"  # Font for subtitles: none, Arial, Times New Roman, etc.
+MERGE_SUBTITLE_FONT = (
+    "none"  # Font for subtitles: none, Arial, Times New Roman, etc.
+)
 MERGE_SUBTITLE_FONT_SIZE = "none"  # Font size: none, 12, 16, etc.
 MERGE_SUBTITLE_FONT_COLOR = "none"  # Font color: none, white, yellow, etc.
-MERGE_SUBTITLE_BACKGROUND = "none"  # Background color: none, black, transparent, etc.
+MERGE_SUBTITLE_BACKGROUND = (
+    "none"  # Background color: none, black, transparent, etc.
+)
 
 # Merge Document Settings
 MERGE_DOCUMENT_PAPER_SIZE = "none"  # Paper size: none, a4, letter, etc.
@@ -1427,7 +1461,9 @@ MERGE_METADATA_COMMENT = "none"  # Comment metadata for merged file
 
 # Compression Settings
 COMPRESSION_ENABLED = False  # Master switch to enable/disable compression feature
-COMPRESSION_PRIORITY = 4  # Processing priority in pipeline (lower numbers run earlier)
+COMPRESSION_PRIORITY = (
+    4  # Processing priority in pipeline (lower numbers run earlier)
+)
 COMPRESSION_DELETE_ORIGINAL = True  # Delete original files after successful compression (default: True, use -del flag to override)
 
 # Video Compression Settings
@@ -1445,7 +1481,9 @@ COMPRESSION_VIDEO_FORMAT = (
 COMPRESSION_VIDEO_BITDEPTH = (
     "none"  # Video bit depth: none (use input), 8, 10, 12, etc.
 )
-COMPRESSION_VIDEO_BITRATE = "none"  # Video bitrate: none (use input), 1M, 5M, 10M, etc.
+COMPRESSION_VIDEO_BITRATE = (
+    "none"  # Video bitrate: none (use input), 1M, 5M, 10M, etc.
+)
 COMPRESSION_VIDEO_RESOLUTION = (
     "none"  # Video resolution: none (use input), 1920x1080, 1280x720, etc.
 )
@@ -1471,7 +1509,9 @@ COMPRESSION_IMAGE_PRESET = "none"  # Compression preset: none, fast, medium, slo
 COMPRESSION_IMAGE_QUALITY = (
     "none"  # Image quality: none (use default), 0-100 (higher is better quality)
 )
-COMPRESSION_IMAGE_RESIZE = "none"  # Image resize dimensions: none, 1920x1080, 50%, etc.
+COMPRESSION_IMAGE_RESIZE = (
+    "none"  # Image resize dimensions: none, 1920x1080, 50%, etc.
+)
 COMPRESSION_IMAGE_FORMAT = (
     "none"  # Output format: none (use input format), jpg, png, webp, etc.
 )
@@ -1479,7 +1519,9 @@ COMPRESSION_IMAGE_FORMAT = (
 # Document Compression Settings
 COMPRESSION_DOCUMENT_ENABLED = False  # Enable/disable document compression
 COMPRESSION_DOCUMENT_PRESET = "none"  # Compression preset: none, fast, medium, slow
-COMPRESSION_DOCUMENT_DPI = "none"  # Document DPI: none (use input), 72, 96, 300, etc.
+COMPRESSION_DOCUMENT_DPI = (
+    "none"  # Document DPI: none (use input), 72, 96, 300, etc.
+)
 COMPRESSION_DOCUMENT_FORMAT = (
     "none"  # Output format: none (use input format), pdf, docx, etc.
 )
@@ -1487,7 +1529,9 @@ COMPRESSION_DOCUMENT_FORMAT = (
 # Subtitle Compression Settings
 COMPRESSION_SUBTITLE_ENABLED = False  # Enable/disable subtitle compression
 COMPRESSION_SUBTITLE_PRESET = "none"  # Compression preset: none, fast, medium, slow
-COMPRESSION_SUBTITLE_ENCODING = "none"  # Character encoding: none, utf-8, utf-16, etc.
+COMPRESSION_SUBTITLE_ENCODING = (
+    "none"  # Character encoding: none, utf-8, utf-16, etc.
+)
 COMPRESSION_SUBTITLE_FORMAT = (
     "none"  # Output format: none (use input format), srt, ass, vtt, etc.
 )
@@ -1502,7 +1546,9 @@ COMPRESSION_ARCHIVE_METHOD = "none"  # Compression method: none, deflate, lzma, 
 COMPRESSION_ARCHIVE_FORMAT = (
     "none"  # Output format: none (use input format), zip, 7z, tar.gz, etc.
 )
-COMPRESSION_ARCHIVE_PASSWORD = "none"  # Password for archive: none or password string
+COMPRESSION_ARCHIVE_PASSWORD = (
+    "none"  # Password for archive: none or password string
+)
 COMPRESSION_ARCHIVE_ALGORITHM = "none"  # Archive algorithm: none, 7z, zip, etc.
 
 # Trim Settings
@@ -1514,8 +1560,12 @@ TRIM_DELETE_ORIGINAL = False  # Delete original files after successful trimming
 
 # Video Trim Settings
 TRIM_VIDEO_ENABLED = False  # Enable/disable video trimming
-TRIM_VIDEO_CODEC = "none"  # Video codec: none, copy (fastest), libx264, libx265, etc.
-TRIM_VIDEO_PRESET = "none"  # Encoding preset: none, ultrafast, fast, medium, slow, etc.
+TRIM_VIDEO_CODEC = (
+    "none"  # Video codec: none, copy (fastest), libx264, libx265, etc.
+)
+TRIM_VIDEO_PRESET = (
+    "none"  # Encoding preset: none, ultrafast, fast, medium, slow, etc.
+)
 TRIM_VIDEO_FORMAT = "none"  # Output format: none, mp4, mkv, avi, etc.
 
 # Audio Trim Settings
@@ -1564,7 +1614,9 @@ EXTRACT_VIDEO_PRESET = (
     "none"  # Encoding preset: none, ultrafast, fast, medium, slow, etc.
 )
 EXTRACT_VIDEO_BITRATE = "none"  # Video bitrate: none, 1M, 5M, etc.
-EXTRACT_VIDEO_RESOLUTION = "none"  # Video resolution: none, 1920x1080, 1280x720, etc.
+EXTRACT_VIDEO_RESOLUTION = (
+    "none"  # Video resolution: none, 1920x1080, 1280x720, etc.
+)
 EXTRACT_VIDEO_FPS = "none"  # Frame rate: none, 30, 60, etc.
 
 # Audio Extract Settings
@@ -1586,7 +1638,9 @@ EXTRACT_SUBTITLE_FORMAT = "none"  # Output format: none, srt, ass, vtt, etc.
 EXTRACT_SUBTITLE_INDEX = None  # Stream index to extract: None (all), 0, 1, 2, etc.
 EXTRACT_SUBTITLE_LANGUAGE = "none"  # Language code: none, eng, spa, etc.
 EXTRACT_SUBTITLE_ENCODING = "none"  # Character encoding: none, utf-8, utf-16, etc.
-EXTRACT_SUBTITLE_FONT = "none"  # Font for subtitles: none, Arial, Times New Roman, etc.
+EXTRACT_SUBTITLE_FONT = (
+    "none"  # Font for subtitles: none, Arial, Times New Roman, etc.
+)
 EXTRACT_SUBTITLE_FONT_SIZE = "none"  # Font size: none, 12, 16, etc.
 
 # Attachment Extract Settings
@@ -1601,7 +1655,9 @@ EXTRACT_MAINTAIN_QUALITY = True  # Maintain original quality during extraction
 # Remove Settings
 REMOVE_ENABLED = False  # Master switch to enable/disable remove feature
 REMOVE_PRIORITY = 8  # Processing priority in pipeline (lower numbers run earlier)
-REMOVE_DELETE_ORIGINAL = True  # Delete original files after successful remove operation
+REMOVE_DELETE_ORIGINAL = (
+    True  # Delete original files after successful remove operation
+)
 REMOVE_METADATA = False  # Remove metadata from files
 
 # Video Remove Settings
@@ -1620,7 +1676,9 @@ REMOVE_SUBTITLE_INDEX = (
 
 # Attachment Remove Settings
 REMOVE_ATTACHMENT_ENABLED = False  # Enable/disable attachment removal
-REMOVE_ATTACHMENT_INDEX = None  # Attachment index to remove: None (all), 0, 1, 2, etc.
+REMOVE_ATTACHMENT_INDEX = (
+    None  # Attachment index to remove: None (all), 0, 1, 2, etc.
+)
 
 # Add Settings
 ADD_ENABLED = False  # Master switch to enable/disable add feature
@@ -1635,7 +1693,9 @@ ADD_VIDEO_ENABLED = False  # Enable/disable video track addition
 ADD_VIDEO_INDEX = None  # Stream index to add: None (all), 0, 1, 2, etc.
 ADD_VIDEO_CODEC = "copy"  # Video codec: copy (fastest), libx264, libx265, etc.
 ADD_VIDEO_QUALITY = "none"  # Video quality: none, high, medium, low, etc.
-ADD_VIDEO_PRESET = "none"  # Encoding preset: none, ultrafast, fast, medium, slow, etc.
+ADD_VIDEO_PRESET = (
+    "none"  # Encoding preset: none, ultrafast, fast, medium, slow, etc.
+)
 ADD_VIDEO_BITRATE = "none"  # Video bitrate: none, 1M, 5M, etc.
 ADD_VIDEO_RESOLUTION = "none"  # Video resolution: none, 1920x1080, 1280x720, etc.
 ADD_VIDEO_FPS = "none"  # Frame rate: none, 30, 60, etc.
@@ -1721,7 +1781,9 @@ CONVERT_VIDEO_PRESET = (
     "none"  # Encoding preset: none, ultrafast, fast, medium, slow, etc.
 )
 CONVERT_VIDEO_MAINTAIN_QUALITY = True  # Maintain original quality during conversion
-CONVERT_VIDEO_RESOLUTION = "none"  # Target resolution: none, 1920x1080, 1280x720, etc.
+CONVERT_VIDEO_RESOLUTION = (
+    "none"  # Target resolution: none, 1920x1080, 1280x720, etc.
+)
 CONVERT_VIDEO_FPS = "none"  # Target frame rate: none, 30, 60, etc.
 
 # Audio Convert Settings
@@ -1729,7 +1791,9 @@ CONVERT_AUDIO_ENABLED = False  # Enable/disable audio conversion
 CONVERT_AUDIO_FORMAT = "none"  # Target format: none, mp3, m4a, flac, ogg, etc.
 CONVERT_AUDIO_CODEC = "none"  # Audio codec: none, aac, mp3, opus, flac, etc.
 CONVERT_AUDIO_BITRATE = "none"  # Target bitrate: none, 128k, 192k, 320k, etc.
-CONVERT_AUDIO_CHANNELS = 0  # Target channels: 0 (original), 1 (mono), 2 (stereo), etc.
+CONVERT_AUDIO_CHANNELS = (
+    0  # Target channels: 0 (original), 1 (mono), 2 (stereo), etc.
+)
 CONVERT_AUDIO_SAMPLING = 0  # Target sampling rate: 0 (original), 44100, 48000, etc.
 CONVERT_AUDIO_VOLUME = 0.0  # Volume adjustment: 0.0 (original), 1.0, 1.5, 0.5, etc.
 

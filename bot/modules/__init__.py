@@ -95,7 +95,11 @@ from .tmdb import tmdb_callback_handler, tmdb_search_command
 from .tool_commands import tool_command
 from .trace_moe import trace_command
 from .truecaller import truecaller_lookup
-from .users_settings import edit_user_settings, get_users_settings, send_user_settings
+from .users_settings import (
+    edit_user_settings,
+    get_users_settings,
+    send_user_settings,
+)
 from .virustotal import virustotal_scan
 from .whisper import whisper_callback, whisper_command
 from .wot import wot_command
@@ -195,10 +199,10 @@ __all__ = [
     "paste_text",
     "phish_check_command",
     "ping",
+    "qrcode_command",
     "quickinfo_callback",
     # QuickInfo functions
     "quickinfo_command",
-    "qrcode_command",
     "remove_from_queue",
     "remove_sudo",
     "restart_bot",
@@ -209,8 +213,8 @@ __all__ = [
     "select",
     "select_type",
     "send_bot_settings",
-    "shortner_command",
     "send_user_settings",
+    "shortner_command",
     "spectrum_handler",
     "speedtest",
     "start",
