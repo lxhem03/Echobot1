@@ -90,9 +90,7 @@ class ConfigCache:
     def get_stats(self) -> dict:
         """Get cache performance statistics"""
         total_requests = self._hit_count + self._miss_count
-        hit_rate = (
-            (self._hit_count / total_requests * 100) if total_requests > 0 else 0
-        )
+        hit_rate = (self._hit_count / total_requests * 100) if total_requests > 0 else 0
 
         return {
             "hit_count": self._hit_count,
@@ -188,12 +186,12 @@ class Config:
     BOT_PM: bool = True  # Enable/disable sending media to user's bot PM
 
     # Forwarding Settings
-    FORWARD_SOURCE: ClassVar[
-        list[str]
-    ] = []  # Source chat IDs/usernames for automatic forwarding (comma-separated)
-    FORWARD_DESTINATION: ClassVar[
-        list[str]
-    ] = []  # Destination chat IDs/usernames for automatic forwarding (comma-separated)
+    FORWARD_SOURCE: ClassVar[list[str]] = (
+        []
+    )  # Source chat IDs/usernames for automatic forwarding (comma-separated)
+    FORWARD_DESTINATION: ClassVar[list[str]] = (
+        []
+    )  # Destination chat IDs/usernames for automatic forwarding (comma-separated)
 
     LEECH_FILENAME_PREFIX: str = ""
     LEECH_SUFFIX: str = ""
@@ -398,16 +396,18 @@ class Config:
     ZOTIFY_OUTPUT_PLAYLIST_TRACK: str = "{playlist}/{artists} - {title}"
     ZOTIFY_OUTPUT_PLAYLIST_EPISODE: str = "{playlist}/{episode_number} - {title}"
     ZOTIFY_OUTPUT_PODCAST: str = "{podcast}/{episode_number} - {title}"
-    ZOTIFY_OUTPUT_SINGLE: str = (
-        "{artists} - {title}"  # For single tracks not in albums
-    )
+    ZOTIFY_OUTPUT_SINGLE: str = "{artists} - {title}"  # For single tracks not in albums
 
     # Zotify Quality and Format Settings (Optimized for free accounts)
     ZOTIFY_DOWNLOAD_QUALITY: str = (
         "normal"  # auto, normal, high, very_high (normal=160kbps max for free)
     )
-    ZOTIFY_AUDIO_FORMAT: str = "mp3"  # vorbis, mp3, flac, aac, fdk_aac, opus, wav, wavpack (mp3 most compatible)
-    ZOTIFY_ARTWORK_SIZE: str = "medium"  # small, medium, large (medium to reduce bandwidth for free accounts)
+    ZOTIFY_AUDIO_FORMAT: str = (
+        "mp3"  # vorbis, mp3, flac, aac, fdk_aac, opus, wav, wavpack (mp3 most compatible)
+    )
+    ZOTIFY_ARTWORK_SIZE: str = (
+        "medium"  # small, medium, large (medium to reduce bandwidth for free accounts)
+    )
     ZOTIFY_TRANSCODE_BITRATE: int = -1  # -1 to use download rate
 
     # Zotify Download Settings
@@ -440,9 +440,7 @@ class Config:
     ZOTIFY_PRINT_SKIPS: bool = False  # Default False in Zotify
 
     # Zotify Match Functionality (from CONFIG_VALUES)
-    ZOTIFY_MATCH_EXISTING: bool = (
-        False  # Match existing files for skip functionality
-    )
+    ZOTIFY_MATCH_EXISTING: bool = False  # Match existing files for skip functionality
 
     # Missing CONFIG_VALUES from Zotify (exact 25 total)
     # Note: We already have most, but these were missing or incorrectly named
@@ -496,7 +494,9 @@ class Config:
 
     # Streamrip Filepaths Configuration
     STREAMRIP_FILEPATHS_ADD_SINGLES_TO_FOLDER: bool = False
-    STREAMRIP_FILEPATHS_FOLDER_FORMAT: str = "{albumartist} - {title} ({year}) [{container}] [{bit_depth}B-{sampling_rate}kHz]"
+    STREAMRIP_FILEPATHS_FOLDER_FORMAT: str = (
+        "{albumartist} - {title} ({year}) [{container}] [{bit_depth}B-{sampling_rate}kHz]"
+    )
     STREAMRIP_FILEPATHS_TRACK_FORMAT: str = (
         "{tracknumber:02}. {artist} - {title}{explicit}"
     )
@@ -583,9 +583,7 @@ class Config:
     # DevUploads Settings
     DEVUPLOADS_API_KEY: str = ""  # Default DevUploads API key
     DEVUPLOADS_FOLDER_NAME: str = ""  # Default folder name for uploads
-    DEVUPLOADS_PUBLIC_FILES: bool = (
-        True  # Default public/private setting for uploads
-    )
+    DEVUPLOADS_PUBLIC_FILES: bool = True  # Default public/private setting for uploads
 
     # MediaFire API Settings
     MEDIAFIRE_API_KEY: str = ""  # MediaFire API key for authenticated access
@@ -742,24 +740,18 @@ class Config:
     TRIM_VIDEO_ENABLED: bool = False
     TRIM_VIDEO_CODEC: str = "none"  # none, copy, libx264, etc.
     TRIM_VIDEO_PRESET: str = "none"  # none, fast, medium, slow
-    TRIM_VIDEO_FORMAT: str = (
-        "none"  # Output format for video trimming (e.g., mp4, mkv)
-    )
+    TRIM_VIDEO_FORMAT: str = "none"  # Output format for video trimming (e.g., mp4, mkv)
 
     # Audio Trim Settings
     TRIM_AUDIO_ENABLED: bool = False
     TRIM_AUDIO_CODEC: str = "none"  # none, copy, aac, etc.
     TRIM_AUDIO_PRESET: str = "none"  # none, fast, medium, slow
-    TRIM_AUDIO_FORMAT: str = (
-        "none"  # Output format for audio trimming (e.g., mp3, aac)
-    )
+    TRIM_AUDIO_FORMAT: str = "none"  # Output format for audio trimming (e.g., mp3, aac)
 
     # Image Trim Settings
     TRIM_IMAGE_ENABLED: bool = False
     TRIM_IMAGE_QUALITY: int = 90
-    TRIM_IMAGE_FORMAT: str = (
-        "none"  # Output format for image trimming (e.g., jpg, png)
-    )
+    TRIM_IMAGE_FORMAT: str = "none"  # Output format for image trimming (e.g., jpg, png)
 
     # Document Trim Settings
     TRIM_DOCUMENT_ENABLED: bool = False
@@ -800,9 +792,7 @@ class Config:
     EXTRACT_VIDEO_QUALITY: str = (
         "none"  # Quality setting for video extraction (e.g., crf value)
     )
-    EXTRACT_VIDEO_PRESET: str = (
-        "none"  # Preset for video encoding (e.g., medium, slow)
-    )
+    EXTRACT_VIDEO_PRESET: str = "none"  # Preset for video encoding (e.g., medium, slow)
     EXTRACT_VIDEO_BITRATE: str = "none"  # Bitrate for video encoding (e.g., 5M)
     EXTRACT_VIDEO_RESOLUTION: str = (
         "none"  # Resolution for video extraction (e.g., 1920x1080)
@@ -1091,16 +1081,16 @@ class Config:
     MERGE_METADATA_COMMENT: str = "none"
 
     # Resource Management Settings
-    PIL_MEMORY_LIMIT: int = 2048
+    PIL_MEMORY_LIMIT: int = (
+        1024  # Reduced from 2048MB to 1024MB for better memory management
+    )
 
     # Auto Restart Settings - Optimized for better resource management
     AUTO_RESTART_ENABLED: bool = False  # Disabled by default for better stability
-    AUTO_RESTART_INTERVAL: int = (
-        48  # Increased to 48 hours to reduce restart frequency
-    )
+    AUTO_RESTART_INTERVAL: int = 48  # Increased to 48 hours to reduce restart frequency
 
     # Garbage Collection Settings
-    GC_ENABLED: bool = True  # Enable/disable garbage collection completely
+    GC_ENABLED: bool = False  # Enable/disable garbage collection completely
     GC_INTERVAL: int = 60  # Minimum interval between GC operations in seconds
     GC_THRESHOLD_MB: int = 150  # Memory threshold in MB to trigger GC
     GC_AGGRESSIVE_MODE: bool = False  # Enable aggressive GC by default
@@ -1119,9 +1109,7 @@ class Config:
     TASK_MONITOR_COMPLETION_THRESHOLD: int = 86400  # in seconds (24 hours)
     TASK_MONITOR_CPU_HIGH: int = 85  # Reduced threshold for better responsiveness
     TASK_MONITOR_CPU_LOW: int = 50  # Reduced threshold
-    TASK_MONITOR_MEMORY_HIGH: int = (
-        70  # Reduced threshold for better memory management
-    )
+    TASK_MONITOR_MEMORY_HIGH: int = 70  # Reduced threshold for better memory management
     TASK_MONITOR_MEMORY_LOW: int = 50  # Reduced threshold
 
     # Limits Settings
@@ -1148,9 +1136,7 @@ class Config:
     )
     STATUS_UPDATE_INTERVAL: int = 3  # Status update interval in seconds (minimum 2)
     STATUS_LIMIT: int = 10  # Number of tasks to display in status message
-    SEARCH_LIMIT: int = (
-        0  # Maximum number of search results to display (0 = unlimited)
-    )
+    SEARCH_LIMIT: int = 0  # Maximum number of search results to display (0 = unlimited)
     SHOW_CLOUD_LINK: bool = True  # Show cloud links in upload completion message
 
     # Truecaller API Settings
@@ -1210,7 +1196,9 @@ class Config:
     AI_ENABLED: bool = True  # Master toggle for AI functionality
 
     # Default AI Model (replaces separate provider and model configs)
-    DEFAULT_AI_MODEL: str = "gpt-4o-mini"  # Use most reliable model as default - All supported models: gpt-4o, gpt-4o-mini, gpt-4, gpt-3.5-turbo, o1-preview, o1-mini, claude-3.5-sonnet, claude-3-sonnet, claude-3-haiku, claude-3-opus, claude-2.1, gemini-1.5-pro, gemini-1.5-flash, gemini-2.0-flash-exp, mixtral-8x7b-32768, llama-3.1-70b-versatile, llama-3.1-8b-instant, llama2-70b-4096, vertex-gemini-1.5-pro, vertex-gemini-1.5-flash, vertex-claude-3-sonnet, vertex-claude-3-haiku, whisper-1, mistral, deepseek
+    DEFAULT_AI_MODEL: str = (
+        "gpt-4o-mini"  # Use most reliable model as default - All supported models: gpt-4o, gpt-4o-mini, gpt-4, gpt-3.5-turbo, o1-preview, o1-mini, claude-3.5-sonnet, claude-3-sonnet, claude-3-haiku, claude-3-opus, claude-2.1, gemini-1.5-pro, gemini-1.5-flash, gemini-2.0-flash-exp, mixtral-8x7b-32768, llama-3.1-70b-versatile, llama-3.1-8b-instant, llama2-70b-4096, vertex-gemini-1.5-pro, vertex-gemini-1.5-flash, vertex-claude-3-sonnet, vertex-claude-3-haiku, whisper-1, mistral, deepseek
+    )
 
     # GPT/OpenAI Settings
     OPENAI_API_KEY: str = ""
@@ -1228,9 +1216,7 @@ class Config:
 
     # Gemini/Google AI Settings
     GOOGLE_AI_API_KEY: str = ""
-    GOOGLE_AI_API_URL: str = (
-        "https://generativelanguage.googleapis.com/v1beta/models"
-    )
+    GOOGLE_AI_API_URL: str = "https://generativelanguage.googleapis.com/v1beta/models"
     GEMINI_MODELS: str = "gemini-1.5-pro,gemini-1.5-flash,gemini-2.0-flash-exp"
 
     # Vertex AI Settings
@@ -1243,7 +1229,9 @@ class Config:
     # Groq Settings
     GROQ_API_KEY: str = ""
     GROQ_API_URL: str = "https://api.groq.com/openai/v1/chat/completions"
-    GROQ_MODELS: str = "mixtral-8x7b-32768,llama2-70b-4096,llama-3.1-70b-versatile,llama-3.1-8b-instant"
+    GROQ_MODELS: str = (
+        "mixtral-8x7b-32768,llama2-70b-4096,llama-3.1-70b-versatile,llama-3.1-8b-instant"
+    )
 
     # Legacy AI Settings (for backward compatibility)
     MISTRAL_API_URL: str = ""
@@ -1275,13 +1263,9 @@ class Config:
     AI_DOCUMENT_PROCESSING_ENABLED: bool = (
         True  # Enable document processing (PDF, text)
     )
-    AI_FOLLOW_UP_QUESTIONS_ENABLED: bool = (
-        True  # Enable automatic follow-up questions
-    )
+    AI_FOLLOW_UP_QUESTIONS_ENABLED: bool = True  # Enable automatic follow-up questions
     AI_CONVERSATION_EXPORT_ENABLED: bool = True  # Enable conversation export
-    AI_TYPEWRITER_EFFECT_ENABLED: bool = (
-        True  # Enable typewriter effect for streaming
-    )
+    AI_TYPEWRITER_EFFECT_ENABLED: bool = True  # Enable typewriter effect for streaming
     AI_CONTEXT_PRUNING_ENABLED: bool = True  # Enable intelligent context pruning
 
     # AI Performance Settings
@@ -1295,12 +1279,12 @@ class Config:
     AI_DAILY_TOKEN_LIMIT: int = 0  # Daily token limit per user (0 = unlimited)
     AI_MONTHLY_TOKEN_LIMIT: int = 0  # Monthly token limit per user (0 = unlimited)
     AI_DAILY_COST_LIMIT: float = 0.0  # Daily cost limit per user (0.0 = unlimited)
-    AI_MONTHLY_COST_LIMIT: float = (
-        0.0  # Monthly cost limit per user (0.0 = unlimited)
-    )
+    AI_MONTHLY_COST_LIMIT: float = 0.0  # Monthly cost limit per user (0.0 = unlimited)
 
     # AI Model Grouping
-    AI_MODEL_GROUPS: str = "GPT:gpt-3.5-turbo,gpt-4,gpt-4o|Claude:claude-3-haiku,claude-3-sonnet|Gemini:gemini-1.5-pro,gemini-1.5-flash|Groq:mixtral-8x7b-32768,llama2-70b-4096|Others:mistral,deepseek"
+    AI_MODEL_GROUPS: str = (
+        "GPT:gpt-3.5-turbo,gpt-4,gpt-4o|Claude:claude-3-haiku,claude-3-sonnet|Gemini:gemini-1.5-pro,gemini-1.5-flash|Groq:mixtral-8x7b-32768,llama2-70b-4096|Others:mistral,deepseek"
+    )
 
     # Shortener Settings
     SHORTENER_MIN_TIME: int = 10  # Minimum time in seconds for shortener to process
@@ -1379,9 +1363,7 @@ class Config:
     )
     WEATHER_UNITS: str = "metric"  # Units: standard, metric, imperial
     WEATHER_LANGUAGE: str = "en"  # Language code for weather descriptions
-    WEATHER_UPDATE_TIME: str = (
-        "08:00"  # Time for daily weather updates (HH:MM format)
-    )
+    WEATHER_UPDATE_TIME: str = "08:00"  # Time for daily weather updates (HH:MM format)
     WEATHER_TIMEZONE: str = "UTC"  # Timezone for weather updates
 
     # Advanced Weather Features
@@ -1408,9 +1390,7 @@ class Config:
     WEATHER_ALERT_WIND_SPEED: float = 15.0  # High wind speed alert threshold (m/s)
     WEATHER_ALERT_VISIBILITY: int = 1000  # Low visibility alert threshold (meters)
     WEATHER_ALERT_AQI: int = 3  # Air quality alert threshold (1-5 scale)
-    WEATHER_ALERT_FIRE_DANGER: int = (
-        3  # Fire weather index alert threshold (0-5 scale)
-    )
+    WEATHER_ALERT_FIRE_DANGER: int = 3  # Fire weather index alert threshold (0-5 scale)
 
     # Weather Map Settings
     WEATHER_MAP_LAYERS: list = [
@@ -1421,9 +1401,7 @@ class Config:
         "clouds_new",  # Clouds
     ]  # Available weather map layers
     WEATHER_MAP_OPACITY: float = 0.6  # Map layer opacity (0.0-1.0)
-    WEATHER_USE_ADVANCED_MAPS: bool = (
-        False  # Use Weather Maps 2.0 (requires paid plan)
-    )
+    WEATHER_USE_ADVANCED_MAPS: bool = False  # Use Weather Maps 2.0 (requires paid plan)
     WEATHER_USE_HOURLY_MAPS: bool = (
         False  # Use Weather Maps 2.0 with 1-hour step (requires paid plan)
     )
@@ -1459,9 +1437,7 @@ class Config:
         True  # Use backup weather data sources if primary fails
     )
     WEATHER_DATA_VALIDATION: bool = True  # Validate weather data before displaying
-    WEATHER_METRIC_CONVERSION: bool = (
-        True  # Auto-convert units based on user location
-    )
+    WEATHER_METRIC_CONVERSION: bool = True  # Auto-convert units based on user location
 
     # Enhanced NSFW Detection Settings
     NSFW_DETECTION_ENABLED: bool = True  # Master toggle for NSFW detection
@@ -1469,7 +1445,9 @@ class Config:
     NSFW_KEYWORD_DETECTION: bool = True  # Enable enhanced keyword detection
     NSFW_VISUAL_DETECTION: bool = False  # Enable AI-powered visual analysis
     NSFW_AUDIO_DETECTION: bool = False  # Enable audio content analysis
-    NSFW_FUZZY_MATCHING: bool = False  # Enable fuzzy keyword matching (disabled by default to reduce false positives)
+    NSFW_FUZZY_MATCHING: bool = (
+        False  # Enable fuzzy keyword matching (disabled by default to reduce false positives)
+    )
     NSFW_LEETSPEAK_DETECTION: bool = True  # Enable leetspeak detection
     NSFW_MULTI_LANGUAGE: bool = (
         False  # Enable multi-language keyword support (disabled by default)
@@ -1516,6 +1494,13 @@ class Config:
     PASTEBIN_API_KEY: str = ""  # Pastebin Developer API Key
     PASTEBIN_ENABLED: bool = False  # Enable/disable Pastebin functionality
 
+    # Bitly API Settings
+    BITLY_ACCESS_TOKEN: str = ""  # Bitly API access token for link shortening
+    BITLY_GROUP_GUID: str = ""  # Optional Bitly group GUID for organization
+
+    # TinyURL API Settings
+    TINYURL_API_TOKEN: str = ""  # TinyURL API token for link shortening
+
     HEROKU_APP_NAME: str = ""
     HEROKU_API_KEY: str = ""
 
@@ -1523,7 +1508,9 @@ class Config:
     CREDIT: str = (
         "Powered by @aimmirror"  # Credit text shown in status messages and RSS feeds
     )
-    OWNER_THUMB: str = "https://graph.org/file/80b7fb095063a18f9e232.jpg"  # Default thumbnail URL for owner
+    OWNER_THUMB: str = (
+        "https://graph.org/file/80b7fb095063a18f9e232.jpg"  # Default thumbnail URL for owner
+    )
 
     @classmethod
     def _convert(cls, key, value):

@@ -175,9 +175,11 @@ def update_user_ldata(user_id, key, value):
 
 DEFAULT_VALUES = {
     # Set default leech split size to max split size based on owner session premium status
-    "LEECH_SPLIT_SIZE": TgClient.MAX_SPLIT_SIZE
-    if hasattr(Config, "USER_SESSION_STRING") and Config.USER_SESSION_STRING
-    else 2097152000,
+    "LEECH_SPLIT_SIZE": (
+        TgClient.MAX_SPLIT_SIZE
+        if hasattr(Config, "USER_SESSION_STRING") and Config.USER_SESSION_STRING
+        else 2097152000
+    ),
     "RSS_DELAY": 600,
     "UPSTREAM_BRANCH": "main",
     "DEFAULT_UPLOAD": "rc",
@@ -386,7 +388,7 @@ DEFAULT_VALUES = {
     # Audio Watermark Settings
     "AUDIO_WATERMARK_VOLUME": 0.0,
     # Branding Settings
-    "CREDIT": "Powered by @aimmirror",
+    "CREDIT": Config.CREDIT,
     "OWNER_THUMB": "https://graph.org/file/80b7fb095063a18f9e232.jpg",
     "AUDIO_WATERMARK_INTERVAL": 0,
     # Subtitle Watermark Settings
@@ -897,9 +899,7 @@ async def get_buttons(key=None, edit_type=None, page=0, user_id=None):
                 # Store the current page in the callback data to ensure we return to the correct page
                 if "merge_config_page" in globals():
                     page = globals()["merge_config_page"]
-                    buttons.data_button(
-                        "Back", f"botset back_to_merge_config {page}"
-                    )
+                    buttons.data_button("Back", f"botset back_to_merge_config {page}")
                 else:
                     buttons.data_button("Back", "botset mediatools_merge_config")
             elif key in [
@@ -955,9 +955,7 @@ async def get_buttons(key=None, edit_type=None, page=0, user_id=None):
                 "TASK_MONITOR_ENABLED",
                 "TORRENT_ENABLED",
             }:
-                help_text = (
-                    "Send 'true' to enable or 'false' to disable this feature."
-                )
+                help_text = "Send 'true' to enable or 'false' to disable this feature."
             elif key == "WATERMARK_KEY":
                 help_text = """<b>Watermark Text Configuration</b>
 
@@ -1143,9 +1141,7 @@ Set to 0 to disable interval (watermark will be applied once).
                 "COMPRESSION_DOCUMENT_DPI",
                 "COMPRESSION_ARCHIVE_LEVEL",
             }:
-                help_text = (
-                    "Send an integer value.\n\n<b>Example:</b> <code>4</code>"
-                )
+                help_text = "Send an integer value.\n\n<b>Example:</b> <code>4</code>"
             elif key in {
                 "WATERMARK_COLOR",
                 "MERGE_VIDEO_PIXEL_FORMAT",
@@ -1519,22 +1515,16 @@ Send one of the following position options:
                 msg += "<b>Note:</b> Changes will take effect after saving.\n\n"
             elif key == "AUTO_RESTART_INTERVAL":
                 msg += "<b>Automatic Restart Interval</b>\n\n"
-                msg += (
-                    "Set the interval in hours between automatic bot restarts.\n\n"
-                )
+                msg += "Set the interval in hours between automatic bot restarts.\n\n"
                 msg += "<b>Example:</b> <code>24</code> (for daily restart)\n\n"
                 msg += "<b>Note:</b> Minimum value is 1 hour. Regular restarts can help maintain bot stability.\n\n"
             elif key == "STATUS_UPDATE_INTERVAL":
                 msg += "<b>Status Update Interval</b>\n\n"
-                msg += (
-                    "Set how frequently status messages are updated in seconds.\n\n"
-                )
+                msg += "Set how frequently status messages are updated in seconds.\n\n"
                 msg += "<b>Examples:</b>\n"
                 msg += "• <code>2</code> - Fast updates (may cause FloodWait)\n"
                 msg += "• <code>3</code> - Balanced (recommended)\n"
-                msg += (
-                    "• <code>5</code> - Slower updates (for high-traffic bots)\n\n"
-                )
+                msg += "• <code>5</code> - Slower updates (for high-traffic bots)\n\n"
                 msg += "<b>Note:</b> Minimum value is 2 seconds. Lower values may trigger Telegram rate limits.\n\n"
             elif key == "TRUECALLER_API_URL":
                 msg += "<b>Truecaller API URL</b>\n\n"
@@ -1549,9 +1539,7 @@ Send one of the following position options:
                 msg += "2. Register/login to your account\n"
                 msg += "3. Go to API section in your account settings\n"
                 msg += "4. Generate and copy your API key\n\n"
-                msg += (
-                    "<b>Example:</b> <code>your_debrid_link_api_key_here</code>\n\n"
-                )
+                msg += "<b>Example:</b> <code>your_debrid_link_api_key_here</code>\n\n"
                 msg += "<b>Supported sites include:</b> 1fichier, Rapidgator, Uploaded, Turbobit, Nitroflare, and 400+ more\n\n"
                 msg += "<b>Note:</b> This enables premium direct downloads from supported file hosting services.\n\n"
             # No special handling for MEDIA_TOOLS_ENABLED - it's now managed through the Media Tools menu
@@ -1724,7 +1712,7 @@ Send one of the following position options:
         filtered_keys.sort()
 
         for k in filtered_keys[start : 10 + start]:
-            if k == "DATABASE_URL" and state != "view":
+            if False and k == "DATABASE_URL" and state != "view":
                 continue
 
             # Always use editvar for Config variables to ensure consistent behavior
@@ -1761,9 +1749,7 @@ Send one of the following position options:
                 position="footer",
             )
 
-        msg = (
-            f"<b>Config Variables</b> | Page: {int(start / 10) + 1} | State: {state}"
-        )
+        msg = f"<b>Config Variables</b> | Page: {int(start / 10) + 1} | State: {state}"
     elif key == "private":
         # Get available private files
         available_files = await database.get_private_files()
@@ -2279,12 +2265,8 @@ Select a category above to configure AI settings. Each category contains related
 
         # Provider API URLs
         buttons.data_button("🌐 OpenAI API URL", "botset editvar OPENAI_API_URL")
-        buttons.data_button(
-            "🌐 Anthropic API URL", "botset editvar ANTHROPIC_API_URL"
-        )
-        buttons.data_button(
-            "🌐 Google AI API URL", "botset editvar GOOGLE_AI_API_URL"
-        )
+        buttons.data_button("🌐 Anthropic API URL", "botset editvar ANTHROPIC_API_URL")
+        buttons.data_button("🌐 Google AI API URL", "botset editvar GOOGLE_AI_API_URL")
         buttons.data_button("🌐 Groq API URL", "botset editvar GROQ_API_URL")
 
         # Legacy providers
@@ -2301,9 +2283,7 @@ Select a category above to configure AI settings. Each category contains related
         buttons.data_button("❌ Close", "botset close", "footer")
 
         # Get provider status
-        openai_key = (
-            "✅ Set" if getattr(Config, "OPENAI_API_KEY", "") else "❌ Not Set"
-        )
+        openai_key = "✅ Set" if getattr(Config, "OPENAI_API_KEY", "") else "❌ Not Set"
         anthropic_key = (
             "✅ Set" if getattr(Config, "ANTHROPIC_API_KEY", "") else "❌ Not Set"
         )
@@ -2597,9 +2577,7 @@ Select a category above to configure AI settings. Each category contains related
         voice_transcription_enabled = getattr(
             Config, "AI_VOICE_TRANSCRIPTION_ENABLED", True
         )
-        image_generation_enabled = getattr(
-            Config, "AI_IMAGE_GENERATION_ENABLED", True
-        )
+        image_generation_enabled = getattr(Config, "AI_IMAGE_GENERATION_ENABLED", True)
         document_processing_enabled = getattr(
             Config, "AI_DOCUMENT_PROCESSING_ENABLED", True
         )
@@ -2642,9 +2620,7 @@ Select a category above to configure AI settings. Each category contains related
         # Streamrip Settings section
         buttons.data_button("⚙️ General Settings", "botset streamrip_general")
         buttons.data_button("🎵 Quality & Codec", "botset streamrip_quality")
-        buttons.data_button(
-            "🔐 Platform Credentials", "botset streamrip_credentials"
-        )
+        buttons.data_button("🔐 Platform Credentials", "botset streamrip_credentials")
         buttons.data_button("📁 Download Settings", "botset streamrip_download")
         buttons.data_button("🎛️ Platform Settings", "botset streamrip_platforms")
         buttons.data_button("🗄️ Database Settings", "botset streamrip_database")
@@ -2665,9 +2641,7 @@ Select a category above to configure AI settings. Each category contains related
         ]
 
         for setting in general_settings:
-            display_name = (
-                setting.replace("STREAMRIP_", "").replace("_", " ").title()
-            )
+            display_name = setting.replace("STREAMRIP_", "").replace("_", " ").title()
 
             # For boolean settings, add toggle buttons with status
             if setting in ["STREAMRIP_ENABLED", "STREAMRIP_AUTO_CONVERT"]:
@@ -2694,9 +2668,7 @@ Select a category above to configure AI settings. Each category contains related
 
         # Get current general settings
         enabled = "✅ Enabled" if Config.STREAMRIP_ENABLED else "❌ Disabled"
-        auto_convert = (
-            "✅ Enabled" if Config.STREAMRIP_AUTO_CONVERT else "❌ Disabled"
-        )
+        auto_convert = "✅ Enabled" if Config.STREAMRIP_AUTO_CONVERT else "❌ Disabled"
 
         msg = f"""<b>🎵 Streamrip General Settings</b> | State: {state}
 
@@ -2721,9 +2693,7 @@ Other settings like concurrent downloads, search results, and database tracking 
         ]
 
         for setting in quality_settings:
-            display_name = (
-                setting.replace("STREAMRIP_", "").replace("_", " ").title()
-            )
+            display_name = setting.replace("STREAMRIP_", "").replace("_", " ").title()
 
             # For boolean settings, add toggle buttons with status
             if setting in ["STREAMRIP_QUALITY_FALLBACK_ENABLED"]:
@@ -2753,9 +2723,7 @@ Other settings like concurrent downloads, search results, and database tracking 
         fallback_quality = Config.STREAMRIP_FALLBACK_QUALITY or "2 (Default)"
         default_codec = Config.STREAMRIP_DEFAULT_CODEC or "flac (Default)"
         quality_fallback = (
-            "✅ Enabled"
-            if Config.STREAMRIP_QUALITY_FALLBACK_ENABLED
-            else "❌ Disabled"
+            "✅ Enabled" if Config.STREAMRIP_QUALITY_FALLBACK_ENABLED else "❌ Disabled"
         )
 
         msg = f"""<b>🎵 Streamrip Quality & Codec Settings</b> | State: {state}
@@ -2805,9 +2773,7 @@ Other settings like concurrent downloads, search results, and database tracking 
         ]
 
         for setting in credential_settings:
-            display_name = (
-                setting.replace("STREAMRIP_", "").replace("_", " ").title()
-            )
+            display_name = setting.replace("STREAMRIP_", "").replace("_", " ").title()
 
             # For boolean settings, add toggle buttons with status
             if setting.endswith("_ENABLED") or setting in [
@@ -2824,13 +2790,9 @@ Other settings like concurrent downloads, search results, and database tracking 
                 buttons.data_button(display_name, f"botset editvar {setting}")
 
         if state == "view":
-            buttons.data_button(
-                "✏️ Edit", "botset edit streamrip_credentials", "footer"
-            )
+            buttons.data_button("✏️ Edit", "botset edit streamrip_credentials", "footer")
         else:
-            buttons.data_button(
-                "👁️ View", "botset view streamrip_credentials", "footer"
-            )
+            buttons.data_button("👁️ View", "botset view streamrip_credentials", "footer")
 
         buttons.data_button(
             "🔄 Reset to Default", "botset default_streamrip_credentials", "footer"
@@ -2903,9 +2865,7 @@ All credentials are stored securely in the database and encrypted."""
         ]
 
         for setting in download_settings:
-            display_name = (
-                setting.replace("STREAMRIP_", "").replace("_", " ").title()
-            )
+            display_name = setting.replace("STREAMRIP_", "").replace("_", " ").title()
 
             # For boolean settings, add toggle buttons with status
             if setting in [
@@ -2989,9 +2949,7 @@ All credentials are stored securely in the database and encrypted."""
         ]
 
         for setting in advanced_settings:
-            display_name = (
-                setting.replace("STREAMRIP_", "").replace("_", " ").title()
-            )
+            display_name = setting.replace("STREAMRIP_", "").replace("_", " ").title()
 
             # For boolean settings, add toggle buttons with status
             if setting in [
@@ -3027,9 +2985,7 @@ All credentials are stored securely in the database and encrypted."""
         embed_cover = (
             "✅ Enabled" if Config.STREAMRIP_EMBED_COVER_ART else "❌ Disabled"
         )
-        save_cover = (
-            "✅ Enabled" if Config.STREAMRIP_SAVE_COVER_ART else "❌ Disabled"
-        )
+        save_cover = "✅ Enabled" if Config.STREAMRIP_SAVE_COVER_ART else "❌ Disabled"
         cover_size = Config.STREAMRIP_COVER_ART_SIZE or "large (Default)"
         embed_max_width = (
             Config.STREAMRIP_ARTWORK_EMBED_MAX_WIDTH
@@ -3066,9 +3022,7 @@ All credentials are stored securely in the database and encrypted."""
     elif key == "streamrip_config":
         # Config File Management
         buttons.data_button("📄 View Current Config", "botset view_streamrip_config")
-        buttons.data_button(
-            "📤 Upload Custom Config", "botset upload_streamrip_config"
-        )
+        buttons.data_button("📤 Upload Custom Config", "botset upload_streamrip_config")
         buttons.data_button("🔄 Reset to Default", "botset reset_streamrip_config")
 
         buttons.data_button("⬅️ Back", "botset streamrip", "footer")
@@ -3110,9 +3064,7 @@ Custom config files take precedence over bot settings. If you upload a custom co
         ]
 
         for setting in general_settings:
-            display_name = (
-                setting.replace("GALLERY_DL_", "").replace("_", " ").title()
-            )
+            display_name = setting.replace("GALLERY_DL_", "").replace("_", " ").title()
 
             # For boolean settings, add toggle buttons with status
             if setting in [
@@ -3194,9 +3146,7 @@ Gallery-dl supports 200+ platforms including Instagram, Twitter, Reddit, Pixiv, 
         ]
 
         for setting in auth_settings:
-            display_name = (
-                setting.replace("GALLERY_DL_", "").replace("_", " ").title()
-            )
+            display_name = setting.replace("GALLERY_DL_", "").replace("_", " ").title()
             buttons.data_button(display_name, f"botset editvar {setting}")
 
         if state == "view":
@@ -3239,9 +3189,7 @@ All credentials are stored securely in the database and encrypted."""
         ]
 
         for setting in download_settings:
-            display_name = (
-                setting.replace("GALLERY_DL_", "").replace("_", " ").title()
-            )
+            display_name = setting.replace("GALLERY_DL_", "").replace("_", " ").title()
             buttons.data_button(display_name, f"botset editvar {setting}")
 
         if state == "view":
@@ -3325,9 +3273,7 @@ Platform-specific authentication settings have been moved to the <b>Authenticati
         ]
 
         for setting in platform_settings:
-            display_name = (
-                setting.replace("STREAMRIP_", "").replace("_", " ").title()
-            )
+            display_name = setting.replace("STREAMRIP_", "").replace("_", " ").title()
 
             # For boolean settings, add toggle buttons with status
             if setting in [
@@ -3355,13 +3301,9 @@ Platform-specific authentication settings have been moved to the <b>Authenticati
                 buttons.data_button(display_name, f"botset editvar {setting}")
 
         if state == "view":
-            buttons.data_button(
-                "✏️ Edit", "botset edit streamrip_platforms", "footer"
-            )
+            buttons.data_button("✏️ Edit", "botset edit streamrip_platforms", "footer")
         else:
-            buttons.data_button(
-                "👁️ View", "botset view streamrip_platforms", "footer"
-            )
+            buttons.data_button("👁️ View", "botset view streamrip_platforms", "footer")
 
         buttons.data_button(
             "🔄 Reset to Default", "botset default_streamrip_platforms", "footer"
@@ -3371,9 +3313,7 @@ Platform-specific authentication settings have been moved to the <b>Authenticati
 
         # Get current platform settings
         qobuz_booklets = (
-            "✅ Enabled"
-            if Config.STREAMRIP_QOBUZ_DOWNLOAD_BOOKLETS
-            else "❌ Disabled"
+            "✅ Enabled" if Config.STREAMRIP_QOBUZ_DOWNLOAD_BOOKLETS else "❌ Disabled"
         )
         tidal_videos = (
             "✅ Enabled" if Config.STREAMRIP_TIDAL_DOWNLOAD_VIDEOS else "❌ Disabled"
@@ -3392,9 +3332,7 @@ Platform-specific authentication settings have been moved to the <b>Authenticati
         )
         youtube_quality = Config.STREAMRIP_YOUTUBE_QUALITY or 0
         youtube_videos = (
-            "✅ Enabled"
-            if Config.STREAMRIP_YOUTUBE_DOWNLOAD_VIDEOS
-            else "❌ Disabled"
+            "✅ Enabled" if Config.STREAMRIP_YOUTUBE_DOWNLOAD_VIDEOS else "❌ Disabled"
         )
         youtube_folder = Config.STREAMRIP_YOUTUBE_VIDEO_FOLDER or "Default"
         youtube_downloads_folder = (
@@ -3443,9 +3381,7 @@ Platform-specific settings for enhanced functionality and compatibility with dif
         ]
 
         for setting in database_settings:
-            display_name = (
-                setting.replace("STREAMRIP_", "").replace("_", " ").title()
-            )
+            display_name = setting.replace("STREAMRIP_", "").replace("_", " ").title()
 
             # For boolean settings, add toggle buttons with status
             if setting in [
@@ -3531,9 +3467,7 @@ Platform-specific settings for enhanced functionality and compatibility with dif
         ]
 
         for setting in conversion_settings:
-            display_name = (
-                setting.replace("STREAMRIP_", "").replace("_", " ").title()
-            )
+            display_name = setting.replace("STREAMRIP_", "").replace("_", " ").title()
 
             # For boolean settings, add toggle buttons with status
             if setting in ["STREAMRIP_CONVERSION_ENABLED"]:
@@ -3548,13 +3482,9 @@ Platform-specific settings for enhanced functionality and compatibility with dif
                 buttons.data_button(display_name, f"botset editvar {setting}")
 
         if state == "view":
-            buttons.data_button(
-                "✏️ Edit", "botset edit streamrip_conversion", "footer"
-            )
+            buttons.data_button("✏️ Edit", "botset edit streamrip_conversion", "footer")
         else:
-            buttons.data_button(
-                "👁️ View", "botset view streamrip_conversion", "footer"
-            )
+            buttons.data_button("👁️ View", "botset view streamrip_conversion", "footer")
 
         buttons.data_button(
             "🔄 Reset to Default", "botset default_streamrip_conversion", "footer"
@@ -3610,9 +3540,7 @@ Convert downloaded audio files to different formats and quality settings. Useful
         ]
 
         for setting in metadata_settings:
-            display_name = (
-                setting.replace("STREAMRIP_", "").replace("_", " ").title()
-            )
+            display_name = setting.replace("STREAMRIP_", "").replace("_", " ").title()
 
             # For boolean settings, add toggle buttons with status
             if setting in [
@@ -3685,9 +3613,7 @@ Metadata settings help customize how track information is handled during downloa
         ]
 
         for setting in cli_settings:
-            display_name = (
-                setting.replace("STREAMRIP_", "").replace("_", " ").title()
-            )
+            display_name = setting.replace("STREAMRIP_", "").replace("_", " ").title()
 
             # For boolean settings, add toggle buttons with status
             if setting in [
@@ -3723,13 +3649,9 @@ Metadata settings help customize how track information is handled during downloa
         progress_bars = (
             "✅ Enabled" if Config.STREAMRIP_CLI_PROGRESS_BARS else "❌ Disabled"
         )
-        max_search_results = (
-            Config.STREAMRIP_CLI_MAX_SEARCH_RESULTS or "100 (Default)"
-        )
+        max_search_results = Config.STREAMRIP_CLI_MAX_SEARCH_RESULTS or "100 (Default)"
         check_updates = (
-            "✅ Enabled"
-            if Config.STREAMRIP_MISC_CHECK_FOR_UPDATES
-            else "❌ Disabled"
+            "✅ Enabled" if Config.STREAMRIP_MISC_CHECK_FOR_UPDATES else "❌ Disabled"
         )
         version = Config.STREAMRIP_MISC_VERSION or "2.0.6 (Default)"
 
@@ -3809,18 +3731,14 @@ These settings primarily affect the streamrip CLI behavior and may not directly 
 
         # Get current general settings
         enabled = "✅ Enabled" if Config.ZOTIFY_ENABLED else "❌ Disabled"
-        real_time = (
-            "✅ Enabled" if Config.ZOTIFY_DOWNLOAD_REAL_TIME else "❌ Disabled"
-        )
+        real_time = "✅ Enabled" if Config.ZOTIFY_DOWNLOAD_REAL_TIME else "❌ Disabled"
         replace_existing = (
             "✅ Enabled" if Config.ZOTIFY_REPLACE_EXISTING else "❌ Disabled"
         )
         skip_duplicates = (
             "✅ Enabled" if Config.ZOTIFY_SKIP_DUPLICATES else "❌ Disabled"
         )
-        skip_previous = (
-            "✅ Enabled" if Config.ZOTIFY_SKIP_PREVIOUS else "❌ Disabled"
-        )
+        skip_previous = "✅ Enabled" if Config.ZOTIFY_SKIP_PREVIOUS else "❌ Disabled"
 
         msg = f"""<b>🎧 Zotify General Settings</b> | State: {state}
 
@@ -3912,9 +3830,7 @@ These are core Zotify settings that control the basic download behavior."""
             buttons.data_button(display_name, f"botset editvar {setting}")
 
         # Add credential management buttons
-        buttons.data_button(
-            "📤 Upload Credentials", "botset upload_zotify_credentials"
-        )
+        buttons.data_button("📤 Upload Credentials", "botset upload_zotify_credentials")
         buttons.data_button("🗑️ Clear Credentials", "botset clear_zotify_credentials")
 
         if state == "view":
@@ -3982,9 +3898,7 @@ Zotify requires Spotify Premium for high-quality downloads. The bot will handle 
         buttons.data_button("❌ Close", "botset close", "footer")
 
         # Get current path settings
-        album_library = (
-            Config.ZOTIFY_ALBUM_LIBRARY or "Music/Zotify Albums (Default)"
-        )
+        album_library = Config.ZOTIFY_ALBUM_LIBRARY or "Music/Zotify Albums (Default)"
         podcast_library = (
             Config.ZOTIFY_PODCAST_LIBRARY or "Music/Zotify Podcasts (Default)"
         )
@@ -4051,9 +3965,7 @@ These paths are relative to the bot's download directory. Each content type will
             Config.ZOTIFY_OUTPUT_PODCAST
             or "{podcast}/{episode_number} - {title} (Default)"
         )
-        single_template = (
-            Config.ZOTIFY_OUTPUT_SINGLE or "{artists} - {title} (Default)"
-        )
+        single_template = Config.ZOTIFY_OUTPUT_SINGLE or "{artists} - {title} (Default)"
 
         msg = f"""<b>🎧 Zotify Output Templates</b> | State: {state}
 
@@ -4112,16 +4024,12 @@ These templates control how files are named and organized within their respectiv
         buttons.data_button("❌ Close", "botset close", "footer")
 
         # Get current download settings
-        print_progress = (
-            "✅ Enabled" if Config.ZOTIFY_PRINT_PROGRESS else "❌ Disabled"
-        )
+        print_progress = "✅ Enabled" if Config.ZOTIFY_PRINT_PROGRESS else "❌ Disabled"
         print_downloads = (
             "✅ Enabled" if Config.ZOTIFY_PRINT_DOWNLOADS else "❌ Disabled"
         )
         print_errors = "✅ Enabled" if Config.ZOTIFY_PRINT_ERRORS else "❌ Disabled"
-        print_warnings = (
-            "✅ Enabled" if Config.ZOTIFY_PRINT_WARNINGS else "❌ Disabled"
-        )
+        print_warnings = "✅ Enabled" if Config.ZOTIFY_PRINT_WARNINGS else "❌ Disabled"
         print_skips = "✅ Enabled" if Config.ZOTIFY_PRINT_SKIPS else "❌ Disabled"
 
         msg = f"""<b>🎧 Zotify Download Settings</b> | State: {state}
@@ -4177,16 +4085,12 @@ These settings control the verbosity of Zotify's logging output during downloads
         buttons.data_button("❌ Close", "botset close", "footer")
 
         # Get current metadata settings
-        save_metadata = (
-            "✅ Enabled" if Config.ZOTIFY_SAVE_METADATA else "❌ Disabled"
-        )
+        save_metadata = "✅ Enabled" if Config.ZOTIFY_SAVE_METADATA else "❌ Disabled"
         save_genre = "✅ Enabled" if Config.ZOTIFY_SAVE_GENRE else "❌ Disabled"
         all_artists = "✅ Enabled" if Config.ZOTIFY_ALL_ARTISTS else "❌ Disabled"
         lyrics_file = "✅ Enabled" if Config.ZOTIFY_LYRICS_FILE else "❌ Disabled"
         lyrics_only = "✅ Enabled" if Config.ZOTIFY_LYRICS_ONLY else "❌ Disabled"
-        save_subtitles = (
-            "✅ Enabled" if Config.ZOTIFY_SAVE_SUBTITLES else "❌ Disabled"
-        )
+        save_subtitles = "✅ Enabled" if Config.ZOTIFY_SAVE_SUBTITLES else "❌ Disabled"
         create_playlist_file = (
             "✅ Enabled" if Config.ZOTIFY_CREATE_PLAYLIST_FILE else "❌ Disabled"
         )
@@ -4252,9 +4156,7 @@ These settings control what additional information is saved with downloaded cont
         ffmpeg_path = Config.ZOTIFY_FFMPEG_PATH or "xtra (Default)"
         ffmpeg_args = Config.ZOTIFY_FFMPEG_ARGS or "None (Default)"
         language = Config.ZOTIFY_LANGUAGE or "en (Default)"
-        match_existing = (
-            "✅ Enabled" if Config.ZOTIFY_MATCH_EXISTING else "❌ Disabled"
-        )
+        match_existing = "✅ Enabled" if Config.ZOTIFY_MATCH_EXISTING else "❌ Disabled"
 
         msg = f"""<b>🎧 Zotify Advanced Settings</b> | State: {state}
 
@@ -4292,9 +4194,7 @@ These are advanced settings that should only be modified if you understand their
 
         for setting in general_settings:
             display_name = (
-                setting.replace("YOUTUBE_UPLOAD_DEFAULT_", "")
-                .replace("_", " ")
-                .title()
+                setting.replace("YOUTUBE_UPLOAD_DEFAULT_", "").replace("_", " ").title()
             )
             buttons.data_button(display_name, f"botset editvar {setting}")
 
@@ -4499,9 +4399,7 @@ To generate a token, use the /dev/generate_yt_drive_token.py script."""
         buttons.data_button("🔐 Security Settings", "botset mega_security")
 
         # Add MEGA Search toggle
-        search_enabled = (
-            "✅ Enabled" if Config.MEGA_SEARCH_ENABLED else "❌ Disabled"
-        )
+        search_enabled = "✅ Enabled" if Config.MEGA_SEARCH_ENABLED else "❌ Disabled"
         buttons.data_button(
             f"🔍 MEGA Search: {search_enabled}",
             f"botset toggle MEGA_SEARCH_ENABLED {not Config.MEGA_SEARCH_ENABLED}",
@@ -4587,9 +4485,7 @@ To generate a token, use the /dev/generate_yt_drive_token.py script."""
             "✅ Enabled" if Config.MEDIA_SEARCH_ENABLED else "❌ Disabled"
         )
         rclone_enabled = "✅ Enabled" if Config.RCLONE_ENABLED else "❌ Disabled"
-        streamrip_enabled = (
-            "✅ Enabled" if Config.STREAMRIP_ENABLED else "❌ Disabled"
-        )
+        streamrip_enabled = "✅ Enabled" if Config.STREAMRIP_ENABLED else "❌ Disabled"
         gallery_dl_enabled = (
             "✅ Enabled" if Config.GALLERY_DL_ENABLED else "❌ Disabled"
         )
@@ -4602,9 +4498,7 @@ To generate a token, use the /dev/generate_yt_drive_token.py script."""
         )
         mega_enabled = "✅ Enabled" if Config.MEGA_ENABLED else "❌ Disabled"
         ddl_enabled = "✅ Enabled" if Config.DDL_ENABLED else "❌ Disabled"
-        file2link_enabled = (
-            "✅ Enabled" if Config.FILE2LINK_ENABLED else "❌ Disabled"
-        )
+        file2link_enabled = "✅ Enabled" if Config.FILE2LINK_ENABLED else "❌ Disabled"
         wrong_cmd_warnings_enabled = (
             "✅ Enabled" if Config.WRONG_CMD_WARNINGS_ENABLED else "❌ Disabled"
         )
@@ -4804,14 +4698,10 @@ To generate a token, use the /dev/generate_yt_drive_token.py script."""
             "⌛ Completion Threshold",
             f"{callback_prefix} TASK_MONITOR_COMPLETION_THRESHOLD",
         )
-        buttons.data_button(
-            "⏲️ Wait Time", f"{callback_prefix} TASK_MONITOR_WAIT_TIME"
-        )
+        buttons.data_button("⏲️ Wait Time", f"{callback_prefix} TASK_MONITOR_WAIT_TIME")
 
         # System resource thresholds
-        buttons.data_button(
-            "📈 CPU High", f"{callback_prefix} TASK_MONITOR_CPU_HIGH"
-        )
+        buttons.data_button("📈 CPU High", f"{callback_prefix} TASK_MONITOR_CPU_HIGH")
         buttons.data_button("📉 CPU Low", f"{callback_prefix} TASK_MONITOR_CPU_LOW")
         buttons.data_button(
             "📊 Memory High", f"{callback_prefix} TASK_MONITOR_MEMORY_HIGH"
@@ -4827,18 +4717,14 @@ To generate a token, use the /dev/generate_yt_drive_token.py script."""
         buttons.data_button("❌ Close", "botset close", "footer")
 
         # Get current task monitoring settings
-        monitor_enabled = (
-            "✅ Enabled" if Config.TASK_MONITOR_ENABLED else "❌ Disabled"
-        )
+        monitor_enabled = "✅ Enabled" if Config.TASK_MONITOR_ENABLED else "❌ Disabled"
         monitor_interval = f"{Config.TASK_MONITOR_INTERVAL} seconds"
         monitor_checks = str(Config.TASK_MONITOR_CONSECUTIVE_CHECKS)
         monitor_speed = f"{Config.TASK_MONITOR_SPEED_THRESHOLD} KB/s"
         monitor_elapsed = f"{Config.TASK_MONITOR_ELAPSED_THRESHOLD // 60} minutes"
         monitor_eta = f"{Config.TASK_MONITOR_ETA_THRESHOLD // 3600} hours"
         monitor_wait = f"{Config.TASK_MONITOR_WAIT_TIME // 60} minutes"
-        monitor_completion = (
-            f"{Config.TASK_MONITOR_COMPLETION_THRESHOLD // 3600} hours"
-        )
+        monitor_completion = f"{Config.TASK_MONITOR_COMPLETION_THRESHOLD // 3600} hours"
         monitor_cpu_high = f"{Config.TASK_MONITOR_CPU_HIGH}%"
         monitor_cpu_low = f"{Config.TASK_MONITOR_CPU_LOW}%"
         monitor_memory_high = f"{Config.TASK_MONITOR_MEMORY_HIGH}%"
@@ -4928,9 +4814,7 @@ These credentials are required for MEGA upload and clone operations."""
         ]
 
         for setting in upload_settings:
-            display_name = (
-                setting.replace("MEGA_UPLOAD_", "").replace("_", " ").title()
-            )
+            display_name = setting.replace("MEGA_UPLOAD_", "").replace("_", " ").title()
 
             # For boolean settings, add toggle buttons with status
             if setting in [
@@ -5041,9 +4925,7 @@ The following MEGA security features are <b>not supported</b> by MEGA SDK v4.8.0
             if (Config.STREAMTAPE_API_USERNAME and Config.STREAMTAPE_API_PASSWORD)
             else "❌ Not Set"
         )
-        devuploads_api_status = (
-            "✅ Set" if Config.DEVUPLOADS_API_KEY else "❌ Not Set"
-        )
+        devuploads_api_status = "✅ Set" if Config.DEVUPLOADS_API_KEY else "❌ Not Set"
         mediafire_api_status = (
             "✅ Set"
             if (
@@ -5208,9 +5090,7 @@ Get your API key from <a href="https://gofile.io/myProfile">Gofile Profile</a>""
         ]
 
         for setting in streamtape_settings:
-            display_name = (
-                setting.replace("STREAMTAPE_", "").replace("_", " ").title()
-            )
+            display_name = setting.replace("STREAMTAPE_", "").replace("_", " ").title()
             buttons.data_button(display_name, f"botset editvar {setting}")
 
         if state == "view":
@@ -5261,9 +5141,7 @@ Get your API credentials from <a href="https://streamtape.com/accpanel">Streamta
         ]
 
         for setting in devuploads_settings:
-            display_name = (
-                setting.replace("DEVUPLOADS_", "").replace("_", " ").title()
-            )
+            display_name = setting.replace("DEVUPLOADS_", "").replace("_", " ").title()
             buttons.data_button(display_name, f"botset editvar {setting}")
 
         # Toggle button for public files
@@ -5325,9 +5203,7 @@ Get your API key from <a href="https://devuploads.com/api">DevUploads API</a>"""
         ]
 
         for setting in mediafire_settings:
-            display_name = (
-                setting.replace("MEDIAFIRE_", "").replace("_", " ").title()
-            )
+            display_name = setting.replace("MEDIAFIRE_", "").replace("_", " ").title()
             buttons.data_button(display_name, f"botset editvar {setting}")
 
         if state == "view":
@@ -5501,9 +5377,7 @@ Email, Password, and App ID are required. API Key is optional for enhanced featu
         buttons.data_button("❌ Close", "botset close", "footer")
 
         # Get current watermark settings
-        watermark_enabled = (
-            "✅ Enabled" if Config.WATERMARK_ENABLED else "❌ Disabled"
-        )
+        watermark_enabled = "✅ Enabled" if Config.WATERMARK_ENABLED else "❌ Disabled"
         watermark_text = Config.WATERMARK_KEY or "None"
         watermark_position = Config.WATERMARK_POSITION or "top_left (Default)"
         watermark_size = Config.WATERMARK_SIZE or "20 (Default)"
@@ -5545,17 +5419,13 @@ Email, Password, and App ID are required. API Key is optional for enhanced featu
         watermark_speed = getattr(Config, "WATERMARK_SPEED", "None (Default)")
 
         # Get audio and subtitle interval values
-        audio_interval = getattr(
-            Config, "AUDIO_WATERMARK_INTERVAL", "None (Default)"
-        )
+        audio_interval = getattr(Config, "AUDIO_WATERMARK_INTERVAL", "None (Default)")
         subtitle_interval = getattr(
             Config, "SUBTITLE_WATERMARK_INTERVAL", "None (Default)"
         )
 
         # Get subtitle style
-        subtitle_style = getattr(
-            Config, "SUBTITLE_WATERMARK_STYLE", "None (Default)"
-        )
+        subtitle_style = getattr(Config, "SUBTITLE_WATERMARK_STYLE", "None (Default)")
 
         # Get image watermark settings
         image_watermark_enabled = (
@@ -5564,9 +5434,7 @@ Email, Password, and App ID are required. API Key is optional for enhanced featu
             else "❌ Disabled"
         )
         image_watermark_path = getattr(Config, "IMAGE_WATERMARK_PATH", "None")
-        image_watermark_scale = getattr(
-            Config, "IMAGE_WATERMARK_SCALE", "10 (Default)"
-        )
+        image_watermark_scale = getattr(Config, "IMAGE_WATERMARK_SCALE", "10 (Default)")
         image_watermark_opacity = getattr(
             Config, "IMAGE_WATERMARK_OPACITY", "1.0 (Default)"
         )
@@ -5678,9 +5546,7 @@ Email, Password, and App ID are required. API Key is optional for enhanced featu
             if setting.startswith("AUDIO_WATERMARK_"):
                 display_name = (
                     "Audio "
-                    + setting.replace("AUDIO_WATERMARK_", "")
-                    .replace("_", " ")
-                    .title()
+                    + setting.replace("AUDIO_WATERMARK_", "").replace("_", " ").title()
                 )
             elif setting.startswith("SUBTITLE_WATERMARK_"):
                 display_name = (
@@ -5692,9 +5558,7 @@ Email, Password, and App ID are required. API Key is optional for enhanced featu
             elif setting.startswith("IMAGE_WATERMARK_"):
                 display_name = (
                     "Image "
-                    + setting.replace("IMAGE_WATERMARK_", "")
-                    .replace("_", " ")
-                    .title()
+                    + setting.replace("IMAGE_WATERMARK_", "").replace("_", " ").title()
                 )
             else:
                 display_name = (
@@ -5752,9 +5616,7 @@ Email, Password, and App ID are required. API Key is optional for enhanced featu
         watermark_speed = getattr(Config, "WATERMARK_SPEED", "None (Default)")
 
         # Image watermark settings
-        image_watermark_scale = getattr(
-            Config, "IMAGE_WATERMARK_SCALE", "10 (Default)"
-        )
+        image_watermark_scale = getattr(Config, "IMAGE_WATERMARK_SCALE", "10 (Default)")
         image_watermark_position = getattr(
             Config, "IMAGE_WATERMARK_POSITION", "bottom_right (Default)"
         )
@@ -5798,13 +5660,11 @@ Email, Password, and App ID are required. API Key is optional for enhanced featu
         ):
             categories.append("Performance")
         if any(
-            setting.startswith("IMAGE_WATERMARK_")
-            for setting in current_page_settings
+            setting.startswith("IMAGE_WATERMARK_") for setting in current_page_settings
         ):
             categories.append("Image")
         if any(
-            setting.startswith("AUDIO_WATERMARK_")
-            for setting in current_page_settings
+            setting.startswith("AUDIO_WATERMARK_") for setting in current_page_settings
         ):
             categories.append("Audio")
         if any(
@@ -6036,9 +5896,7 @@ Current page shows: {category_text} settings."""
                 display_name = f"{prefix} Remove Original"
             else:
                 prefix = "⚙️"
-                display_name = (
-                    setting.replace("MERGE_", "").replace("_", " ").title()
-                )
+                display_name = setting.replace("MERGE_", "").replace("_", " ").title()
                 display_name = f"{prefix} {display_name}"
 
             # For boolean settings, add toggle buttons with status
@@ -6078,13 +5936,9 @@ Current page shows: {category_text} settings."""
             for i in range(total_pages):
                 # Make the current page button different
                 if i == current_page:
-                    buttons.data_button(
-                        f"[{i + 1}]", f"botset start_merge {i}", "page"
-                    )
+                    buttons.data_button(f"[{i + 1}]", f"botset start_merge {i}", "page")
                 else:
-                    buttons.data_button(
-                        str(i + 1), f"botset start_merge {i}", "page"
-                    )
+                    buttons.data_button(str(i + 1), f"botset start_merge {i}", "page")
 
             # Add a debug log message# Get current merge settings
         merge_enabled = "✅ Enabled" if Config.MERGE_ENABLED else "❌ Disabled"
@@ -6110,25 +5964,21 @@ Current page shows: {category_text} settings."""
         # Get the categories shown on the current page
         categories = []
         if any(
-            setting in general_settings
-            for setting in merge_settings[start_idx:end_idx]
+            setting in general_settings for setting in merge_settings[start_idx:end_idx]
         ):
             categories.append("General")
         if any(setting in formats for setting in merge_settings[start_idx:end_idx]):
             categories.append("Formats")
         if any(
-            setting in video_settings
-            for setting in merge_settings[start_idx:end_idx]
+            setting in video_settings for setting in merge_settings[start_idx:end_idx]
         ):
             categories.append("Video")
         if any(
-            setting in audio_settings
-            for setting in merge_settings[start_idx:end_idx]
+            setting in audio_settings for setting in merge_settings[start_idx:end_idx]
         ):
             categories.append("Audio")
         if any(
-            setting in image_settings
-            for setting in merge_settings[start_idx:end_idx]
+            setting in image_settings for setting in merge_settings[start_idx:end_idx]
         ):
             categories.append("Image")
         if any(
@@ -6259,9 +6109,7 @@ Current page shows: {category_text} settings."""
                 prefix = "💬"
                 display_name = (
                     f"{prefix} Subtitle "
-                    + setting.replace("EXTRACT_SUBTITLE_", "")
-                    .replace("_", " ")
-                    .title()
+                    + setting.replace("EXTRACT_SUBTITLE_", "").replace("_", " ").title()
                 )
             elif setting.startswith("EXTRACT_ATTACHMENT_"):
                 prefix = "📎"
@@ -6327,9 +6175,7 @@ Current page shows: {category_text} settings."""
         else:
             buttons.data_button("👁️ View", "botset view mediatools_extract", "footer")
 
-        buttons.data_button(
-            "🔄 Reset to Default", "botset default_extract", "footer"
-        )
+        buttons.data_button("🔄 Reset to Default", "botset default_extract", "footer")
 
         buttons.data_button("⬅️ Back", "botset mediatools", "footer")
         buttons.data_button("❌ Close", "botset close", "footer")
@@ -6342,9 +6188,7 @@ Current page shows: {category_text} settings."""
         )
 
         # Video settings
-        video_enabled = (
-            "✅ Enabled" if Config.EXTRACT_VIDEO_ENABLED else "❌ Disabled"
-        )
+        video_enabled = "✅ Enabled" if Config.EXTRACT_VIDEO_ENABLED else "❌ Disabled"
         video_codec = Config.EXTRACT_VIDEO_CODEC or "None"
         video_format = Config.EXTRACT_VIDEO_FORMAT or "None"
         video_index = Config.EXTRACT_VIDEO_INDEX or "All"
@@ -6355,9 +6199,7 @@ Current page shows: {category_text} settings."""
         video_fps = Config.EXTRACT_VIDEO_FPS or "None"
 
         # Audio settings
-        audio_enabled = (
-            "✅ Enabled" if Config.EXTRACT_AUDIO_ENABLED else "❌ Disabled"
-        )
+        audio_enabled = "✅ Enabled" if Config.EXTRACT_AUDIO_ENABLED else "❌ Disabled"
         audio_codec = Config.EXTRACT_AUDIO_CODEC or "None"
         audio_format = Config.EXTRACT_AUDIO_FORMAT or "None"
         audio_index = Config.EXTRACT_AUDIO_INDEX or "All"
@@ -6532,9 +6374,7 @@ Configure global extract settings that will be used when user settings are not a
                 prefix = "📝"
                 display_name = (
                     f"{prefix} Subtitle "
-                    + setting.replace("REMOVE_SUBTITLE_", "")
-                    .replace("_", " ")
-                    .title()
+                    + setting.replace("REMOVE_SUBTITLE_", "").replace("_", " ").title()
                 )
             elif setting.startswith("REMOVE_ATTACHMENT_"):
                 prefix = "📎"
@@ -6546,9 +6386,7 @@ Configure global extract settings that will be used when user settings are not a
                 )
             else:
                 # General settings
-                display_name = (
-                    setting.replace("REMOVE_", "").replace("_", " ").title()
-                )
+                display_name = setting.replace("REMOVE_", "").replace("_", " ").title()
 
             # For boolean settings, add toggle buttons with status
             if setting.endswith("_ENABLED") or setting in [
@@ -6588,9 +6426,7 @@ Configure global extract settings that will be used when user settings are not a
         )
 
         # Video remove settings
-        video_enabled = (
-            "✅ Enabled" if Config.REMOVE_VIDEO_ENABLED else "❌ Disabled"
-        )
+        video_enabled = "✅ Enabled" if Config.REMOVE_VIDEO_ENABLED else "❌ Disabled"
         video_codec = Config.REMOVE_VIDEO_CODEC or "None"
         video_format = Config.REMOVE_VIDEO_FORMAT or "None"
         video_index = Config.REMOVE_VIDEO_INDEX or "All"
@@ -6601,9 +6437,7 @@ Configure global extract settings that will be used when user settings are not a
         video_fps = Config.REMOVE_VIDEO_FPS or "None"
 
         # Audio remove settings
-        audio_enabled = (
-            "✅ Enabled" if Config.REMOVE_AUDIO_ENABLED else "❌ Disabled"
-        )
+        audio_enabled = "✅ Enabled" if Config.REMOVE_AUDIO_ENABLED else "❌ Disabled"
         audio_codec = Config.REMOVE_AUDIO_CODEC or "None"
         audio_format = Config.REMOVE_AUDIO_FORMAT or "None"
         audio_index = Config.REMOVE_AUDIO_INDEX or "All"
@@ -6775,9 +6609,7 @@ Configure global remove settings that will be used when user settings are not av
             elif setting.startswith("ADD_ATTACHMENT_"):
                 display_name = (
                     "Attachment "
-                    + setting.replace("ADD_ATTACHMENT_", "")
-                    .replace("_", " ")
-                    .title()
+                    + setting.replace("ADD_ATTACHMENT_", "").replace("_", " ").title()
                 )
             else:
                 display_name = setting.replace("ADD_", "").replace("_", " ").title()
@@ -7261,9 +7093,7 @@ Configure global swap settings that will be used when user settings are not avai
         subtitle_format = Config.TRIM_SUBTITLE_FORMAT or "None"
 
         # Archive settings
-        archive_enabled = (
-            "✅ Enabled" if Config.TRIM_ARCHIVE_ENABLED else "❌ Disabled"
-        )
+        archive_enabled = "✅ Enabled" if Config.TRIM_ARCHIVE_ENABLED else "❌ Disabled"
         archive_format = Config.TRIM_ARCHIVE_FORMAT or "None"
 
         msg = f"""<b>Trim Settings</b> | State: {state}
@@ -7402,9 +7232,7 @@ Configure global trim settings that will be used when user settings are not avai
             elif setting.startswith("EXTRACT_SUBTITLE_"):
                 display_name = (
                     "Subtitle "
-                    + setting.replace("EXTRACT_SUBTITLE_", "")
-                    .replace("_", " ")
-                    .title()
+                    + setting.replace("EXTRACT_SUBTITLE_", "").replace("_", " ").title()
                 )
             elif setting.startswith("EXTRACT_ATTACHMENT_"):
                 display_name = (
@@ -7414,9 +7242,7 @@ Configure global trim settings that will be used when user settings are not avai
                     .title()
                 )
             else:
-                display_name = (
-                    setting.replace("EXTRACT_", "").replace("_", " ").title()
-                )
+                display_name = setting.replace("EXTRACT_", "").replace("_", " ").title()
 
             # For boolean settings, add toggle buttons
             if setting in [
@@ -7477,9 +7303,7 @@ Configure global trim settings that will be used when user settings are not avai
         )
 
         # Video settings
-        video_enabled = (
-            "✅ Enabled" if Config.EXTRACT_VIDEO_ENABLED else "❌ Disabled"
-        )
+        video_enabled = "✅ Enabled" if Config.EXTRACT_VIDEO_ENABLED else "❌ Disabled"
         video_codec = Config.EXTRACT_VIDEO_CODEC or "None"
         video_format = Config.EXTRACT_VIDEO_FORMAT or "None"
         video_index = Config.EXTRACT_VIDEO_INDEX or "All"
@@ -7490,9 +7314,7 @@ Configure global trim settings that will be used when user settings are not avai
         video_fps = Config.EXTRACT_VIDEO_FPS or "None"
 
         # Audio settings
-        audio_enabled = (
-            "✅ Enabled" if Config.EXTRACT_AUDIO_ENABLED else "❌ Disabled"
-        )
+        audio_enabled = "✅ Enabled" if Config.EXTRACT_AUDIO_ENABLED else "❌ Disabled"
         audio_codec = Config.EXTRACT_AUDIO_CODEC or "None"
         audio_format = Config.EXTRACT_AUDIO_FORMAT or "None"
         audio_index = Config.EXTRACT_AUDIO_INDEX or "All"
@@ -7999,28 +7821,20 @@ Configure global compression settings that will be used when user settings are n
             elif setting.startswith("CONVERT_SUBTITLE_"):
                 display_name = (
                     "Subtitle "
-                    + setting.replace("CONVERT_SUBTITLE_", "")
-                    .replace("_", " ")
-                    .title()
+                    + setting.replace("CONVERT_SUBTITLE_", "").replace("_", " ").title()
                 )
             elif setting.startswith("CONVERT_DOCUMENT_"):
                 display_name = (
                     "Document "
-                    + setting.replace("CONVERT_DOCUMENT_", "")
-                    .replace("_", " ")
-                    .title()
+                    + setting.replace("CONVERT_DOCUMENT_", "").replace("_", " ").title()
                 )
             elif setting.startswith("CONVERT_ARCHIVE_"):
                 display_name = (
                     "Archive "
-                    + setting.replace("CONVERT_ARCHIVE_", "")
-                    .replace("_", " ")
-                    .title()
+                    + setting.replace("CONVERT_ARCHIVE_", "").replace("_", " ").title()
                 )
             else:
-                display_name = (
-                    setting.replace("CONVERT_", "").replace("_", " ").title()
-                )
+                display_name = setting.replace("CONVERT_", "").replace("_", " ").title()
 
             # For boolean settings, add toggle buttons
             if setting in [
@@ -8082,9 +7896,7 @@ Configure global compression settings that will be used when user settings are n
         )
 
         # Video settings
-        video_enabled = (
-            "✅ Enabled" if Config.CONVERT_VIDEO_ENABLED else "❌ Disabled"
-        )
+        video_enabled = "✅ Enabled" if Config.CONVERT_VIDEO_ENABLED else "❌ Disabled"
         video_format = Config.CONVERT_VIDEO_FORMAT
         video_codec = Config.CONVERT_VIDEO_CODEC
         video_quality = Config.CONVERT_VIDEO_QUALITY
@@ -8097,9 +7909,7 @@ Configure global compression settings that will be used when user settings are n
         video_fps = Config.CONVERT_VIDEO_FPS
 
         # Audio settings
-        audio_enabled = (
-            "✅ Enabled" if Config.CONVERT_AUDIO_ENABLED else "❌ Disabled"
-        )
+        audio_enabled = "✅ Enabled" if Config.CONVERT_AUDIO_ENABLED else "❌ Disabled"
         audio_format = Config.CONVERT_AUDIO_FORMAT
         audio_codec = Config.CONVERT_AUDIO_CODEC
         audio_bitrate = Config.CONVERT_AUDIO_BITRATE
@@ -8233,13 +8043,9 @@ Configure global convert settings that will be used when user settings are not a
             if setting == "METADATA_ALL":
                 display_name = "All Fields"
             elif setting.startswith("METADATA_VIDEO_"):
-                display_name = (
-                    "Video " + setting.replace("METADATA_VIDEO_", "").title()
-                )
+                display_name = "Video " + setting.replace("METADATA_VIDEO_", "").title()
             elif setting.startswith("METADATA_AUDIO_"):
-                display_name = (
-                    "Audio " + setting.replace("METADATA_AUDIO_", "").title()
-                )
+                display_name = "Audio " + setting.replace("METADATA_AUDIO_", "").title()
             elif setting.startswith("METADATA_SUBTITLE_"):
                 display_name = (
                     "Subtitle " + setting.replace("METADATA_SUBTITLE_", "").title()
@@ -8413,13 +8219,9 @@ Configure global metadata settings that will be used when user settings are not 
 
         # Add action buttons in a separate row
         if state == "view":
-            buttons.data_button(
-                "Edit", "botset edit mediatools_merge_config", "footer"
-            )
+            buttons.data_button("Edit", "botset edit mediatools_merge_config", "footer")
         else:
-            buttons.data_button(
-                "View", "botset view mediatools_merge_config", "footer"
-            )
+            buttons.data_button("View", "botset view mediatools_merge_config", "footer")
 
         # Add Default button
         buttons.data_button("Default", "botset default_merge_config", "footer")
@@ -8477,16 +8279,14 @@ Configure global metadata settings that will be used when user settings are not 
             or DEFAULT_VALUES["MERGE_VIDEO_PRESET"] + " (Default)"
         )
         video_crf = (
-            Config.MERGE_VIDEO_CRF
-            or DEFAULT_VALUES["MERGE_VIDEO_CRF"] + " (Default)"
+            Config.MERGE_VIDEO_CRF or DEFAULT_VALUES["MERGE_VIDEO_CRF"] + " (Default)"
         )
         video_pixel_format = (
             Config.MERGE_VIDEO_PIXEL_FORMAT
             or DEFAULT_VALUES["MERGE_VIDEO_PIXEL_FORMAT"] + " (Default)"
         )
         video_tune = (
-            Config.MERGE_VIDEO_TUNE
-            or DEFAULT_VALUES["MERGE_VIDEO_TUNE"] + " (Default)"
+            Config.MERGE_VIDEO_TUNE or DEFAULT_VALUES["MERGE_VIDEO_TUNE"] + " (Default)"
         )
         video_faststart = "Enabled" if Config.MERGE_VIDEO_FASTSTART else "Disabled"
 
@@ -8514,8 +8314,7 @@ Configure global metadata settings that will be used when user settings are not 
 
         # Image settings
         image_mode = (
-            Config.MERGE_IMAGE_MODE
-            or DEFAULT_VALUES["MERGE_IMAGE_MODE"] + " (Default)"
+            Config.MERGE_IMAGE_MODE or DEFAULT_VALUES["MERGE_IMAGE_MODE"] + " (Default)"
         )
         image_columns = (
             Config.MERGE_IMAGE_COLUMNS
@@ -8526,8 +8325,7 @@ Configure global metadata settings that will be used when user settings are not 
             or str(DEFAULT_VALUES["MERGE_IMAGE_QUALITY"]) + " (Default)"
         )
         image_dpi = (
-            Config.MERGE_IMAGE_DPI
-            or DEFAULT_VALUES["MERGE_IMAGE_DPI"] + " (Default)"
+            Config.MERGE_IMAGE_DPI or DEFAULT_VALUES["MERGE_IMAGE_DPI"] + " (Default)"
         )
         image_resize = (
             Config.MERGE_IMAGE_RESIZE
@@ -8647,8 +8445,7 @@ Configure advanced merge settings that will be used when user settings are not a
         # Get the categories shown on the current page
         categories = []
         if any(
-            setting in formats
-            for setting in merge_config_settings[start_idx:end_idx]
+            setting in formats for setting in merge_config_settings[start_idx:end_idx]
         ):
             categories.append("Formats")
         if any(
@@ -9206,9 +9003,7 @@ async def handle_image_upload(_, message, pre_message):
         if is_owner:
             # If this is an owner upload, update the owner's document
             # This will be used as a fallback for all users
-            await database.update_user_doc(
-                user_id, "IMAGE_WATERMARK", None, img_data
-            )
+            await database.update_user_doc(user_id, "IMAGE_WATERMARK", None, img_data)
 
             # Also update the Config.IMAGE_WATERMARK_PATH to indicate we have an owner watermark
             Config.IMAGE_WATERMARK_PATH = "Added"
@@ -9486,9 +9281,7 @@ async def edit_variable(_, message, pre_message, key):
             # Check if we need to return to a specific page in watermark_text
             if pre_message.text and "Page:" in pre_message.text:
                 try:
-                    page_info = (
-                        pre_message.text.split("Page:")[1].strip().split("/")[0]
-                    )
+                    page_info = pre_message.text.split("Page:")[1].strip().split("/")[0]
                     page_no = int(page_info) - 1
                     # Set the global watermark_text_page variable to ensure we return to the correct page
                     globals()["watermark_text_page"] = page_no
@@ -9542,9 +9335,7 @@ async def edit_variable(_, message, pre_message, key):
             # Check if we need to return to a specific page in mediatools_merge_config
             if pre_message.text and "Page:" in pre_message.text:
                 try:
-                    page_info = (
-                        pre_message.text.split("Page:")[1].strip().split("/")[0]
-                    )
+                    page_info = pre_message.text.split("Page:")[1].strip().split("/")[0]
                     page_no = int(page_info) - 1
                     # Set the global merge_config_page variable to ensure we return to the correct page
                     globals()["merge_config_page"] = page_no
@@ -9565,9 +9356,7 @@ async def edit_variable(_, message, pre_message, key):
             # Check if we need to return to a specific page in mediatools_merge
             if pre_message.text and "Page:" in pre_message.text:
                 try:
-                    page_info = (
-                        pre_message.text.split("Page:")[1].strip().split("/")[0]
-                    )
+                    page_info = pre_message.text.split("Page:")[1].strip().split("/")[0]
                     page_no = int(page_info) - 1
                     # Set the global merge_page variable to ensure we return to the correct page
                     globals()["merge_page"] = page_no
@@ -9580,9 +9369,7 @@ async def edit_variable(_, message, pre_message, key):
             # Check if we need to return to a specific page in mediatools_merge
             if pre_message.text and "Page:" in pre_message.text:
                 try:
-                    page_info = (
-                        pre_message.text.split("Page:")[1].strip().split("/")[0]
-                    )
+                    page_info = pre_message.text.split("Page:")[1].strip().split("/")[0]
                     page_no = int(page_info) - 1
                     # Set the global merge_page variable to ensure we return to the correct page
                     globals()["merge_page"] = page_no
@@ -9773,9 +9560,7 @@ async def edit_variable(_, message, pre_message, key):
     elif key == "BASE_URL_PORT":
         # Kill any running web server
         with contextlib.suppress(Exception):
-            await (
-                await create_subprocess_exec("pkill", "-9", "-f", "gunicorn")
-            ).wait()
+            await (await create_subprocess_exec("pkill", "-9", "-f", "gunicorn")).wait()
 
         # Only start web server if port is not 0
         if value != 0:
@@ -10086,9 +9871,7 @@ async def handle_watermark_image_upload(_, message):
                 await update_buttons(original_message, "mediatools_watermark")
             elif message.reply_to_message:
                 # Fallback to reply_to_message if available
-                await update_buttons(
-                    message.reply_to_message, "mediatools_watermark"
-                )
+                await update_buttons(message.reply_to_message, "mediatools_watermark")
 
         elif doc := message.document:
             # For document uploads (files)
@@ -10192,9 +9975,7 @@ async def handle_watermark_image_upload(_, message):
                 await update_buttons(original_message, "mediatools_watermark")
             elif message.reply_to_message:
                 # Fallback to reply_to_message if available
-                await update_buttons(
-                    message.reply_to_message, "mediatools_watermark"
-                )
+                await update_buttons(message.reply_to_message, "mediatools_watermark")
 
     except Exception as e:
         error_msg = await send_message(
@@ -10242,9 +10023,7 @@ async def update_private_file(_, message, pre_message):
         elif file_name in [".netrc", "netrc"]:
             await (await create_subprocess_exec("touch", ".netrc")).wait()
             await (await create_subprocess_exec("chmod", "600", ".netrc")).wait()
-            await (
-                await create_subprocess_exec("cp", ".netrc", "/root/.netrc")
-            ).wait()
+            await (await create_subprocess_exec("cp", ".netrc", "/root/.netrc")).wait()
         elif file_name == "streamrip_config.toml":
             # Handle streamrip config deletion - use same logic as dedicated streamrip config reset
             try:
@@ -10257,9 +10036,7 @@ async def update_private_file(_, message, pre_message):
                 if success:
                     # Reinitialize streamrip config to use default settings
                     await streamrip_config.initialize()
-                    LOGGER.info(
-                        "Streamrip custom config deleted, reverted to default"
-                    )
+                    LOGGER.info("Streamrip custom config deleted, reverted to default")
                 else:
                     LOGGER.error("Failed to delete streamrip config from database")
 
@@ -10355,9 +10132,7 @@ async def update_private_file(_, message, pre_message):
                 await rename("netrc", ".netrc")
                 file_name = ".netrc"
             await (await create_subprocess_exec("chmod", "600", ".netrc")).wait()
-            await (
-                await create_subprocess_exec("cp", ".netrc", "/root/.netrc")
-            ).wait()
+            await (await create_subprocess_exec("cp", ".netrc", "/root/.netrc")).wait()
         elif file_name == "config.py":
             await load_config()
         elif file_name == "streamrip_config.toml":
@@ -10791,9 +10566,7 @@ async def edit_bot_settings(client, query):
 
         # Check if zotify is enabled
         if not Config.ZOTIFY_ENABLED:
-            await query.answer(
-                "Zotify is disabled by the bot owner.", show_alert=True
-            )
+            await query.answer("Zotify is disabled by the bot owner.", show_alert=True)
             return
 
         # Set the state back to what it was
@@ -10888,9 +10661,7 @@ async def edit_bot_settings(client, query):
 
         # Check if zotify is enabled
         if not Config.ZOTIFY_ENABLED:
-            await query.answer(
-                "Zotify is disabled by the bot owner.", show_alert=True
-            )
+            await query.answer("Zotify is disabled by the bot owner.", show_alert=True)
             return
 
         # Set the state back to what it was
@@ -11154,9 +10925,7 @@ async def edit_bot_settings(client, query):
 
         # Check if zotify is enabled
         if not Config.ZOTIFY_ENABLED:
-            await query.answer(
-                "Zotify is disabled by the bot owner.", show_alert=True
-            )
+            await query.answer("Zotify is disabled by the bot owner.", show_alert=True)
             return
 
         # Set up handler for credentials file upload
@@ -11200,9 +10969,7 @@ async def edit_bot_settings(client, query):
 
         # Check if zotify is enabled
         if not Config.ZOTIFY_ENABLED:
-            await query.answer(
-                "Zotify is disabled by the bot owner.", show_alert=True
-            )
+            await query.answer("Zotify is disabled by the bot owner.", show_alert=True)
             return
 
         try:
@@ -11914,9 +11681,7 @@ async def edit_bot_settings(client, query):
         ]  # This is True by default
 
         # Video compression settings
-        Config.COMPRESSION_VIDEO_ENABLED = DEFAULT_VALUES[
-            "COMPRESSION_VIDEO_ENABLED"
-        ]
+        Config.COMPRESSION_VIDEO_ENABLED = DEFAULT_VALUES["COMPRESSION_VIDEO_ENABLED"]
         Config.COMPRESSION_VIDEO_PRESET = DEFAULT_VALUES["COMPRESSION_VIDEO_PRESET"]
         Config.COMPRESSION_VIDEO_CRF = DEFAULT_VALUES["COMPRESSION_VIDEO_CRF"]
         Config.COMPRESSION_VIDEO_CODEC = DEFAULT_VALUES["COMPRESSION_VIDEO_CODEC"]
@@ -11926,26 +11691,16 @@ async def edit_bot_settings(client, query):
         ]
 
         # Audio compression settings
-        Config.COMPRESSION_AUDIO_ENABLED = DEFAULT_VALUES[
-            "COMPRESSION_AUDIO_ENABLED"
-        ]
+        Config.COMPRESSION_AUDIO_ENABLED = DEFAULT_VALUES["COMPRESSION_AUDIO_ENABLED"]
         Config.COMPRESSION_AUDIO_PRESET = DEFAULT_VALUES["COMPRESSION_AUDIO_PRESET"]
         Config.COMPRESSION_AUDIO_CODEC = DEFAULT_VALUES["COMPRESSION_AUDIO_CODEC"]
-        Config.COMPRESSION_AUDIO_BITRATE = DEFAULT_VALUES[
-            "COMPRESSION_AUDIO_BITRATE"
-        ]
-        Config.COMPRESSION_AUDIO_CHANNELS = DEFAULT_VALUES[
-            "COMPRESSION_AUDIO_CHANNELS"
-        ]
+        Config.COMPRESSION_AUDIO_BITRATE = DEFAULT_VALUES["COMPRESSION_AUDIO_BITRATE"]
+        Config.COMPRESSION_AUDIO_CHANNELS = DEFAULT_VALUES["COMPRESSION_AUDIO_CHANNELS"]
 
         # Image compression settings
-        Config.COMPRESSION_IMAGE_ENABLED = DEFAULT_VALUES[
-            "COMPRESSION_IMAGE_ENABLED"
-        ]
+        Config.COMPRESSION_IMAGE_ENABLED = DEFAULT_VALUES["COMPRESSION_IMAGE_ENABLED"]
         Config.COMPRESSION_IMAGE_PRESET = DEFAULT_VALUES["COMPRESSION_IMAGE_PRESET"]
-        Config.COMPRESSION_IMAGE_QUALITY = DEFAULT_VALUES[
-            "COMPRESSION_IMAGE_QUALITY"
-        ]
+        Config.COMPRESSION_IMAGE_QUALITY = DEFAULT_VALUES["COMPRESSION_IMAGE_QUALITY"]
         Config.COMPRESSION_IMAGE_RESIZE = DEFAULT_VALUES["COMPRESSION_IMAGE_RESIZE"]
 
         # Document compression settings
@@ -11972,15 +11727,9 @@ async def edit_bot_settings(client, query):
         Config.COMPRESSION_ARCHIVE_ENABLED = DEFAULT_VALUES[
             "COMPRESSION_ARCHIVE_ENABLED"
         ]
-        Config.COMPRESSION_ARCHIVE_PRESET = DEFAULT_VALUES[
-            "COMPRESSION_ARCHIVE_PRESET"
-        ]
-        Config.COMPRESSION_ARCHIVE_LEVEL = DEFAULT_VALUES[
-            "COMPRESSION_ARCHIVE_LEVEL"
-        ]
-        Config.COMPRESSION_ARCHIVE_METHOD = DEFAULT_VALUES[
-            "COMPRESSION_ARCHIVE_METHOD"
-        ]
+        Config.COMPRESSION_ARCHIVE_PRESET = DEFAULT_VALUES["COMPRESSION_ARCHIVE_PRESET"]
+        Config.COMPRESSION_ARCHIVE_LEVEL = DEFAULT_VALUES["COMPRESSION_ARCHIVE_LEVEL"]
+        Config.COMPRESSION_ARCHIVE_METHOD = DEFAULT_VALUES["COMPRESSION_ARCHIVE_METHOD"]
         Config.COMPRESSION_ARCHIVE_PASSWORD = DEFAULT_VALUES[
             "COMPRESSION_ARCHIVE_PASSWORD"
         ]
@@ -12001,9 +11750,7 @@ async def edit_bot_settings(client, query):
                 "COMPRESSION_VIDEO_ENABLED": DEFAULT_VALUES[
                     "COMPRESSION_VIDEO_ENABLED"
                 ],
-                "COMPRESSION_VIDEO_PRESET": DEFAULT_VALUES[
-                    "COMPRESSION_VIDEO_PRESET"
-                ],
+                "COMPRESSION_VIDEO_PRESET": DEFAULT_VALUES["COMPRESSION_VIDEO_PRESET"],
                 "COMPRESSION_VIDEO_CRF": DEFAULT_VALUES["COMPRESSION_VIDEO_CRF"],
                 "COMPRESSION_VIDEO_CODEC": DEFAULT_VALUES["COMPRESSION_VIDEO_CODEC"],
                 "COMPRESSION_VIDEO_TUNE": DEFAULT_VALUES["COMPRESSION_VIDEO_TUNE"],
@@ -12014,9 +11761,7 @@ async def edit_bot_settings(client, query):
                 "COMPRESSION_AUDIO_ENABLED": DEFAULT_VALUES[
                     "COMPRESSION_AUDIO_ENABLED"
                 ],
-                "COMPRESSION_AUDIO_PRESET": DEFAULT_VALUES[
-                    "COMPRESSION_AUDIO_PRESET"
-                ],
+                "COMPRESSION_AUDIO_PRESET": DEFAULT_VALUES["COMPRESSION_AUDIO_PRESET"],
                 "COMPRESSION_AUDIO_CODEC": DEFAULT_VALUES["COMPRESSION_AUDIO_CODEC"],
                 "COMPRESSION_AUDIO_BITRATE": DEFAULT_VALUES[
                     "COMPRESSION_AUDIO_BITRATE"
@@ -12028,15 +11773,11 @@ async def edit_bot_settings(client, query):
                 "COMPRESSION_IMAGE_ENABLED": DEFAULT_VALUES[
                     "COMPRESSION_IMAGE_ENABLED"
                 ],
-                "COMPRESSION_IMAGE_PRESET": DEFAULT_VALUES[
-                    "COMPRESSION_IMAGE_PRESET"
-                ],
+                "COMPRESSION_IMAGE_PRESET": DEFAULT_VALUES["COMPRESSION_IMAGE_PRESET"],
                 "COMPRESSION_IMAGE_QUALITY": DEFAULT_VALUES[
                     "COMPRESSION_IMAGE_QUALITY"
                 ],
-                "COMPRESSION_IMAGE_RESIZE": DEFAULT_VALUES[
-                    "COMPRESSION_IMAGE_RESIZE"
-                ],
+                "COMPRESSION_IMAGE_RESIZE": DEFAULT_VALUES["COMPRESSION_IMAGE_RESIZE"],
                 # Document compression settings
                 "COMPRESSION_DOCUMENT_ENABLED": DEFAULT_VALUES[
                     "COMPRESSION_DOCUMENT_ENABLED"
@@ -12044,9 +11785,7 @@ async def edit_bot_settings(client, query):
                 "COMPRESSION_DOCUMENT_PRESET": DEFAULT_VALUES[
                     "COMPRESSION_DOCUMENT_PRESET"
                 ],
-                "COMPRESSION_DOCUMENT_DPI": DEFAULT_VALUES[
-                    "COMPRESSION_DOCUMENT_DPI"
-                ],
+                "COMPRESSION_DOCUMENT_DPI": DEFAULT_VALUES["COMPRESSION_DOCUMENT_DPI"],
                 # Subtitle compression settings
                 "COMPRESSION_SUBTITLE_ENABLED": DEFAULT_VALUES[
                     "COMPRESSION_SUBTITLE_ENABLED"
@@ -12099,9 +11838,7 @@ async def edit_bot_settings(client, query):
         # Video extract settings
         Config.EXTRACT_VIDEO_ENABLED = DEFAULT_VALUES["EXTRACT_VIDEO_ENABLED"]
         Config.EXTRACT_VIDEO_CODEC = DEFAULT_VALUES["EXTRACT_VIDEO_CODEC"]
-        Config.EXTRACT_VIDEO_FORMAT = DEFAULT_VALUES.get(
-            "EXTRACT_VIDEO_FORMAT", "none"
-        )
+        Config.EXTRACT_VIDEO_FORMAT = DEFAULT_VALUES.get("EXTRACT_VIDEO_FORMAT", "none")
         Config.EXTRACT_VIDEO_INDEX = DEFAULT_VALUES["EXTRACT_VIDEO_INDEX"]
         Config.EXTRACT_VIDEO_QUALITY = DEFAULT_VALUES["EXTRACT_VIDEO_QUALITY"]
         Config.EXTRACT_VIDEO_PRESET = DEFAULT_VALUES["EXTRACT_VIDEO_PRESET"]
@@ -12112,9 +11849,7 @@ async def edit_bot_settings(client, query):
         # Audio extract settings
         Config.EXTRACT_AUDIO_ENABLED = DEFAULT_VALUES["EXTRACT_AUDIO_ENABLED"]
         Config.EXTRACT_AUDIO_CODEC = DEFAULT_VALUES["EXTRACT_AUDIO_CODEC"]
-        Config.EXTRACT_AUDIO_FORMAT = DEFAULT_VALUES.get(
-            "EXTRACT_AUDIO_FORMAT", "none"
-        )
+        Config.EXTRACT_AUDIO_FORMAT = DEFAULT_VALUES.get("EXTRACT_AUDIO_FORMAT", "none")
         Config.EXTRACT_AUDIO_INDEX = DEFAULT_VALUES["EXTRACT_AUDIO_INDEX"]
         Config.EXTRACT_AUDIO_BITRATE = DEFAULT_VALUES["EXTRACT_AUDIO_BITRATE"]
         Config.EXTRACT_AUDIO_CHANNELS = DEFAULT_VALUES["EXTRACT_AUDIO_CHANNELS"]
@@ -12128,28 +11863,18 @@ async def edit_bot_settings(client, query):
             "EXTRACT_SUBTITLE_FORMAT", "none"
         )
         Config.EXTRACT_SUBTITLE_INDEX = DEFAULT_VALUES["EXTRACT_SUBTITLE_INDEX"]
-        Config.EXTRACT_SUBTITLE_LANGUAGE = DEFAULT_VALUES[
-            "EXTRACT_SUBTITLE_LANGUAGE"
-        ]
-        Config.EXTRACT_SUBTITLE_ENCODING = DEFAULT_VALUES[
-            "EXTRACT_SUBTITLE_ENCODING"
-        ]
+        Config.EXTRACT_SUBTITLE_LANGUAGE = DEFAULT_VALUES["EXTRACT_SUBTITLE_LANGUAGE"]
+        Config.EXTRACT_SUBTITLE_ENCODING = DEFAULT_VALUES["EXTRACT_SUBTITLE_ENCODING"]
         Config.EXTRACT_SUBTITLE_FONT = DEFAULT_VALUES["EXTRACT_SUBTITLE_FONT"]
-        Config.EXTRACT_SUBTITLE_FONT_SIZE = DEFAULT_VALUES[
-            "EXTRACT_SUBTITLE_FONT_SIZE"
-        ]
+        Config.EXTRACT_SUBTITLE_FONT_SIZE = DEFAULT_VALUES["EXTRACT_SUBTITLE_FONT_SIZE"]
 
         # Attachment extract settings
-        Config.EXTRACT_ATTACHMENT_ENABLED = DEFAULT_VALUES[
-            "EXTRACT_ATTACHMENT_ENABLED"
-        ]
+        Config.EXTRACT_ATTACHMENT_ENABLED = DEFAULT_VALUES["EXTRACT_ATTACHMENT_ENABLED"]
         Config.EXTRACT_ATTACHMENT_FORMAT = DEFAULT_VALUES.get(
             "EXTRACT_ATTACHMENT_FORMAT", "none"
         )
         Config.EXTRACT_ATTACHMENT_INDEX = DEFAULT_VALUES["EXTRACT_ATTACHMENT_INDEX"]
-        Config.EXTRACT_ATTACHMENT_FILTER = DEFAULT_VALUES[
-            "EXTRACT_ATTACHMENT_FILTER"
-        ]
+        Config.EXTRACT_ATTACHMENT_FILTER = DEFAULT_VALUES["EXTRACT_ATTACHMENT_FILTER"]
 
         # Quality settings
         Config.EXTRACT_MAINTAIN_QUALITY = DEFAULT_VALUES["EXTRACT_MAINTAIN_QUALITY"]
@@ -12171,9 +11896,7 @@ async def edit_bot_settings(client, query):
                 "EXTRACT_VIDEO_QUALITY": DEFAULT_VALUES["EXTRACT_VIDEO_QUALITY"],
                 "EXTRACT_VIDEO_PRESET": DEFAULT_VALUES["EXTRACT_VIDEO_PRESET"],
                 "EXTRACT_VIDEO_BITRATE": DEFAULT_VALUES["EXTRACT_VIDEO_BITRATE"],
-                "EXTRACT_VIDEO_RESOLUTION": DEFAULT_VALUES[
-                    "EXTRACT_VIDEO_RESOLUTION"
-                ],
+                "EXTRACT_VIDEO_RESOLUTION": DEFAULT_VALUES["EXTRACT_VIDEO_RESOLUTION"],
                 "EXTRACT_VIDEO_FPS": DEFAULT_VALUES["EXTRACT_VIDEO_FPS"],
                 # Audio extract settings
                 "EXTRACT_AUDIO_ENABLED": DEFAULT_VALUES["EXTRACT_AUDIO_ENABLED"],
@@ -12187,9 +11910,7 @@ async def edit_bot_settings(client, query):
                 "EXTRACT_AUDIO_SAMPLING": DEFAULT_VALUES["EXTRACT_AUDIO_SAMPLING"],
                 "EXTRACT_AUDIO_VOLUME": DEFAULT_VALUES["EXTRACT_AUDIO_VOLUME"],
                 # Subtitle extract settings
-                "EXTRACT_SUBTITLE_ENABLED": DEFAULT_VALUES[
-                    "EXTRACT_SUBTITLE_ENABLED"
-                ],
+                "EXTRACT_SUBTITLE_ENABLED": DEFAULT_VALUES["EXTRACT_SUBTITLE_ENABLED"],
                 "EXTRACT_SUBTITLE_CODEC": DEFAULT_VALUES["EXTRACT_SUBTITLE_CODEC"],
                 "EXTRACT_SUBTITLE_FORMAT": DEFAULT_VALUES.get(
                     "EXTRACT_SUBTITLE_FORMAT", "none"
@@ -12212,16 +11933,12 @@ async def edit_bot_settings(client, query):
                 "EXTRACT_ATTACHMENT_FORMAT": DEFAULT_VALUES.get(
                     "EXTRACT_ATTACHMENT_FORMAT", "none"
                 ),
-                "EXTRACT_ATTACHMENT_INDEX": DEFAULT_VALUES[
-                    "EXTRACT_ATTACHMENT_INDEX"
-                ],
+                "EXTRACT_ATTACHMENT_INDEX": DEFAULT_VALUES["EXTRACT_ATTACHMENT_INDEX"],
                 "EXTRACT_ATTACHMENT_FILTER": DEFAULT_VALUES[
                     "EXTRACT_ATTACHMENT_FILTER"
                 ],
                 # Quality settings
-                "EXTRACT_MAINTAIN_QUALITY": DEFAULT_VALUES[
-                    "EXTRACT_MAINTAIN_QUALITY"
-                ],
+                "EXTRACT_MAINTAIN_QUALITY": DEFAULT_VALUES["EXTRACT_MAINTAIN_QUALITY"],
             }
         )
         # Update the UI - maintain the current state (edit/view)
@@ -12300,9 +12017,7 @@ async def edit_bot_settings(client, query):
                 "TRIM_IMAGE_FORMAT": DEFAULT_VALUES["TRIM_IMAGE_FORMAT"],
                 # Document trim settings
                 "TRIM_DOCUMENT_ENABLED": DEFAULT_VALUES["TRIM_DOCUMENT_ENABLED"],
-                "TRIM_DOCUMENT_START_PAGE": DEFAULT_VALUES[
-                    "TRIM_DOCUMENT_START_PAGE"
-                ],
+                "TRIM_DOCUMENT_START_PAGE": DEFAULT_VALUES["TRIM_DOCUMENT_START_PAGE"],
                 "TRIM_DOCUMENT_END_PAGE": DEFAULT_VALUES["TRIM_DOCUMENT_END_PAGE"],
                 "TRIM_DOCUMENT_QUALITY": DEFAULT_VALUES["TRIM_DOCUMENT_QUALITY"],
                 "TRIM_DOCUMENT_FORMAT": DEFAULT_VALUES["TRIM_DOCUMENT_FORMAT"],
@@ -12362,12 +12077,8 @@ async def edit_bot_settings(client, query):
         # Subtitle convert settings
         Config.CONVERT_SUBTITLE_ENABLED = DEFAULT_VALUES["CONVERT_SUBTITLE_ENABLED"]
         Config.CONVERT_SUBTITLE_FORMAT = DEFAULT_VALUES["CONVERT_SUBTITLE_FORMAT"]
-        Config.CONVERT_SUBTITLE_ENCODING = DEFAULT_VALUES[
-            "CONVERT_SUBTITLE_ENCODING"
-        ]
-        Config.CONVERT_SUBTITLE_LANGUAGE = DEFAULT_VALUES[
-            "CONVERT_SUBTITLE_LANGUAGE"
-        ]
+        Config.CONVERT_SUBTITLE_ENCODING = DEFAULT_VALUES["CONVERT_SUBTITLE_ENCODING"]
+        Config.CONVERT_SUBTITLE_LANGUAGE = DEFAULT_VALUES["CONVERT_SUBTITLE_LANGUAGE"]
         Config.CONVERT_SUBTITLE_DELETE_ORIGINAL = DEFAULT_VALUES[
             "CONVERT_SUBTITLE_DELETE_ORIGINAL"
         ]
@@ -12407,9 +12118,7 @@ async def edit_bot_settings(client, query):
                 "CONVERT_VIDEO_MAINTAIN_QUALITY": DEFAULT_VALUES[
                     "CONVERT_VIDEO_MAINTAIN_QUALITY"
                 ],
-                "CONVERT_VIDEO_RESOLUTION": DEFAULT_VALUES[
-                    "CONVERT_VIDEO_RESOLUTION"
-                ],
+                "CONVERT_VIDEO_RESOLUTION": DEFAULT_VALUES["CONVERT_VIDEO_RESOLUTION"],
                 "CONVERT_VIDEO_FPS": DEFAULT_VALUES["CONVERT_VIDEO_FPS"],
                 "CONVERT_VIDEO_DELETE_ORIGINAL": DEFAULT_VALUES[
                     "CONVERT_VIDEO_DELETE_ORIGINAL"
@@ -12426,9 +12135,7 @@ async def edit_bot_settings(client, query):
                     "CONVERT_AUDIO_DELETE_ORIGINAL"
                 ],
                 # Subtitle convert settings
-                "CONVERT_SUBTITLE_ENABLED": DEFAULT_VALUES[
-                    "CONVERT_SUBTITLE_ENABLED"
-                ],
+                "CONVERT_SUBTITLE_ENABLED": DEFAULT_VALUES["CONVERT_SUBTITLE_ENABLED"],
                 "CONVERT_SUBTITLE_FORMAT": DEFAULT_VALUES["CONVERT_SUBTITLE_FORMAT"],
                 "CONVERT_SUBTITLE_ENCODING": DEFAULT_VALUES[
                     "CONVERT_SUBTITLE_ENCODING"
@@ -12440,13 +12147,9 @@ async def edit_bot_settings(client, query):
                     "CONVERT_SUBTITLE_DELETE_ORIGINAL"
                 ],
                 # Document convert settings
-                "CONVERT_DOCUMENT_ENABLED": DEFAULT_VALUES[
-                    "CONVERT_DOCUMENT_ENABLED"
-                ],
+                "CONVERT_DOCUMENT_ENABLED": DEFAULT_VALUES["CONVERT_DOCUMENT_ENABLED"],
                 "CONVERT_DOCUMENT_FORMAT": DEFAULT_VALUES["CONVERT_DOCUMENT_FORMAT"],
-                "CONVERT_DOCUMENT_QUALITY": DEFAULT_VALUES[
-                    "CONVERT_DOCUMENT_QUALITY"
-                ],
+                "CONVERT_DOCUMENT_QUALITY": DEFAULT_VALUES["CONVERT_DOCUMENT_QUALITY"],
                 "CONVERT_DOCUMENT_DPI": DEFAULT_VALUES["CONVERT_DOCUMENT_DPI"],
                 "CONVERT_DOCUMENT_DELETE_ORIGINAL": DEFAULT_VALUES[
                     "CONVERT_DOCUMENT_DELETE_ORIGINAL"
@@ -12526,14 +12229,10 @@ async def edit_bot_settings(client, query):
         Config.REMOVE_SUBTITLE_LANGUAGE = DEFAULT_VALUES["REMOVE_SUBTITLE_LANGUAGE"]
         Config.REMOVE_SUBTITLE_ENCODING = DEFAULT_VALUES["REMOVE_SUBTITLE_ENCODING"]
         Config.REMOVE_SUBTITLE_FONT = DEFAULT_VALUES["REMOVE_SUBTITLE_FONT"]
-        Config.REMOVE_SUBTITLE_FONT_SIZE = DEFAULT_VALUES[
-            "REMOVE_SUBTITLE_FONT_SIZE"
-        ]
+        Config.REMOVE_SUBTITLE_FONT_SIZE = DEFAULT_VALUES["REMOVE_SUBTITLE_FONT_SIZE"]
 
         # Attachment remove settings
-        Config.REMOVE_ATTACHMENT_ENABLED = DEFAULT_VALUES[
-            "REMOVE_ATTACHMENT_ENABLED"
-        ]
+        Config.REMOVE_ATTACHMENT_ENABLED = DEFAULT_VALUES["REMOVE_ATTACHMENT_ENABLED"]
         Config.REMOVE_ATTACHMENT_FORMAT = DEFAULT_VALUES["REMOVE_ATTACHMENT_FORMAT"]
         Config.REMOVE_ATTACHMENT_INDEX = DEFAULT_VALUES["REMOVE_ATTACHMENT_INDEX"]
         Config.REMOVE_ATTACHMENT_FILTER = DEFAULT_VALUES["REMOVE_ATTACHMENT_FILTER"]
@@ -12571,12 +12270,8 @@ async def edit_bot_settings(client, query):
                 "REMOVE_SUBTITLE_CODEC": DEFAULT_VALUES["REMOVE_SUBTITLE_CODEC"],
                 "REMOVE_SUBTITLE_FORMAT": DEFAULT_VALUES["REMOVE_SUBTITLE_FORMAT"],
                 "REMOVE_SUBTITLE_INDEX": DEFAULT_VALUES["REMOVE_SUBTITLE_INDEX"],
-                "REMOVE_SUBTITLE_LANGUAGE": DEFAULT_VALUES[
-                    "REMOVE_SUBTITLE_LANGUAGE"
-                ],
-                "REMOVE_SUBTITLE_ENCODING": DEFAULT_VALUES[
-                    "REMOVE_SUBTITLE_ENCODING"
-                ],
+                "REMOVE_SUBTITLE_LANGUAGE": DEFAULT_VALUES["REMOVE_SUBTITLE_LANGUAGE"],
+                "REMOVE_SUBTITLE_ENCODING": DEFAULT_VALUES["REMOVE_SUBTITLE_ENCODING"],
                 "REMOVE_SUBTITLE_FONT": DEFAULT_VALUES["REMOVE_SUBTITLE_FONT"],
                 "REMOVE_SUBTITLE_FONT_SIZE": DEFAULT_VALUES[
                     "REMOVE_SUBTITLE_FONT_SIZE"
@@ -12585,13 +12280,9 @@ async def edit_bot_settings(client, query):
                 "REMOVE_ATTACHMENT_ENABLED": DEFAULT_VALUES[
                     "REMOVE_ATTACHMENT_ENABLED"
                 ],
-                "REMOVE_ATTACHMENT_FORMAT": DEFAULT_VALUES[
-                    "REMOVE_ATTACHMENT_FORMAT"
-                ],
+                "REMOVE_ATTACHMENT_FORMAT": DEFAULT_VALUES["REMOVE_ATTACHMENT_FORMAT"],
                 "REMOVE_ATTACHMENT_INDEX": DEFAULT_VALUES["REMOVE_ATTACHMENT_INDEX"],
-                "REMOVE_ATTACHMENT_FILTER": DEFAULT_VALUES[
-                    "REMOVE_ATTACHMENT_FILTER"
-                ],
+                "REMOVE_ATTACHMENT_FILTER": DEFAULT_VALUES["REMOVE_ATTACHMENT_FILTER"],
             }
         )
 
@@ -12688,30 +12379,22 @@ async def edit_bot_settings(client, query):
         # Audio swap settings
         Config.SWAP_AUDIO_ENABLED = DEFAULT_VALUES["SWAP_AUDIO_ENABLED"]
         Config.SWAP_AUDIO_USE_LANGUAGE = DEFAULT_VALUES["SWAP_AUDIO_USE_LANGUAGE"]
-        Config.SWAP_AUDIO_LANGUAGE_ORDER = DEFAULT_VALUES[
-            "SWAP_AUDIO_LANGUAGE_ORDER"
-        ]
+        Config.SWAP_AUDIO_LANGUAGE_ORDER = DEFAULT_VALUES["SWAP_AUDIO_LANGUAGE_ORDER"]
         Config.SWAP_AUDIO_INDEX_ORDER = DEFAULT_VALUES["SWAP_AUDIO_INDEX_ORDER"]
 
         # Video swap settings
         Config.SWAP_VIDEO_ENABLED = DEFAULT_VALUES["SWAP_VIDEO_ENABLED"]
         Config.SWAP_VIDEO_USE_LANGUAGE = DEFAULT_VALUES["SWAP_VIDEO_USE_LANGUAGE"]
-        Config.SWAP_VIDEO_LANGUAGE_ORDER = DEFAULT_VALUES[
-            "SWAP_VIDEO_LANGUAGE_ORDER"
-        ]
+        Config.SWAP_VIDEO_LANGUAGE_ORDER = DEFAULT_VALUES["SWAP_VIDEO_LANGUAGE_ORDER"]
         Config.SWAP_VIDEO_INDEX_ORDER = DEFAULT_VALUES["SWAP_VIDEO_INDEX_ORDER"]
 
         # Subtitle swap settings
         Config.SWAP_SUBTITLE_ENABLED = DEFAULT_VALUES["SWAP_SUBTITLE_ENABLED"]
-        Config.SWAP_SUBTITLE_USE_LANGUAGE = DEFAULT_VALUES[
-            "SWAP_SUBTITLE_USE_LANGUAGE"
-        ]
+        Config.SWAP_SUBTITLE_USE_LANGUAGE = DEFAULT_VALUES["SWAP_SUBTITLE_USE_LANGUAGE"]
         Config.SWAP_SUBTITLE_LANGUAGE_ORDER = DEFAULT_VALUES[
             "SWAP_SUBTITLE_LANGUAGE_ORDER"
         ]
-        Config.SWAP_SUBTITLE_INDEX_ORDER = DEFAULT_VALUES[
-            "SWAP_SUBTITLE_INDEX_ORDER"
-        ]
+        Config.SWAP_SUBTITLE_INDEX_ORDER = DEFAULT_VALUES["SWAP_SUBTITLE_INDEX_ORDER"]
 
         # Create a dictionary of all SWAP_ settings from DEFAULT_VALUES
         swap_settings = {
@@ -12850,18 +12533,14 @@ async def edit_bot_settings(client, query):
         Config.STREAMRIP_QOBUZ_ENABLED = DEFAULT_VALUES.get(
             "STREAMRIP_QOBUZ_ENABLED", False
         )
-        Config.STREAMRIP_QOBUZ_EMAIL = DEFAULT_VALUES.get(
-            "STREAMRIP_QOBUZ_EMAIL", ""
-        )
+        Config.STREAMRIP_QOBUZ_EMAIL = DEFAULT_VALUES.get("STREAMRIP_QOBUZ_EMAIL", "")
         Config.STREAMRIP_QOBUZ_PASSWORD = DEFAULT_VALUES.get(
             "STREAMRIP_QOBUZ_PASSWORD", ""
         )
         Config.STREAMRIP_QOBUZ_USE_AUTH_TOKEN = DEFAULT_VALUES.get(
             "STREAMRIP_QOBUZ_USE_AUTH_TOKEN", False
         )
-        Config.STREAMRIP_QOBUZ_APP_ID = DEFAULT_VALUES.get(
-            "STREAMRIP_QOBUZ_APP_ID", ""
-        )
+        Config.STREAMRIP_QOBUZ_APP_ID = DEFAULT_VALUES.get("STREAMRIP_QOBUZ_APP_ID", "")
         Config.STREAMRIP_QOBUZ_SECRETS = DEFAULT_VALUES.get(
             "STREAMRIP_QOBUZ_SECRETS", []
         )
@@ -12871,9 +12550,7 @@ async def edit_bot_settings(client, query):
         Config.STREAMRIP_TIDAL_ENABLED = DEFAULT_VALUES.get(
             "STREAMRIP_TIDAL_ENABLED", False
         )
-        Config.STREAMRIP_TIDAL_EMAIL = DEFAULT_VALUES.get(
-            "STREAMRIP_TIDAL_EMAIL", ""
-        )
+        Config.STREAMRIP_TIDAL_EMAIL = DEFAULT_VALUES.get("STREAMRIP_TIDAL_EMAIL", "")
         Config.STREAMRIP_TIDAL_PASSWORD = DEFAULT_VALUES.get(
             "STREAMRIP_TIDAL_PASSWORD", ""
         )
@@ -12963,9 +12640,7 @@ async def edit_bot_settings(client, query):
             "STREAMRIP_DISC_SUBDIRECTORIES", True
         )
         Config.STREAMRIP_CONCURRENCY = DEFAULT_VALUES.get("STREAMRIP_CONCURRENCY", 1)
-        Config.STREAMRIP_VERIFY_SSL = DEFAULT_VALUES.get(
-            "STREAMRIP_VERIFY_SSL", True
-        )
+        Config.STREAMRIP_VERIFY_SSL = DEFAULT_VALUES.get("STREAMRIP_VERIFY_SSL", True)
 
         # Update the database
         await database.update_config(
@@ -13283,9 +12958,7 @@ async def edit_bot_settings(client, query):
         Config.ZOTIFY_SKIP_DUPLICATES = DEFAULT_VALUES.get(
             "ZOTIFY_SKIP_DUPLICATES", True
         )
-        Config.ZOTIFY_SKIP_PREVIOUS = DEFAULT_VALUES.get(
-            "ZOTIFY_SKIP_PREVIOUS", True
-        )
+        Config.ZOTIFY_SKIP_PREVIOUS = DEFAULT_VALUES.get("ZOTIFY_SKIP_PREVIOUS", True)
 
         # Update the database
         await database.update_config(
@@ -13309,12 +12982,8 @@ async def edit_bot_settings(client, query):
         Config.ZOTIFY_DOWNLOAD_QUALITY = DEFAULT_VALUES.get(
             "ZOTIFY_DOWNLOAD_QUALITY", "auto"
         )
-        Config.ZOTIFY_AUDIO_FORMAT = DEFAULT_VALUES.get(
-            "ZOTIFY_AUDIO_FORMAT", "vorbis"
-        )
-        Config.ZOTIFY_ARTWORK_SIZE = DEFAULT_VALUES.get(
-            "ZOTIFY_ARTWORK_SIZE", "large"
-        )
+        Config.ZOTIFY_AUDIO_FORMAT = DEFAULT_VALUES.get("ZOTIFY_AUDIO_FORMAT", "vorbis")
+        Config.ZOTIFY_ARTWORK_SIZE = DEFAULT_VALUES.get("ZOTIFY_ARTWORK_SIZE", "large")
         Config.ZOTIFY_TRANSCODE_BITRATE = DEFAULT_VALUES.get(
             "ZOTIFY_TRANSCODE_BITRATE", -1
         )
@@ -13419,16 +13088,12 @@ async def edit_bot_settings(client, query):
     elif data[1] == "default_zotify_download":
         await query.answer("Resetting Zotify download settings to default...")
         # Reset Zotify download settings to default
-        Config.ZOTIFY_PRINT_PROGRESS = DEFAULT_VALUES.get(
-            "ZOTIFY_PRINT_PROGRESS", True
-        )
+        Config.ZOTIFY_PRINT_PROGRESS = DEFAULT_VALUES.get("ZOTIFY_PRINT_PROGRESS", True)
         Config.ZOTIFY_PRINT_DOWNLOADS = DEFAULT_VALUES.get(
             "ZOTIFY_PRINT_DOWNLOADS", False
         )
         Config.ZOTIFY_PRINT_ERRORS = DEFAULT_VALUES.get("ZOTIFY_PRINT_ERRORS", True)
-        Config.ZOTIFY_PRINT_WARNINGS = DEFAULT_VALUES.get(
-            "ZOTIFY_PRINT_WARNINGS", True
-        )
+        Config.ZOTIFY_PRINT_WARNINGS = DEFAULT_VALUES.get("ZOTIFY_PRINT_WARNINGS", True)
         Config.ZOTIFY_PRINT_SKIPS = DEFAULT_VALUES.get("ZOTIFY_PRINT_SKIPS", False)
 
         # Update the database
@@ -13450,9 +13115,7 @@ async def edit_bot_settings(client, query):
     elif data[1] == "default_zotify_metadata":
         await query.answer("Resetting Zotify metadata settings to default...")
         # Reset Zotify metadata settings to default
-        Config.ZOTIFY_SAVE_METADATA = DEFAULT_VALUES.get(
-            "ZOTIFY_SAVE_METADATA", True
-        )
+        Config.ZOTIFY_SAVE_METADATA = DEFAULT_VALUES.get("ZOTIFY_SAVE_METADATA", True)
         Config.ZOTIFY_SAVE_GENRE = DEFAULT_VALUES.get("ZOTIFY_SAVE_GENRE", False)
         Config.ZOTIFY_ALL_ARTISTS = DEFAULT_VALUES.get("ZOTIFY_ALL_ARTISTS", True)
         Config.ZOTIFY_LYRICS_FILE = DEFAULT_VALUES.get("ZOTIFY_LYRICS_FILE", False)
@@ -13534,9 +13197,7 @@ async def edit_bot_settings(client, query):
         await update_buttons(message, "gallerydl_general")
 
     elif data[1] == "default_gallerydl_auth":
-        await query.answer(
-            "Resetting gallery-dl authentication settings to default..."
-        )
+        await query.answer("Resetting gallery-dl authentication settings to default...")
         # Reset gallery-dl auth settings to default
         Config.GALLERY_DL_INSTAGRAM_USERNAME = ""
         Config.GALLERY_DL_INSTAGRAM_PASSWORD = ""
@@ -13867,9 +13528,7 @@ async def edit_bot_settings(client, query):
         Config.GOFILE_API_KEY = DEFAULT_VALUES["GOFILE_API_KEY"]
         Config.GOFILE_FOLDER_NAME = DEFAULT_VALUES["GOFILE_FOLDER_NAME"]
         Config.GOFILE_PUBLIC_LINKS = DEFAULT_VALUES["GOFILE_PUBLIC_LINKS"]
-        Config.GOFILE_PASSWORD_PROTECTION = DEFAULT_VALUES[
-            "GOFILE_PASSWORD_PROTECTION"
-        ]
+        Config.GOFILE_PASSWORD_PROTECTION = DEFAULT_VALUES["GOFILE_PASSWORD_PROTECTION"]
         Config.GOFILE_DEFAULT_PASSWORD = DEFAULT_VALUES["GOFILE_DEFAULT_PASSWORD"]
         Config.GOFILE_LINK_EXPIRY_DAYS = DEFAULT_VALUES["GOFILE_LINK_EXPIRY_DAYS"]
         Config.STREAMTAPE_API_USERNAME = DEFAULT_VALUES["STREAMTAPE_API_USERNAME"]
@@ -13918,9 +13577,7 @@ async def edit_bot_settings(client, query):
         Config.DDL_DEFAULT_SERVER = DEFAULT_VALUES["DDL_DEFAULT_SERVER"]
 
         # Update database
-        await database.update_config(
-            {"DDL_DEFAULT_SERVER": Config.DDL_DEFAULT_SERVER}
-        )
+        await database.update_config({"DDL_DEFAULT_SERVER": Config.DDL_DEFAULT_SERVER})
 
         # Update the UI - stay in DDL general section
         current_state = globals()["state"]
@@ -13933,9 +13590,7 @@ async def edit_bot_settings(client, query):
         Config.GOFILE_API_KEY = DEFAULT_VALUES["GOFILE_API_KEY"]
         Config.GOFILE_FOLDER_NAME = DEFAULT_VALUES["GOFILE_FOLDER_NAME"]
         Config.GOFILE_PUBLIC_LINKS = DEFAULT_VALUES["GOFILE_PUBLIC_LINKS"]
-        Config.GOFILE_PASSWORD_PROTECTION = DEFAULT_VALUES[
-            "GOFILE_PASSWORD_PROTECTION"
-        ]
+        Config.GOFILE_PASSWORD_PROTECTION = DEFAULT_VALUES["GOFILE_PASSWORD_PROTECTION"]
         Config.GOFILE_DEFAULT_PASSWORD = DEFAULT_VALUES["GOFILE_DEFAULT_PASSWORD"]
         Config.GOFILE_LINK_EXPIRY_DAYS = DEFAULT_VALUES["GOFILE_LINK_EXPIRY_DAYS"]
 
@@ -14035,9 +13690,7 @@ async def edit_bot_settings(client, query):
         Config.TASK_MONITOR_ELAPSED_THRESHOLD = DEFAULT_VALUES[
             "TASK_MONITOR_ELAPSED_THRESHOLD"
         ]
-        Config.TASK_MONITOR_ETA_THRESHOLD = DEFAULT_VALUES[
-            "TASK_MONITOR_ETA_THRESHOLD"
-        ]
+        Config.TASK_MONITOR_ETA_THRESHOLD = DEFAULT_VALUES["TASK_MONITOR_ETA_THRESHOLD"]
         Config.TASK_MONITOR_WAIT_TIME = DEFAULT_VALUES["TASK_MONITOR_WAIT_TIME"]
         Config.TASK_MONITOR_COMPLETION_THRESHOLD = DEFAULT_VALUES[
             "TASK_MONITOR_COMPLETION_THRESHOLD"
@@ -14069,9 +13722,7 @@ async def edit_bot_settings(client, query):
                 ],
                 "TASK_MONITOR_CPU_HIGH": DEFAULT_VALUES["TASK_MONITOR_CPU_HIGH"],
                 "TASK_MONITOR_CPU_LOW": DEFAULT_VALUES["TASK_MONITOR_CPU_LOW"],
-                "TASK_MONITOR_MEMORY_HIGH": DEFAULT_VALUES[
-                    "TASK_MONITOR_MEMORY_HIGH"
-                ],
+                "TASK_MONITOR_MEMORY_HIGH": DEFAULT_VALUES["TASK_MONITOR_MEMORY_HIGH"],
                 "TASK_MONITOR_MEMORY_LOW": DEFAULT_VALUES["TASK_MONITOR_MEMORY_LOW"],
             }
         )
@@ -14407,8 +14058,7 @@ async def edit_bot_settings(client, query):
                         "DEFAULT_AI_",
                     )
                 )
-                and data[2]
-                not in ["CONCAT_DEMUXER_ENABLED", "FILTER_COMPLEX_ENABLED"]
+                and data[2] not in ["CONCAT_DEMUXER_ENABLED", "FILTER_COMPLEX_ENABLED"]
             )
             or data[2].startswith("STREAMRIP_")
             or data[2].startswith("ZOTIFY_")
@@ -14780,10 +14430,7 @@ async def edit_bot_settings(client, query):
             return
 
         # Handle all other IMAGE_WATERMARK_ settings like normal settings
-        if (
-            data[2].startswith("IMAGE_WATERMARK_")
-            and data[2] != "IMAGE_WATERMARK_PATH"
-        ):
+        if data[2].startswith("IMAGE_WATERMARK_") and data[2] != "IMAGE_WATERMARK_PATH":
             # Use the standard editvar flow for these settings
             await update_buttons(message, data[2], "editvar")
             return
@@ -14848,9 +14495,7 @@ async def edit_bot_settings(client, query):
             msg = f"{help_text}Send a valid value for <code>{data[2]}</code>.\n\n<b>Current value:</b> <code>{Config.get(data[2])}</code>\n\n<i>Timeout: 60 seconds</i>"
             buttons = ButtonMaker()
             buttons.data_button("⬅️ Back", "botset mediatools_add", "footer")
-            buttons.data_button(
-                "🔄 Default", f"botset default_add_setting {data[2]}"
-            )
+            buttons.data_button("🔄 Default", f"botset default_add_setting {data[2]}")
             buttons.data_button("❌ Close", "botset close", "footer")
 
             await edit_message(message, msg, buttons.build_menu(1))
@@ -15133,9 +14778,7 @@ async def edit_bot_settings(client, query):
                 # Check if we need to return to a specific page in mediatools_merge_config
                 if message.text and "Page:" in message.text:
                     try:
-                        page_info = (
-                            message.text.split("Page:")[1].strip().split("/")[0]
-                        )
+                        page_info = message.text.split("Page:")[1].strip().split("/")[0]
                         page_no = int(page_info) - 1
                         # Set the global merge_config_page variable to ensure we return to the correct page
                         globals()["merge_config_page"] = page_no
@@ -15155,9 +14798,7 @@ async def edit_bot_settings(client, query):
                 # Check if we need to return to a specific page in mediatools_merge
                 if message.text and "Page:" in message.text:
                     try:
-                        page_info = (
-                            message.text.split("Page:")[1].strip().split("/")[0]
-                        )
+                        page_info = message.text.split("Page:")[1].strip().split("/")[0]
                         page_no = int(page_info) - 1
                         # Set the global merge_page variable to ensure we return to the correct page
                         globals()["merge_page"] = page_no
@@ -15169,9 +14810,7 @@ async def edit_bot_settings(client, query):
                 # Check if we need to return to a specific page in mediatools_merge
                 if message.text and "Page:" in message.text:
                     try:
-                        page_info = (
-                            message.text.split("Page:")[1].strip().split("/")[0]
-                        )
+                        page_info = message.text.split("Page:")[1].strip().split("/")[0]
                         page_no = int(page_info) - 1
                         # Set the global merge_page variable to ensure we return to the correct page
                         globals()["merge_page"] = page_no
@@ -15221,15 +14860,9 @@ async def edit_bot_settings(client, query):
         # Reset all merge config settings to default using DEFAULT_VALUES
 
         # Reset output formats
-        Config.MERGE_OUTPUT_FORMAT_VIDEO = DEFAULT_VALUES[
-            "MERGE_OUTPUT_FORMAT_VIDEO"
-        ]
-        Config.MERGE_OUTPUT_FORMAT_AUDIO = DEFAULT_VALUES[
-            "MERGE_OUTPUT_FORMAT_AUDIO"
-        ]
-        Config.MERGE_OUTPUT_FORMAT_IMAGE = DEFAULT_VALUES[
-            "MERGE_OUTPUT_FORMAT_IMAGE"
-        ]
+        Config.MERGE_OUTPUT_FORMAT_VIDEO = DEFAULT_VALUES["MERGE_OUTPUT_FORMAT_VIDEO"]
+        Config.MERGE_OUTPUT_FORMAT_AUDIO = DEFAULT_VALUES["MERGE_OUTPUT_FORMAT_AUDIO"]
+        Config.MERGE_OUTPUT_FORMAT_IMAGE = DEFAULT_VALUES["MERGE_OUTPUT_FORMAT_IMAGE"]
         Config.MERGE_OUTPUT_FORMAT_DOCUMENT = DEFAULT_VALUES[
             "MERGE_OUTPUT_FORMAT_DOCUMENT"
         ]
@@ -15265,20 +14898,12 @@ async def edit_bot_settings(client, query):
         Config.MERGE_SUBTITLE_ENCODING = DEFAULT_VALUES["MERGE_SUBTITLE_ENCODING"]
         Config.MERGE_SUBTITLE_FONT = DEFAULT_VALUES["MERGE_SUBTITLE_FONT"]
         Config.MERGE_SUBTITLE_FONT_SIZE = DEFAULT_VALUES["MERGE_SUBTITLE_FONT_SIZE"]
-        Config.MERGE_SUBTITLE_FONT_COLOR = DEFAULT_VALUES[
-            "MERGE_SUBTITLE_FONT_COLOR"
-        ]
-        Config.MERGE_SUBTITLE_BACKGROUND = DEFAULT_VALUES[
-            "MERGE_SUBTITLE_BACKGROUND"
-        ]
+        Config.MERGE_SUBTITLE_FONT_COLOR = DEFAULT_VALUES["MERGE_SUBTITLE_FONT_COLOR"]
+        Config.MERGE_SUBTITLE_BACKGROUND = DEFAULT_VALUES["MERGE_SUBTITLE_BACKGROUND"]
 
         # Reset document settings
-        Config.MERGE_DOCUMENT_PAPER_SIZE = DEFAULT_VALUES[
-            "MERGE_DOCUMENT_PAPER_SIZE"
-        ]
-        Config.MERGE_DOCUMENT_ORIENTATION = DEFAULT_VALUES[
-            "MERGE_DOCUMENT_ORIENTATION"
-        ]
+        Config.MERGE_DOCUMENT_PAPER_SIZE = DEFAULT_VALUES["MERGE_DOCUMENT_PAPER_SIZE"]
+        Config.MERGE_DOCUMENT_ORIENTATION = DEFAULT_VALUES["MERGE_DOCUMENT_ORIENTATION"]
         Config.MERGE_DOCUMENT_MARGIN = DEFAULT_VALUES["MERGE_DOCUMENT_MARGIN"]
 
         # Reset metadata settings
@@ -15310,9 +14935,7 @@ async def edit_bot_settings(client, query):
                 "MERGE_VIDEO_QUALITY": DEFAULT_VALUES["MERGE_VIDEO_QUALITY"],
                 "MERGE_VIDEO_PRESET": DEFAULT_VALUES["MERGE_VIDEO_PRESET"],
                 "MERGE_VIDEO_CRF": DEFAULT_VALUES["MERGE_VIDEO_CRF"],
-                "MERGE_VIDEO_PIXEL_FORMAT": DEFAULT_VALUES[
-                    "MERGE_VIDEO_PIXEL_FORMAT"
-                ],
+                "MERGE_VIDEO_PIXEL_FORMAT": DEFAULT_VALUES["MERGE_VIDEO_PIXEL_FORMAT"],
                 "MERGE_VIDEO_TUNE": DEFAULT_VALUES["MERGE_VIDEO_TUNE"],
                 "MERGE_VIDEO_FASTSTART": DEFAULT_VALUES["MERGE_VIDEO_FASTSTART"],
                 # Audio settings
@@ -15331,9 +14954,7 @@ async def edit_bot_settings(client, query):
                 # Subtitle settings
                 "MERGE_SUBTITLE_ENCODING": DEFAULT_VALUES["MERGE_SUBTITLE_ENCODING"],
                 "MERGE_SUBTITLE_FONT": DEFAULT_VALUES["MERGE_SUBTITLE_FONT"],
-                "MERGE_SUBTITLE_FONT_SIZE": DEFAULT_VALUES[
-                    "MERGE_SUBTITLE_FONT_SIZE"
-                ],
+                "MERGE_SUBTITLE_FONT_SIZE": DEFAULT_VALUES["MERGE_SUBTITLE_FONT_SIZE"],
                 "MERGE_SUBTITLE_FONT_COLOR": DEFAULT_VALUES[
                     "MERGE_SUBTITLE_FONT_COLOR"
                 ],
@@ -15464,9 +15085,7 @@ async def edit_bot_settings(client, query):
         elif data[2] == "PIL_MEMORY_LIMIT":
             value = 2048  # Default to 2GB
         elif data[2] == "BASE_URL":
-            await (
-                await create_subprocess_exec("pkill", "-9", "-f", "gunicorn")
-            ).wait()
+            await (await create_subprocess_exec("pkill", "-9", "-f", "gunicorn")).wait()
         elif data[2] == "BASE_URL_PORT":
             value = 80
             # Kill any running web server
@@ -16032,9 +15651,7 @@ Click on any file to download it.
                 existing_files[file_name] = file_info
 
         if not existing_files:
-            await query.answer(
-                "No private files available to delete!", show_alert=True
-            )
+            await query.answer("No private files available to delete!", show_alert=True)
             return
 
         # Create buttons for each available file
@@ -16118,9 +15735,7 @@ Click on any file to delete it.
                         )
                         return
                 else:
-                    await query.answer(
-                        f"File {file_name} not found!", show_alert=True
-                    )
+                    await query.answer(f"File {file_name} not found!", show_alert=True)
                     return
 
             await query.answer(f"File {file_name} sent successfully!")
@@ -16358,9 +15973,7 @@ Are you sure you want to delete <b>{display_name}</b>?
             except Exception as e:
                 LOGGER.error(f"Error during special cleanup: {e}")
 
-            await query.answer(
-                f"Successfully deleted {deleted_count} private files!"
-            )
+            await query.answer(f"Successfully deleted {deleted_count} private files!")
             # Return to private files menu
             await update_buttons(message, "private")
 
@@ -16651,7 +16264,9 @@ No database-only files found."""
             icon = tool_info["icon"]
             desc = tool_info["desc"]
             status = "✅ Enabled" if tool_name in enabled_tools else "❌ Disabled"
-            tool_status_msg += f"{icon} <b>{tool_name.capitalize()}</b>: {status}\n<i>{desc}</i>\n\n"
+            tool_status_msg += (
+                f"{icon} <b>{tool_name.capitalize()}</b>: {status}\n<i>{desc}</i>\n\n"
+            )
 
         # Show the message with tool descriptions and buttons
         await edit_message(
@@ -16817,9 +16432,7 @@ No database-only files found."""
             res = await sabnzbd_client.add_server(
                 {"name": Config.USENET_SERVERS[index]["name"], data[3]: ""},
             )
-            Config.USENET_SERVERS[index][data[3]] = res["config"]["servers"][0][
-                data[3]
-            ]
+            Config.USENET_SERVERS[index][data[3]] = res["config"]["servers"][0][data[3]]
             await database.update_config({"USENET_SERVERS": Config.USENET_SERVERS})
 
             # Set the state back to what it was
@@ -17117,7 +16730,9 @@ No database-only files found."""
             icon = tool_info["icon"]
             desc = tool_info["desc"]
             status = "✅ Enabled" if tool_name in enabled_tools else "❌ Disabled"
-            tool_status_msg += f"{icon} <b>{tool_name.capitalize()}</b>: {status}\n<i>{desc}</i>\n\n"
+            tool_status_msg += (
+                f"{icon} <b>{tool_name.capitalize()}</b>: {status}\n<i>{desc}</i>\n\n"
+            )
 
         # Show the message with tool descriptions and buttons
         await edit_message(
@@ -17245,7 +16860,9 @@ No database-only files found."""
             tool_name = tool_info["name"]
             icon = tool_info["icon"]
             desc = tool_info["desc"]
-            tool_status_msg += f"{icon} <b>{tool_name.capitalize()}</b>: ✅ Enabled\n<i>{desc}</i>\n\n"
+            tool_status_msg += (
+                f"{icon} <b>{tool_name.capitalize()}</b>: ✅ Enabled\n<i>{desc}</i>\n\n"
+            )
 
         # Show the message with tool descriptions and buttons
         await edit_message(
@@ -17589,10 +17206,7 @@ No database-only files found."""
             globals()["state"] = current_state
 
             # Try to use the stored page if available
-            if (
-                message.chat.id
-                and f"{message.chat.id}_watermark_page" in handler_dict
-            ):
+            if message.chat.id and f"{message.chat.id}_watermark_page" in handler_dict:
                 page = handler_dict[f"{message.chat.id}_watermark_page"]
             else:
                 page = globals().get("watermark_text_page", 0)

@@ -3,11 +3,7 @@ import os
 
 from pyrogram import filters
 from pyrogram.filters import command, regex
-from pyrogram.handlers import (
-    CallbackQueryHandler,
-    EditedMessageHandler,
-    MessageHandler,
-)
+from pyrogram.handlers import CallbackQueryHandler, EditedMessageHandler, MessageHandler
 
 from bot import LOGGER
 from bot.core.config_manager import Config
@@ -94,6 +90,7 @@ from bot.modules import (  # Encoding/Decoding imports; index_command removed - 
     paste_text,
     phish_check_command,
     ping,
+    qrcode_command,
     quickinfo_callback,
     quickinfo_command,
     remove_from_queue,
@@ -106,6 +103,7 @@ from bot.modules import (  # Encoding/Decoding imports; index_command removed - 
     select_type,
     send_bot_settings,
     send_user_settings,
+    shortner_command,
     spectrum_handler,
     speedtest,
     start,
@@ -417,6 +415,16 @@ def add_handlers():
         "paste": (
             paste_text,
             BotCommands.PasteCommand,
+            CustomFilters.authorized,
+        ),
+        "shortner": (
+            shortner_command,
+            BotCommands.ShortnerCommand,
+            CustomFilters.authorized,
+        ),
+        "qrcode": (
+            qrcode_command,
+            BotCommands.QRCodeCommand,
             CustomFilters.authorized,
         ),
         "virustotal": (
@@ -895,6 +903,7 @@ def add_handlers():
         "spectrum",
         "sox",
         "paste",
+        "shortner",
         "virustotal",
         "mediatools",
         "mt",
@@ -1012,7 +1021,8 @@ def add_handlers():
             filters=command("cancelbc", case_sensitive=False)
             & filters.private
             & filters.create(
-                lambda _, __, m: m.from_user and m.from_user.id == Config.OWNER_ID
+                lambda _, __, m: m.from_user
+                and m.from_user.id == Config.OWNER_ID
                 # We don't check broadcast_awaiting_message here to allow cancellation
                 # even if the state tracking has issues
             ),
@@ -1033,9 +1043,7 @@ def add_handlers():
                     m.from_user
                     and m.from_user.id == Config.OWNER_ID
                     # Exclude commands
-                    and not (
-                        hasattr(m, "text") and m.text and m.text.startswith("/")
-                    )
+                    and not (hasattr(m, "text") and m.text and m.text.startswith("/"))
                 )
                 # We'll check broadcast_awaiting_message inside the handler
             ),
@@ -1061,7 +1069,8 @@ def add_handlers():
             & filters.create(
                 lambda _, __, m: (
                     # Must be from owner
-                    m.from_user and m.from_user.id == Config.OWNER_ID
+                    m.from_user
+                    and m.from_user.id == Config.OWNER_ID
                 )
                 # We'll check broadcast_awaiting_message inside the handler
             ),

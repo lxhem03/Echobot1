@@ -1,8 +1,5 @@
 from bot.core.config_manager import Config
-from bot.helper.telegram_helper.message_utils import (
-    auto_delete_message,
-    send_message,
-)
+from bot.helper.telegram_helper.message_utils import auto_delete_message, send_message
 
 
 async def handle_qb_commands(_, message):
@@ -140,7 +137,9 @@ async def handle_no_suffix_commands(client, message):  # noqa: ARG001
         "spectrum",
         "sox",
         "paste",
+        "qrcode",
         "scrap",
+        "shortner",
         "streamripmirror",
         "srmirror",
         "streamripleech",
