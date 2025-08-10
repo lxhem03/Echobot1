@@ -19,14 +19,9 @@ from .helper.telegram_helper.bot_commands import BotCommands
 
 COMMANDS = {
     "MirrorCommand": "- Start mirroring",
-    "LeechCommand": "- Start leeching",
-    "JdMirrorCommand": "- Mirror using JDownloader",
-    "JdLeechCommand": "- Leech using JDownloader",
-    "NzbMirrorCommand": "- Mirror NZB files",
-    "NzbLeechCommand": "- Leech NZB files",
+    "LeechCommand": "- Start leeching/qbleeching",
     "YtdlCommand": "- Mirror link using yt-dlp",
     "YtdlLeechCommand": "- Leech link using yt-dlp",
-    "CloneCommand": "- Copy file/folder to Drive",
     "MediaInfoCommand": "- Get media information",
     "SoxCommand": "- Get audio spectrum",
     "ForceStartCommand": "- Force start a task from queue",
@@ -117,5 +112,5 @@ create_help_buttons()
 add_handlers()
 
 
-LOGGER.info("Bot Started!")
+LOGGER.info("PM leecher 👑 is now live on work 💫.....")
 bot_loop.run_forever()
