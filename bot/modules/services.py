@@ -33,7 +33,7 @@ async def start(client, message):
         if stored_token is None:
             return await send_message(
                 message,
-                "<b>This token is not for you!</b>\n\nPlease generate your own.",
+                "<b>Looks like the token was not generate for you 🌚</b>\n\nPlease generate your own. 😁✌️",
             )
         if input_token != stored_token:
             return await send_message(
@@ -62,10 +62,12 @@ async def start(client, message):
         return await send_message(message, msg)
     elif await CustomFilters.authorized(client, message):
         help_command = f"/{BotCommands.HelpCommand}"
-        start_string = f"This bot can mirror all your links|files|torrents to Google Drive or any rclone cloud or to telegram.\n<b>Type {help_command} to get a list of available commands</b>"
+        start_string = f"𝘏𝘦𝘭𝘭𝘰 𝘵𝘩𝘦𝘳𝘦!! \n\n𝘐'𝘮 𝘢𝘯 𝘢𝘥𝘷𝘢𝘯𝘤𝘦 𝘭𝘦𝘦𝘤𝘩 𝘣𝘰𝘵 𝘤𝘳𝘦𝘢𝘵𝘦𝘥 𝘉𝘺 <a href='http://t.me/The_TGguy'>𝘛𝘦𝘭𝘦𝘨𝘳𝘢𝘮 𝘎𝘶𝘺!!</a> 𝘐 𝘤𝘢𝘯 𝘸𝘰𝘳𝘬 𝘪𝘯 𝘗𝘔 𝘢𝘯𝘥 𝘢𝘭𝘴𝘰 𝘪𝘯 𝘈𝘶𝘵𝘩𝘰𝘳𝘪𝘻𝘦𝘥 𝘨𝘳𝘰𝘶𝘱𝘴! 𝘐 𝘴𝘶𝘱𝘱𝘰𝘳𝘵 𝘠𝘵𝘥𝘭, 𝘵𝘰𝘳𝘳𝘦𝘯𝘵𝘴, 𝘮𝘢𝘨𝘯𝘦𝘵 𝘭𝘪𝘯𝘬𝘴, 𝘭𝘦𝘦𝘤𝘩𝘪𝘯𝘨, 𝘮𝘪𝘳𝘳𝘰𝘳 𝘢𝘯𝘥 𝘮𝘰𝘳𝘦....\n\n<i>𝘓𝘦𝘢𝘳𝘯 𝘮𝘰𝘳𝘦 𝘢𝘣𝘰𝘶𝘵 𝘮𝘦 𝘰𝘯 {help_command}</i> \n\n<blockquote>Dᴏᴡɴʟᴏᴀᴅɪɴɢ 18+ sᴜᴄʜ ᴀs Pᴏʀɴ, ᴜʟʟᴜ ᴀʀᴇ ᴀʟʟᴏᴡᴇᴅ (ɴᴏ R@ᴘᴇ ᴏʀ ᴄᴘ, ɪғ ғᴏᴜɴᴅ ᴘᴇʀᴍᴀɴᴇɴᴛ ʙᴀɴ 🚫)</blockquote>"
         await send_message(message, start_string)
     else:
-        await send_message(message, "You are not a authorized user!")
+        help_command = f"/{BotCommands.HelpCommand}"
+        unauth = f"𝘏𝘦𝘭𝘭𝘰 𝘵𝘩𝘦𝘳𝘦!! \n\n𝘐'𝘮 𝘢𝘯 𝘢𝘥𝘷𝘢𝘯𝘤𝘦 𝘭𝘦𝘦𝘤𝘩 𝘣𝘰𝘵 𝘤𝘳𝘦𝘢𝘵𝘦𝘥 𝘉𝘺 <a href='http://t.me/The_TGguy'>𝘛𝘦𝘭𝘦𝘨𝘳𝘢𝘮 𝘎𝘶𝘺!!</a> 𝘐 𝘤𝘢𝘯 𝘸𝘰𝘳𝘬 𝘪𝘯 𝘗𝘔 𝘢𝘯𝘥 𝘢𝘭𝘴𝘰 𝘪𝘯 𝘈𝘶𝘵𝘩𝘰𝘳𝘪𝘻𝘦𝘥 𝘨𝘳𝘰𝘶𝘱𝘴! 𝘐 𝘴𝘶𝘱𝘱𝘰𝘳𝘵 𝘠𝘵𝘥𝘭, 𝘵𝘰𝘳𝘳𝘦𝘯𝘵𝘴, 𝘮𝘢𝘨𝘯𝘦𝘵 𝘭𝘪𝘯𝘬𝘴, 𝘭𝘦𝘦𝘤𝘩𝘪𝘯𝘨, 𝘮𝘪𝘳𝘳𝘰𝘳 𝘢𝘯𝘥 𝘮𝘰𝘳𝘦....\n\n<i>𝘓𝘦𝘢𝘳𝘯 𝘮𝘰𝘳𝘦 𝘢𝘣𝘰𝘶𝘵 𝘮𝘦 𝘰𝘯 {help_command}</i> \n\n<blockquote>Dᴏᴡɴʟᴏᴀᴅɪɴɢ 18+ sᴜᴄʜ ᴀs Pᴏʀɴ, ᴜʟʟᴜ ᴀʀᴇ ᴀʟʟᴏᴡᴇᴅ (ɴᴏ R@ᴘᴇ ᴏʀ ᴄᴘ, ɪғ ғᴏᴜɴᴅ ᴘᴇʀᴍᴀɴᴇɴᴛ ʙᴀɴ 🚫)</blockquote>"
+        await send_message(message, unauth)
     await database.update_pm_users(message.from_user.id)
     return None
 
@@ -73,7 +75,7 @@ async def start(client, message):
 @new_task
 async def ping(_, message):
     start_time = round(time() * 1000)
-    reply = await send_message(message, "Starting Ping")
+    reply = await send_message(message, "Starting Ping 😉")
     end_time = round(time() * 1000)
     await edit_message(reply, f"{end_time - start_time} ms")
 
