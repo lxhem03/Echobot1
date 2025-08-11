@@ -24,6 +24,17 @@ from bot.helper.telegram_helper.message_utils import (
 
 @new_task
 async def start(client, message):
+    sbutton = InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton("📢 𝐔𝐩𝐝𝐚𝐭𝐞𝐬 📢", url=""),
+                InlineKeyboardButton("❄️ 𝐒𝐮𝐩𝐩𝐨𝐫𝐭 ❄️", url="")
+            ],
+            [
+                InlineKeyboardButton("📜  📜", url="")
+            ]
+        ]
+    )    
     if len(message.command) > 1 and message.command[1] == "private":
         await delete_message(message)
     elif len(message.command) > 1 and len(message.command[1]) == 36:
@@ -63,11 +74,11 @@ async def start(client, message):
     elif await CustomFilters.authorized(client, message):
         help_command = f"/{BotCommands.HelpCommand}"
         start_string = f"𝘏𝘦𝘭𝘭𝘰 𝘵𝘩𝘦𝘳𝘦!! \n\n𝘐'𝘮 𝘢𝘯 𝘢𝘥𝘷𝘢𝘯𝘤𝘦 𝘭𝘦𝘦𝘤𝘩 𝘣𝘰𝘵 𝘤𝘳𝘦𝘢𝘵𝘦𝘥 𝘉𝘺 <a href='http://t.me/The_TGguy'>𝘛𝘦𝘭𝘦𝘨𝘳𝘢𝘮 𝘎𝘶𝘺!!</a> 𝘐 𝘤𝘢𝘯 𝘸𝘰𝘳𝘬 𝘪𝘯 𝘗𝘔 𝘢𝘯𝘥 𝘢𝘭𝘴𝘰 𝘪𝘯 𝘈𝘶𝘵𝘩𝘰𝘳𝘪𝘻𝘦𝘥 𝘨𝘳𝘰𝘶𝘱𝘴! 𝘐 𝘴𝘶𝘱𝘱𝘰𝘳𝘵 𝘠𝘵𝘥𝘭, 𝘵𝘰𝘳𝘳𝘦𝘯𝘵𝘴, 𝘮𝘢𝘨𝘯𝘦𝘵 𝘭𝘪𝘯𝘬𝘴, 𝘭𝘦𝘦𝘤𝘩𝘪𝘯𝘨, 𝘮𝘪𝘳𝘳𝘰𝘳 𝘢𝘯𝘥 𝘮𝘰𝘳𝘦....\n\n<i>𝘓𝘦𝘢𝘳𝘯 𝘮𝘰𝘳𝘦 𝘢𝘣𝘰𝘶𝘵 𝘮𝘦 𝘰𝘯 {help_command}</i> \n\n<blockquote>Dᴏᴡɴʟᴏᴀᴅɪɴɢ 18+ sᴜᴄʜ ᴀs Pᴏʀɴ, ᴜʟʟᴜ ᴀʀᴇ ᴀʟʟᴏᴡᴇᴅ (ɴᴏ R@ᴘᴇ ᴏʀ ᴄᴘ, ɪғ ғᴏᴜɴᴅ ᴘᴇʀᴍᴀɴᴇɴᴛ ʙᴀɴ 🚫)</blockquote>"
-        await send_message(message, start_string)
+        await send_message(message, start_string, buttons=sbutton)
     else:
         help_command = f"/{BotCommands.HelpCommand}"
         unauth = f"𝘏𝘦𝘭𝘭𝘰 𝘵𝘩𝘦𝘳𝘦!! \n\n𝘐'𝘮 𝘢𝘯 𝘢𝘥𝘷𝘢𝘯𝘤𝘦 𝘭𝘦𝘦𝘤𝘩 𝘣𝘰𝘵 𝘤𝘳𝘦𝘢𝘵𝘦𝘥 𝘉𝘺 <a href='http://t.me/The_TGguy'>𝘛𝘦𝘭𝘦𝘨𝘳𝘢𝘮 𝘎𝘶𝘺!!</a> 𝘐 𝘤𝘢𝘯 𝘸𝘰𝘳𝘬 𝘪𝘯 𝘗𝘔 𝘢𝘯𝘥 𝘢𝘭𝘴𝘰 𝘪𝘯 𝘈𝘶𝘵𝘩𝘰𝘳𝘪𝘻𝘦𝘥 𝘨𝘳𝘰𝘶𝘱𝘴! 𝘐 𝘴𝘶𝘱𝘱𝘰𝘳𝘵 𝘠𝘵𝘥𝘭, 𝘵𝘰𝘳𝘳𝘦𝘯𝘵𝘴, 𝘮𝘢𝘨𝘯𝘦𝘵 𝘭𝘪𝘯𝘬𝘴, 𝘭𝘦𝘦𝘤𝘩𝘪𝘯𝘨, 𝘮𝘪𝘳𝘳𝘰𝘳 𝘢𝘯𝘥 𝘮𝘰𝘳𝘦....\n\n<i>𝘓𝘦𝘢𝘳𝘯 𝘮𝘰𝘳𝘦 𝘢𝘣𝘰𝘶𝘵 𝘮𝘦 𝘰𝘯 {help_command}</i> \n\n<blockquote>Dᴏᴡɴʟᴏᴀᴅɪɴɢ 18+ sᴜᴄʜ ᴀs Pᴏʀɴ, ᴜʟʟᴜ ᴀʀᴇ ᴀʟʟᴏᴡᴇᴅ (ɴᴏ R@ᴘᴇ ᴏʀ ᴄᴘ, ɪғ ғᴏᴜɴᴅ ᴘᴇʀᴍᴀɴᴇɴᴛ ʙᴀɴ 🚫)</blockquote>"
-        await send_message(message, unauth)
+        await send_message(message, unauth, buttons=sbutton)
     await database.update_pm_users(message.from_user.id)
     return None
 
