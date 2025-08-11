@@ -1,11 +1,11 @@
 # REQUIRED CONFIG
-BOT_TOKEN = ""
-OWNER_ID = 0
-TELEGRAM_API = 0
-TELEGRAM_HASH = ""
+BOT_TOKEN = "8147541001:AAEZGGhrmvAEJYkjfnZ-YVe_CVo6zZfyixE"
+OWNER_ID = 7465574522
+TELEGRAM_API = 27394279
+TELEGRAM_HASH = "90a9aa4c31afa3750da5fd686c410851"
 
 # Recommended for persisting settings, RSS feeds, and task history. Essential for some features.
-DATABASE_URL = ""
+DATABASE_URL = "mongodb+srv://python21java:8ZFGYMKJCqAPwsiO@filestore.f876hjv.mongodb.net/?retryWrites=true&w=majority&appName=Filestore"
 
 # OPTIONAL CONFIG
 TG_PROXY = {}  # Example: {"scheme": "socks5", "hostname": "11.22.33.44", "port": 1234, "username": "user", "password": "pass"}
@@ -20,7 +20,7 @@ EXCLUDED_EXTENSIONS = (
     ""  # Space separated file extensions to exclude (e.g., .log .exe)
 )
 INCOMPLETE_TASK_NOTIFIER = (
-    False  # Notify for incomplete tasks on restart (requires DATABASE_URL)
+    True  # Notify for incomplete tasks on restart (requires DATABASE_URL)
 )
 YT_DLP_OPTIONS = {}  # Dictionary of yt-dlp options, e.g., {"format": "bestvideo+bestaudio/best"}
 USE_SERVICE_ACCOUNTS = False
@@ -81,7 +81,7 @@ USENET_SERVERS = [  # List of Usenet server configurations
 
 # Update
 UPSTREAM_REPO = (
-    "https://github.com/AeonOrg/Aeon-MLTB"  # Upstream repository for updates
+    "https://github.com/lxhem03/Echobot1"  # Upstream repository for updates
 )
 UPSTREAM_BRANCH = "main"  # Default branch for updates
 
