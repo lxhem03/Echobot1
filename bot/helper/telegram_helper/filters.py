@@ -12,10 +12,18 @@ class CustomFilters:
     owner = create(owner_filter)
 
     async def authorized_user(self, _, update):
+        
         user = update.from_user or update.sender_chat
         uid = user.id
-        chat_id = update.chat.id
-        thread_id = update.message_thread_id if update.topic_message else None
+        chat = update.chat
+        chat_id = chat.id
+        thread_id = update.message_thread_id if hasattr(update, "topic_message") and update.topic_message else None
+
+        # Allow everyone in private messages (PM)
+        if chat.type == "private":
+            return True
+
+        # Existing logic for groups/channels
         return bool(
             uid == Config.OWNER_ID
             or (
@@ -45,10 +53,8 @@ class CustomFilters:
                     )
                     or not auth_chats[chat_id]
                 )
-            ),
+            )
         )
-
-    authorized = create(authorized_user)
 
     async def sudo_user(self, _, update):
         user = update.from_user or update.sender_chat
