@@ -56,6 +56,8 @@ class CustomFilters:
             )
         )
 
+    authorized = create(authorized_user)
+
     async def sudo_user(self, _, update):
         user = update.from_user or update.sender_chat
         uid = user.id
