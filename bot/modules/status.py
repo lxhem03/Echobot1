@@ -57,10 +57,9 @@ async def task_status(_, message):
     if count == 0:
         currentTime = get_readable_time(time() - bot_start_time)
         free = get_readable_file_size(disk_usage(DOWNLOAD_DIR).free)
-        msg = "No Active Tasks!\n"
+        msg = "<blockquote><i>I'm free and bored as hell 🥱</i></blockquote>\n\n<b>Do you have something for me to do? 👀🧐</b>\n"
         msg += (
-            f"\n<b>CPU:</b> {cpu_percent()}% | <b>FREE:</b> {free}"
-            f"\n<b>RAM:</b> {virtual_memory().percent}% | <b>UPTIME:</b> {currentTime}"
+            f"\n<blockquote><b>• CPU:</b> {cpu_percent()}% | <b>• FREE:</b> {free}\n<b>• RAM:</b> {virtual_memory().percent}% | <b>• UPTIME:</b> {currentTime}</blockquote>"
         )
         reply_message = await send_message(message, msg)
         await auto_delete_message(message, reply_message)
