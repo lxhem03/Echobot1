@@ -1,7 +1,7 @@
 from html import escape
 from time import time
 from uuid import uuid4
-
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiofiles import open as aiopen
 
 from bot import LOGGER, user_data
@@ -27,11 +27,11 @@ async def start(client, message):
     sbutton = InlineKeyboardMarkup(
         [
             [
-                InlineKeyboardButton("📢 𝐔𝐩𝐝𝐚𝐭𝐞𝐬 📢", url=""),
-                InlineKeyboardButton("❄️ 𝐒𝐮𝐩𝐩𝐨𝐫𝐭 ❄️", url="")
+                InlineKeyboardButton("📢 𝐔𝐩𝐝𝐚𝐭𝐞𝐬 📢", url="https://t.me/+ipiHTFYbG3s1ZWY1"),
+                InlineKeyboardButton("❄️ 𝐒𝐮𝐩𝐩𝐨𝐫𝐭 ❄️", url="https://t.me/+NVEV24yebe80ZDZl")
             ],
             [
-                InlineKeyboardButton("📜  📜", url="")
+                InlineKeyboardButton("📜 𝐷𝑖𝑠𝑐𝑙𝑎𝑖𝑚𝑒𝑟/𝑅𝑢𝑙𝑒𝑠 📜", url="https://bot.telescope.workers.dev/open/BQACAgUAAx0EWiS9TAACHh9om1YweFYFc-eaiAe9robOU1H8cAAC1BYAAky72VSU-uLrugoW-TYE/vTelegraphBot.html")
             ]
         ]
     )    
