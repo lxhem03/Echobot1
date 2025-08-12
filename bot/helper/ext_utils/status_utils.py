@@ -185,7 +185,7 @@ def source(self):
 
 
 async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=1):
-    msg = "<a href='http://t.me/The_TGguy'><b><i>A bot by Telegram Guy!!</i></b></a>"
+    msg = "<a href='http://t.me/The_TGguy'><b><i>A bot by Telegram Guy!!</i></b></a>\n\n"
     button = None
 
     tasks = await get_specific_tasks(status, sid if is_user else None)
@@ -254,7 +254,7 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
         msg += f"\n<b>Tool:</b> {task.tool}"
         task_gid = task.gid()
         short_gid = task_gid[-8:] if task_gid.startswith("SABnzbd") else task_gid[:8]
-        msg += f"/n<b>To cancel:</b> /stop_{short_gid}\n\n"
+        msg += f"\n<b>To cancel:</b> /stop_{short_gid}\n<b><i>☰☰☰☰☰☰☰☰☰☰☰☰☰☰☰☰☰☰☰</i></b>\n"
 
     if len(msg) == 0:
         if status == "All":
@@ -262,7 +262,7 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
         msg = f"<blockquote><i>I'm free and bored as hell 🥱</i></blockquote>\n\n<b>Do you have something for me to do? 👀🧐</b>\n\n"
     buttons = ButtonMaker()
     if not is_user:
-        buttons.data_button("♠", f"status {sid} ov", position="header")
+        buttons.data_button("↻", f"status {sid} ov", position="header")
     if len(tasks) > STATUS_LIMIT:
         msg += f"<b>Page:</b> {page_no}/{pages} | <b>Tasks:</b> {tasks_no} | <b>Step:</b> {page_step}\n"
         buttons.data_button("←", f"status {sid} pre", position="header")
