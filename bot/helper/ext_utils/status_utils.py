@@ -254,12 +254,12 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
         msg += f"\n<b>Tool:</b> {task.tool}"
         task_gid = task.gid()
         short_gid = task_gid[-8:] if task_gid.startswith("SABnzbd") else task_gid[:8]
-        msg += f"\n/stop_{short_gid}\n\n"
+        msg += f"/n<b>To cancel:</b> /stop_{short_gid}\n\n"
 
     if len(msg) == 0:
         if status == "All":
             return None, None
-        msg = f"\n\n"
+        msg = f"<blockquote><i>I'm free and bored as hell 🥱</i></blockquote>\n\n<b>Do you have something for me to do? 👀🧐</b>\n\n"
     buttons = ButtonMaker()
     if not is_user:
         buttons.data_button("♠", f"status {sid} ov", position="header")
@@ -275,6 +275,5 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
             if status_value != status:
                 buttons.data_button(label, f"status {sid} st {status_value}")
     button = buttons.build_menu(8)
-    msg += f"<b>CPU:</b> {cpu_percent()}% | <b>FREE:</b> {get_readable_file_size(disk_usage(DOWNLOAD_DIR).free)}"
-    msg += f"\n<b>RAM:</b> {virtual_memory().percent}% | <b>UPTIME:</b> {get_readable_time(time() - bot_start_time)}"
+    msg += f"<blockquote><b>• CPU:</b> {cpu_percent()}% | <b>• FREE:</b> {get_readable_file_size(disk_usage(DOWNLOAD_DIR).free)}\n<b>• RAM:</b> {virtual_memory().percent}% | <b>• UPTIME:</b> {get_readable_time(time() - bot_start_time)}</blockquote>"
     return msg, button
