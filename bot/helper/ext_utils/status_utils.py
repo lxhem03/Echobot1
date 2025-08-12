@@ -10,26 +10,25 @@ from bot.helper.telegram_helper.button_build import ButtonMaker
 
 SIZE_UNITS = ["B", "KB", "MB", "GB", "TB", "PB"]
 
-
 class MirrorStatus:
-    STATUS_UPLOAD = "Upload"
-    STATUS_DOWNLOAD = "Download"
-    STATUS_CLONE = "Clone"
-    STATUS_QUEUEDL = "QueueDl"
-    STATUS_QUEUEUP = "QueueUp"
-    STATUS_PAUSED = "Pause"
-    STATUS_ARCHIVE = "Archive"
-    STATUS_EXTRACT = "Extract"
-    STATUS_SPLIT = "Split"
-    STATUS_CHECK = "CheckUp"
-    STATUS_SEED = "Seed"
-    STATUS_SAMVID = "SamVid"
-    STATUS_CONVERT = "Convert"
-    STATUS_FFMPEG = "FFmpeg"
-    STATUS_METADATA = "Metadata"
-    STATUS_WATERMARK = "Watermark"
-    STATUS_ETHUMB = "Embed Thumb"
-    STATUS_YT = "YouTube"
+    STATUS_UPLOAD = "𝚄𝚙𝚕𝚘𝚊𝚍"
+    STATUS_DOWNLOAD = "𝙳𝚘𝚠𝚗𝚕𝚘𝚊𝚍"
+    STATUS_CLONE = "𝙲𝚕𝚘𝚗𝚎"
+    STATUS_QUEUEDL = "𝚀𝚞𝚎𝚞𝚎𝙳𝚕"
+    STATUS_QUEUEUP = "𝚀𝚞𝚎𝚞𝚎𝚄𝚙"
+    STATUS_PAUSED = "𝙿𝚊𝚞𝚜𝚎"
+    STATUS_ARCHIVE = "𝙰𝚛𝚌𝚑𝚒𝚟𝚎"
+    STATUS_EXTRACT = "𝙴𝚡𝚝𝚛𝚊𝚌𝚝"
+    STATUS_SPLIT = "𝚂𝚙𝚕𝚒𝚝"
+    STATUS_CHECK = "𝙲𝚑𝚎𝚌𝚔𝚄𝚙"
+    STATUS_SEED = "𝚂𝚎𝚎𝚍"
+    STATUS_SAMVID = "𝚂𝚊𝚖𝚅𝚒𝚍"
+    STATUS_CONVERT = "𝙲𝚘𝚗𝚟𝚎𝚛𝚝"
+    STATUS_FFMPEG = "𝙵𝙵𝚖𝚙𝚎𝚐"
+    STATUS_METADATA = "𝙼𝚎𝚝𝚊𝚍𝚊𝚝𝚊"
+    STATUS_WATERMARK = "𝚆𝚊𝚝𝚎𝚛𝚖𝚊𝚛𝚔"
+    STATUS_ETHUMB = "𝙴𝚖𝚋𝚎𝚍 𝚃𝚑𝚞𝚖𝚋"
+    STATUS_YT = "𝚈𝚘𝚞𝚃𝚞𝚋𝚎"
 
 
 STATUSES = {
@@ -186,7 +185,7 @@ def source(self):
 
 
 async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=1):
-    msg = ""
+    msg = "<a href='http://t.me/The_TGguy'><b><i>A bot by Telegram Guy!!</i></b></a>"
     button = None
 
     tasks = await get_specific_tasks(status, sid if is_user else None)
@@ -260,14 +259,14 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
     if len(msg) == 0:
         if status == "All":
             return None, None
-        msg = f"No Active {status} Tasks!\n\n"
+        msg = f"\n\n"
     buttons = ButtonMaker()
     if not is_user:
-        buttons.data_button("≈", f"status {sid} ov", position="header")
+        buttons.data_button("♠", f"status {sid} ov", position="header")
     if len(tasks) > STATUS_LIMIT:
         msg += f"<b>Page:</b> {page_no}/{pages} | <b>Tasks:</b> {tasks_no} | <b>Step:</b> {page_step}\n"
-        buttons.data_button("prev", f"status {sid} pre", position="header")
-        buttons.data_button("next", f"status {sid} nex", position="header")
+        buttons.data_button("←", f"status {sid} pre", position="header")
+        buttons.data_button("→", f"status {sid} nex", position="header")
         if tasks_no > 30:
             for i in [1, 2, 4, 6, 8, 10, 15]:
                 buttons.data_button(i, f"status {sid} ps {i}", position="footer")
