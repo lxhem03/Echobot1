@@ -1,8 +1,8 @@
 # REQUIRED CONFIG
 BOT_TOKEN = "8147541001:AAEZGGhrmvAEJYkjfnZ-YVe_CVo6zZfyixE"
 OWNER_ID = 7465574522
-TELEGRAM_API = 27394279
-TELEGRAM_HASH = "90a9aa4c31afa3750da5fd686c410851"
+TELEGRAM_API = 23340285
+TELEGRAM_HASH = "ab18f905cb5f4a75d41bb48d20acfa50"
 
 # Recommended for persisting settings, RSS feeds, and task history. Essential for some features.
 DATABASE_URL = "mongodb+srv://python21java:8ZFGYMKJCqAPwsiO@filestore.f876hjv.mongodb.net/?retryWrites=true&w=majority&appName=Filestore"
