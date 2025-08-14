@@ -123,7 +123,7 @@ def add_handlers():
         "start": (
             start,
             BotCommands.StartCommand,
-            None,
+            CustomFilters.authorized,
         ),
         "log": (
             log,
