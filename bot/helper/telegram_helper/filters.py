@@ -10,22 +10,21 @@ class CustomFilters:
         return user.id == Config.OWNER_ID
 
     owner = create(owner_filter)
-
+#Authoried filter 
     async def authorized_user(self, _, update):
-        
         user = update.from_user or update.sender_chat
         uid = user.id
-        chat = update.chat
-        chat_id = chat.id
-        thread_id = update.message_thread_id if hasattr(update, "topic_message") and update.topic_message else None
-
-        # Allow everyone in private messages (PM)
-        if chat.type == "private":
-            return True
-
-        # Existing logic for groups/channels
+        chat_id = update.chat.id
+        thread_id = update.message_thread_id if update.topic_message else None
+    
+        # Check if the message is in a private chat (PM)
+        is_private_chat = chat_id == uid
+    
         return bool(
-            uid == Config.OWNER_ID
+            # Allow everyone in private chats
+            is_private_chat
+            # Existing logic for owner, sudo, and authorized users
+            or uid == Config.OWNER_ID
             or (
                 uid in user_data
                 and (
@@ -33,6 +32,7 @@ class CustomFilters:
                     or user_data[uid].get("SUDO", False)
                 )
             )
+            # Existing logic for authorized groups and threads
             or (
                 chat_id in user_data
                 and user_data[chat_id].get("AUTH", False)
